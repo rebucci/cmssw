@@ -613,15 +613,20 @@ void L1FPGATrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
       	strip=irphi[0];
       }
 
-      if (doMyDebug) std::cout << "... add this stub to the event!" << std::endl;
+      if (tempStubPtr->getTriggerDisplacement() > 100.) {
+	if (doMyDebug) std::cout << "... if FE inefficiencies calculated, this stub is thrown out! " << endl;
+      }
+      else {
+	if (doMyDebug) std::cout << "... add this stub to the event!" << std::endl;
+	if (ev.addStub(layer,ladder,module,strip,-1,tempStubPtr->getTriggerBend(),
+		       posStub.x(),posStub.y(),posStub.z(),
+		       innerStack,irphi,iz,iladder,imodule,isPSmodule,isFlipped)) {
+	  
+	  L1TStub lastStub=ev.lastStub();
+	  stubMap[lastStub]=tempStubPtr;
+	}
+      }
 
-      if (ev.addStub(layer,ladder,module,strip,-1,tempStubPtr->getTriggerBend(),
-		     posStub.x(),posStub.y(),posStub.z(),
-		     innerStack,irphi,iz,iladder,imodule,isPSmodule,isFlipped)) {
-
-	L1TStub lastStub=ev.lastStub();
-	stubMap[lastStub]=tempStubPtr;
-      }    
     }
   }
 
