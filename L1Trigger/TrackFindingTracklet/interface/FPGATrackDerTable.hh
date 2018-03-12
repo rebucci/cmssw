@@ -249,7 +249,7 @@ public:
 	  //disks[ndisks]=d+1;
 	  z[ndisks]=zmean[d];
 	  alpha[ndisks]=0.0;
-	  double r=r=zmean[d]/t;
+	  double r=zmean[d]/t;
 	  double r2=r*r;
 	  if (diskmask&(1<<(2*(4-d)))) {
 	    if (alphaBits_==3) {
