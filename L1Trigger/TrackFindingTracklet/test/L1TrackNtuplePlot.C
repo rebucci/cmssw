@@ -240,7 +240,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
     tree->SetBranchAddress("tp_injet",   &tp_injet,   &b_tp_injet);
     tree->SetBranchAddress("tp_injet_highpt",   &tp_injet_highpt,   &b_tp_injet_highpt);
   }
-  
   if (doLooseMatch) {
     tree->SetBranchAddress("loosematchtrk_pt",    &matchtrk_pt,    &b_matchtrk_pt);
     tree->SetBranchAddress("loosematchtrk_eta",   &matchtrk_eta,   &b_matchtrk_eta);
@@ -277,7 +276,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
     tree->SetBranchAddress("trk_injet",   &trk_injet,   &b_trk_injet);
     tree->SetBranchAddress("trk_injet_highpt",   &trk_injet_highpt,   &b_trk_injet_highpt);
   }
-  
   /*
   if (TP_select_injet > 0) {
     tree->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
@@ -754,7 +752,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
       }
     }
 
-
     h_ntrk_pt2->Fill(ntrkevt_pt2);
     h_ntrk_pt3->Fill(ntrkevt_pt3);
     h_ntrk_pt10->Fill(ntrkevt_pt10);
@@ -951,7 +948,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
       else if (fabs(tp_eta->at(it)) < 1.6 && fabs(tp_eta->at(it)) >= 0.8) h_match_trk_nstub_I->Fill(matchtrk_nstub->at(it));
       else if (fabs(tp_eta->at(it)) >= 1.6) h_match_trk_nstub_F->Fill(matchtrk_nstub->at(it));
       
-
       // ----------------------------------------------------------------------------------------------------------------
       // fill resolution histograms
       
@@ -997,7 +993,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
 	
       }
       
-
       // ----------------------------------------------------------------------------------------------------------------
       // fill resolution vs. pt histograms    
       for (int im=0; im<nRANGE; im++) {
@@ -1768,6 +1763,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
 
   // plots overlaying 68, 90, 99% confidence levels]
 
+
   float max_eta_ptRel = 0.2;
   float max_pt_ptRel = 0.2;
   float max_pt_pt = 20;
@@ -1970,6 +1966,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
   h2_resVsEta_phi_90->SetMinimum(0);
   h2_resVsEta_phi_90->SetMarkerStyle(20);
   h2_resVsEta_phi_90->Draw("p");
+
   c.SaveAs(DIR+type+"_resVsEta_phi_90.pdf");
   c.SaveAs(DIR+type+"_resVsEta_phi_90.png");
 
