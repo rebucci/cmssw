@@ -960,7 +960,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
       
       if (fabs(tp_eta->at(it)) < 0.8) h_res_z0_C->Fill(matchtrk_z0->at(it) - tp_z0->at(it));
       else if (fabs(tp_eta->at(it)) < 1.6 && fabs(tp_eta->at(it)) >= 0.8) h_res_z0_I->Fill(matchtrk_z0->at(it) - tp_z0->at(it));
-      else if (fabs(tp_eta->at(it)) >= 1.6) h_res_z0_F->Fill(tp_z0->at(it) - tp_z0->at(it));
+      else if (fabs(tp_eta->at(it)) >= 1.6) h_res_z0_F->Fill(matchtrk_z0->at(it) - tp_z0->at(it));
       
       
       if (tp_pt->at(it) < 8.0) {
