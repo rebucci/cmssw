@@ -10,10 +10,19 @@ parser.add_option('--label', metavar='F', type='string', action='store',
                   default='',
                   dest='label',
                   help='')
+parser.add_option('--ptlabel', metavar='F', type='string', action='store',
+                  default='',
+                  dest='ptlabel',
+                  help='e.g. pt3')
 (options, args) = parser.parse_args()
 argv = []
 
-userLabel = options.label
+userLabel=""
+userPtLabel=""
+if options.label != "":
+    userLabel = "_"+options.label
+if options.ptlabel != "":
+    userPtLabel = "_"+options.ptlabel
 
 # Labels for input files
 PUtypes = ["0","140","200"]
@@ -25,9 +34,9 @@ ptRangeTypes = {
 pdgIdTypes = { 0 : "",
                1 : "_injet",
                2 : "_injet_highpt",
-               13 : "_pdgid13"#,
-#               11 : "pdgid11",
-#               211 : "pdgid211"
+               13 : "_pdgid13",
+               11 : "_pdgid11"#,
+#               211 : "_pdgid211"
 }
 
 def SetPlotStyle():
@@ -96,6 +105,14 @@ def mySmallText(x, y, color, text):
   l.SetNDC();
   l.SetTextColor(color);
   l.DrawLatex(x,y,text);
+def myItalicText(x, y, color, text):
+  tsize=0.038;
+  l = r.TLatex();
+  l.SetTextSize(tsize); 
+  l.SetTextFont(52); 
+  l.SetNDC();
+  l.SetTextColor(color);
+  l.DrawLatex(x,y,text);
 
 def getAllHistogramsFromFile( what, sample, ptRange, pdgid, rebin, normToOne=False ):
 
@@ -103,16 +120,16 @@ def getAllHistogramsFromFile( what, sample, ptRange, pdgid, rebin, normToOne=Fal
   inputFileNames = [];
   inputFileNameTemplate = ""
   if 'TTbar' in sample:
-    inputFileNameTemplate = "output_{sample}_PU{PU}_{trunc}Truncation{pdg}{userLabel}.root"
+    inputFileNameTemplate = "output_{sample}_PU{PU}_{trunc}Truncation{pdg}{userPtLabel}{userLabel}.root"
   else :
-    inputFileNameTemplate = "output_{sample}{ptRange}_PU{PU}_{trunc}Truncation{pdg}{userLabel}.root"
+    inputFileNameTemplate = "output_{sample}{ptRange}_PU{PU}_{trunc}Truncation{pdg}{userPtLabel}{userLabel}.root"
 
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userPtLabel=userPtLabel, userLabel=userLabel ) )
 
   # Get trees from files
   inputFiles=[];
@@ -141,6 +158,7 @@ def getAllHistogramsFromFile( what, sample, ptRange, pdgid, rebin, normToOne=Fal
     for n, h in histograms.iteritems():
       if h != None:
         h.Scale( 1 / h.Integral() )
+        h.GetYaxis().SetTitle('Fraction of events')
 
   return histograms
 
@@ -244,7 +262,7 @@ def compareEfficiency(what, sample, ptRange=0, pdgid=0,rebin=0, normToOne=False,
   l.Draw()
 
   # Save canvas
-  outputDir = 'OverlayPlots'+userLabel
+  outputDir = 'OverlayPlots'+userPtLabel
   if not os.path.isdir(outputDir):
     os.mkdir(outputDir)
   outputFileName = "{outputDir}/{sample}_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
@@ -252,6 +270,10 @@ def compareEfficiency(what, sample, ptRange=0, pdgid=0,rebin=0, normToOne=False,
   if 'TTbar' in sample:
     if pdgid == 13:
       outputFileName = "{outputDir}/{sample}_muons_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
+    elif pdgid == 11:
+      outputFileName = "{outputDir}/{sample}_electrons_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
+    elif pdgid == 0:
+      outputFileName = "{outputDir}/{sample}_inclusive_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
     elif pdgid == 1:
       outputFileName = "{outputDir}/{sample}_injet_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
     elif pdgid == 2:
@@ -262,25 +284,31 @@ def compareEfficiency(what, sample, ptRange=0, pdgid=0,rebin=0, normToOne=False,
 
   canvas.Print(outputFileName);
 
+  
 if __name__ == '__main__':
   r.gROOT.SetBatch()
 
   for sample in ['TTbar']:
-    for pdg in [13]:
+    for pdg in [0,11,13]:
       compareEfficiency("eff_pt_L",sample,0,pdg)
       compareEfficiency("eff_pt_H",sample,0,pdg)
       compareEfficiency("eff_eta_L",sample,0,pdg)
       compareEfficiency("eff_eta_H",sample,0,pdg)
-    for pdg in [1,2]:
+    for pdg in [0,1,2,11,13]:
       compareEfficiency("eff_pt",sample,0,pdg)
       compareEfficiency("eff_eta",sample,0,pdg)
-
-    #compareEfficiency("eff_d0",sample,0,0,rebin=0, normToOne=False, legPosition="topright")
-    compareEfficiency("eff_d0",sample,0,0)
-    
+  
     compareEfficiency("ntrk_pt2",sample,0,0,rebin=4, normToOne=True, legPosition="topright")
     compareEfficiency("ntrk_pt3",sample,0,0,rebin=4, normToOne=True, legPosition="topright")
     compareEfficiency("ntrk_pt10",sample,0,0,rebin=4, normToOne=True, legPosition="topright")
 
 
+#  pGunSamples = {
+#    'MuonPt10' : 13,
+#    'MuonPt100' : 13,
+#    'ElectronPt10' : 11,
+#    'ElectronPt35' : 11,
+#  }
+#  for sample, pdg in pGunSamples.iteritems():
+#    compareEfficiency("eff_eta",sample,0,pdg)
 

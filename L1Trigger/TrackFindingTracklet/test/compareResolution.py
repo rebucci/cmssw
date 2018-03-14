@@ -10,10 +10,19 @@ parser.add_option('--label', metavar='F', type='string', action='store',
                   default='',
                   dest='label',
                   help='')
+parser.add_option('--ptlabel', metavar='F', type='string', action='store',
+                  default='',
+                  dest='ptlabel',
+                  help='e.g. pt3')
 (options, args) = parser.parse_args()
 argv = []
 
-userLabel = options.label
+userLabel=""
+userPtLabel=""
+if options.label != "":
+    userLabel = "_"+options.label
+if options.ptlabel != "":
+    userPtLabel = "_"+options.ptlabel
 
 # Labels for input files
 PUtypes = ["0","140","200"]
@@ -25,9 +34,9 @@ ptRangeTypes = {
 pdgIdTypes = { 0 : "",
                1 : "_injet",
                2 : "_injet_highpt",
-               13 : "_pdgid13"#,
-               #11 : "pdgid11",
-               #211 : "pdgid211"
+               13 : "_pdgid13",
+               11 : "_pdgid11"#,
+#               211 : "pdgid211"
 }
 
 def SetPlotStyle():
@@ -96,6 +105,14 @@ def mySmallText(x, y, color, text):
   l.SetNDC();
   l.SetTextColor(color);
   l.DrawLatex(x,y,text);
+def myItalicText(x, y, color, text):
+  tsize=0.038;
+  l = r.TLatex();
+  l.SetTextSize(tsize); 
+  l.SetTextFont(52); 
+  l.SetNDC();
+  l.SetTextColor(color);
+  l.DrawLatex(x,y,text);
 
 def getAllHistogramsFromFile( what, sample, ptRange, pdgid, maxY=-1 ):
 
@@ -103,16 +120,16 @@ def getAllHistogramsFromFile( what, sample, ptRange, pdgid, maxY=-1 ):
   inputFileNames = [];
   inputFileNameTemplate = ""
   if 'TTbar' in sample:
-    inputFileNameTemplate = "output_{sample}_PU{PU}_{trunc}Truncation{pdg}{userLabel}.root"
+    inputFileNameTemplate = "output_{sample}_PU{PU}_{trunc}Truncation{pdg}{userPtLabel}{userLabel}.root"
   else :
-    inputFileNameTemplate = "output_{sample}{ptRange}_PU{PU}_{trunc}Truncation{pdg}{userLabel}.root"
+    inputFileNameTemplate = "output_{sample}{ptRange}_PU{PU}_{trunc}Truncation{pdg}{userPtLabel}{userLabel}.root"
 
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userLabel=userLabel ) )
-  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'With', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[0], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[1], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userPtLabel=userPtLabel, userLabel=userLabel ) )
+  inputFileNames.append( inputFileNameTemplate.format(sample = sample, PU = PUtypes[2], ptRange=ptRangeTypes[ptRange], pdg=pdgIdTypes[pdgid], trunc = 'Without', userPtLabel=userPtLabel, userLabel=userLabel ) )
 
   # Get trees from files
   inputFiles=[];
@@ -289,14 +306,20 @@ def compareResolution(what, sample, ptRange=0, pdgid=0,maxY=-1,legPosition=''):
   l, l1 = setupLegend(sample,histograms68,histograms90,PULabels,legPosition=legPosition)
   l.Draw()
   l1.Draw()
+
+  
   # Save canvas
-  outputDir = 'OverlayPlots'+userLabel
+  outputDir = 'OverlayPlots'+userPtLabel
   if not os.path.isdir(outputDir):
     os.mkdir(outputDir)
   outputFileName = "{outputDir}/{sample}_{what}.pdf".format( outputDir = outputDir, sample = sample, what=what )
   if 'TTbar' in sample:
     if pdgid == 13:
       outputFileName = "{outputDir}/{sample}_muons_{what}.pdf".format( outputDir = outputDir, sample = sample, what=what )
+    elif pdgid == 11:
+      outputFileName = "{outputDir}/{sample}_electrons_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
+    elif pdgid == 0:
+      outputFileName = "{outputDir}/{sample}_inclusive_{what}.pdf".format( outputDir=outputDir, sample = sample, what=what )
     elif pdgid == 1:
       outputFileName = "{outputDir}/{sample}_injet_{what}.pdf".format( outputDir = outputDir, sample = sample, what=what )
     elif pdgid == 2:
@@ -306,26 +329,37 @@ def compareResolution(what, sample, ptRange=0, pdgid=0,maxY=-1,legPosition=''):
 if __name__ == '__main__':
   r.gROOT.SetBatch()
 
-  for pdg in [1,2,13]:
+  for pdg in [0,1,2,11,13]:
+  
+    if pdg == 13:
+      for ptRange in ['L','H']:
+        compareResolution("resVsEta_phi_"+ptRange,'TTbar',ptRange,pdg,maxY=0.02)
+        compareResolution("resVsEta_z0_"+ptRange,'TTbar',ptRange,pdg,maxY=2)
+        compareResolution("resVsEta_ptRel_"+ptRange,'TTbar',ptRange,pdg,maxY=0.3)
+        compareResolution("resVsEta_eta_"+ptRange,'TTbar',ptRange,pdg,maxY=0.03)
+        compareResolution("resVsPt2_phi",'TTbar',ptRange,pdg,maxY=0.02)
+        compareResolution("resVsPt2_z0",'TTbar',ptRange,pdg,maxY=2)
+        compareResolution("resVsPt2_ptRel",'TTbar',ptRange,pdg,maxY=0.3)
+        compareResolution("resVsPt2_eta",'TTbar',ptRange,pdg,maxY=0.03)
+    else:
+      compareResolution("resVsEta_phi",'TTbar',0,pdg,maxY=0.02)
+      compareResolution("resVsEta_z0",'TTbar',0,pdg,maxY=2)
+      compareResolution("resVsEta_ptRel",'TTbar',0,pdg,maxY=0.3)
+      compareResolution("resVsEta_eta",'TTbar',0,pdg,maxY=0.03)
+      compareResolution("resVsPt2_phi",'TTbar',0,pdg,maxY=0.02)
+      compareResolution("resVsPt2_z0",'TTbar',0,pdg,maxY=2)
+      compareResolution("resVsPt2_ptRel",'TTbar',0,pdg,maxY=0.5)
+      compareResolution("resVsPt2_eta",'TTbar',0,pdg,maxY=0.03)
 
-    for sample in ['TTbar']:
-      if pdg == 13:
-        for ptRange in ['L','H']:
-          compareResolution("resVsEta_phi_"+ptRange,sample,ptRange,pdg,maxY=0.02)
-          compareResolution("resVsEta_z0_"+ptRange,sample,ptRange,pdg,maxY=2)
-          compareResolution("resVsEta_ptRel_"+ptRange,sample,ptRange,pdg,maxY=0.3)
-          compareResolution("resVsEta_eta_"+ptRange,sample,ptRange,pdg,maxY=0.03)
-          compareResolution("resVsPt2_phi",sample,ptRange,pdg,maxY=0.02)
-          compareResolution("resVsPt2_z0",sample,ptRange,pdg,maxY=2)
-          compareResolution("resVsPt2_ptRel",sample,ptRange,pdg,maxY=0.3)
-          compareResolution("resVsPt2_eta",sample,ptRange,pdg,maxY=0.03)
-      else:
-        compareResolution("resVsEta_phi",sample,0,pdg,maxY=0.02)
-        compareResolution("resVsEta_z0",sample,0,pdg,maxY=2)
-        compareResolution("resVsEta_ptRel",sample,0,pdg,maxY=0.3)
-        compareResolution("resVsEta_eta",sample,0,pdg,maxY=0.03)
-        compareResolution("resVsPt2_phi",sample,0,pdg,maxY=0.02)
-        compareResolution("resVsPt2_z0",sample,0,pdg,maxY=2)
-        compareResolution("resVsPt2_ptRel",sample,0,pdg,maxY=0.5)
-        compareResolution("resVsPt2_eta",sample,0,pdg,maxY=0.03)
-
+  
+#  pGunSamples = {
+#      'MuonPt10' : 13,
+#      'MuonPt100' : 13,
+#      'ElectronPt10' : 11,
+#      'ElectronPt35' : 11,
+#  }
+#  for sample, pdg in pGunSamples.iteritems():
+#      compareResolution("resVsEta_phi",sample,0,pdg,maxY=0.03)
+#      compareResolution("resVsEta_z0",sample,0,pdg,maxY=1)
+#      compareResolution("resVsEta_ptRel",sample,0,pdg,maxY=0.03)
+#      compareResolution("resVsEta_eta",sample,0,pdg,maxY=1)
