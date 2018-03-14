@@ -40,7 +40,7 @@ void makeResidualIntervalPlot( TString type, TString dir, TString variable, TH1F
 // ----------------------------------------------------------------------------------------------------------------
 
 
-void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=0, int TP_select_eventid=0, float TP_minPt=2.0, float TP_maxPt=100.0, float TP_maxEta=2.4) {
+void L1TrackNtuplePlot(TString type, TString treeName="", int TP_select_injet=0, int TP_select_pdgid=0, int TP_select_eventid=0, float TP_minPt=2.0, float TP_maxPt=100.0, float TP_maxEta=2.4) {
 
   // type:              this is the input file you want to process (minus ".root" extension)
   // TP_select_pdgid:   if non-zero, only select TPs with a given PDG ID
@@ -93,7 +93,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
 
   // ----------------------------------------------------------------------------------------------------------------
   // read ntuples
-  TChain* tree = new TChain("L1TrackNtuple/eventTree");
+  TChain* tree = new TChain("L1TrackNtuple"+treeName+"/eventTree");
   tree->Add(type+".root");
   
   if (tree->GetEntries() == 0) {
@@ -240,6 +240,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
     tree->SetBranchAddress("tp_injet",   &tp_injet,   &b_tp_injet);
     tree->SetBranchAddress("tp_injet_highpt",   &tp_injet_highpt,   &b_tp_injet_highpt);
   }
+  
   if (doLooseMatch) {
     tree->SetBranchAddress("loosematchtrk_pt",    &matchtrk_pt,    &b_matchtrk_pt);
     tree->SetBranchAddress("loosematchtrk_eta",   &matchtrk_eta,   &b_matchtrk_eta);
@@ -276,6 +277,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
     tree->SetBranchAddress("trk_injet",   &trk_injet,   &b_trk_injet);
     tree->SetBranchAddress("trk_injet_highpt",   &trk_injet_highpt,   &b_trk_injet_highpt);
   }
+  
   /*
   if (TP_select_injet > 0) {
     tree->SetBranchAddress("jet_eta", &jet_eta, &b_jet_eta);
@@ -391,16 +393,17 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
   }
 
   // resolution vs. eta histograms
-  /*
+
   const int nETARANGE = 24;
   TString etarange[nETARANGE] = {"0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0",
 				 "1.1","1.2","1.3","1.4","1.5","1.6","1.7","1.8","1.9","2.0",
 				 "2.1","2.2","2.3","2.4"};
-  */
+  /*
   const int nETARANGE = 12;
   TString etarange[nETARANGE] = {"0.2","0.4","0.6","0.8","1.0",
 				 "1.2","1.4","1.6","1.8","2.0",
 				 "2.2","2.4"};
+  */
 
   TH1F* h_absResVsEta_eta[nETARANGE];
   TH1F* h_absResVsEta_z0[nETARANGE];
@@ -752,6 +755,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
       }
     }
 
+
     h_ntrk_pt2->Fill(ntrkevt_pt2);
     h_ntrk_pt3->Fill(ntrkevt_pt3);
     h_ntrk_pt10->Fill(ntrkevt_pt10);
@@ -948,6 +952,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
       else if (fabs(tp_eta->at(it)) < 1.6 && fabs(tp_eta->at(it)) >= 0.8) h_match_trk_nstub_I->Fill(matchtrk_nstub->at(it));
       else if (fabs(tp_eta->at(it)) >= 1.6) h_match_trk_nstub_F->Fill(matchtrk_nstub->at(it));
       
+
       // ----------------------------------------------------------------------------------------------------------------
       // fill resolution histograms
       
@@ -993,6 +998,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
 	
       }
       
+
       // ----------------------------------------------------------------------------------------------------------------
       // fill resolution vs. pt histograms    
       for (int im=0; im<nRANGE; im++) {
@@ -1049,8 +1055,8 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
       // ----------------------------------------------------------------------------------------------------------------
       // fill resolution vs. eta histograms
       for (int im=0; im<nETARANGE; im++) {
-	//if ( (fabs(tp_eta->at(it)) > (float)im*0.1) && (fabs(tp_eta->at(it)) < (float)im*0.1+0.1) ) {
-	if ( (fabs(tp_eta->at(it)) > (float)im*0.2) && (fabs(tp_eta->at(it)) < (float)im*0.2+0.2) ) {
+	if ( (fabs(tp_eta->at(it)) > (float)im*0.1) && (fabs(tp_eta->at(it)) < (float)im*0.1+0.1) ) {
+	//if ( (fabs(tp_eta->at(it)) > (float)im*0.2) && (fabs(tp_eta->at(it)) < (float)im*0.2+0.2) ) {
 	 h_resVsEta_ptRel[im]->Fill((matchtrk_pt->at(it) - tp_pt->at(it))/tp_pt->at(it));
 	 h_resVsEta_eta[im]  ->Fill(matchtrk_eta->at(it) - tp_eta->at(it));
 	 h_resVsEta_phi[im]  ->Fill(matchtrk_phi->at(it) - tp_phi->at(it));
@@ -1746,10 +1752,10 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
     sprintf(pttxt,"_pt%.0f",TP_minPt);
     type = type+pttxt;
   }
-  
+
   TFile* fout;
-  if (doLooseMatch) fout = new TFile("output_loose_"+type+".root","recreate");
-  else fout = new TFile("output_"+type+".root","recreate");
+  if (doLooseMatch) fout = new TFile("output_loose_"+type+treeName+".root","recreate");
+  else fout = new TFile("output_"+type+treeName+".root","recreate");
   
   
   // -------------------------------------------------------------------------------------------
@@ -1762,7 +1768,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
   TString DIR = "TrkPlots/";
 
   // plots overlaying 68, 90, 99% confidence levels]
-
 
   float max_eta_ptRel = 0.2;
   float max_pt_ptRel = 0.2;
@@ -1966,7 +1971,6 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
   h2_resVsEta_phi_90->SetMinimum(0);
   h2_resVsEta_phi_90->SetMarkerStyle(20);
   h2_resVsEta_phi_90->Draw("p");
-
   c.SaveAs(DIR+type+"_resVsEta_phi_90.pdf");
   c.SaveAs(DIR+type+"_resVsEta_phi_90.png");
 
@@ -2113,19 +2117,18 @@ void L1TrackNtuplePlot(TString type, int TP_select_injet=0, int TP_select_pdgid=
   // ----------------------------------------------------------------------------------------------------------------
 
   // rebin pt/phi plots
-  h_tp_pt->Rebin(2);
+  h_tp_pt->Rebin(4);
+  h_match_tp_pt->Rebin(4);
   h_tp_phi->Rebin(2);
-  h_match_tp_pt->Rebin(2);
   h_match_tp_phi->Rebin(2);
 
-  h_tp_pt->Rebin(2);
-  h_match_tp_pt->Rebin(2);
   h_tp_pt_L->Rebin(2);
   h_match_tp_pt_L->Rebin(2);
   h_tp_pt_LC->Rebin(2);
   h_match_tp_pt_LC->Rebin(2);
   h_tp_pt_H->Rebin(2);
   h_match_tp_pt_H->Rebin(2);
+
   h_tp_eta->Rebin(2);
   h_match_tp_eta->Rebin(2);
   h_tp_eta_L->Rebin(2);
@@ -2904,9 +2907,6 @@ void makeResidualIntervalPlot( TString type, TString dir, TString variable, TH1F
   h_90->SetMaximum( maxY );
   h_99->SetMaximum( maxY );
 
-  if ( (type.Contains("Muon") || type.Contains("Electron")) && variable.Contains("resVsPt") )
-    h_68->SetAxisRange(0,50,"X");
-
   h_68->SetMarkerStyle(20);
   h_90->SetMarkerStyle(26);
   h_99->SetMarkerStyle(24);
@@ -2915,14 +2915,14 @@ void makeResidualIntervalPlot( TString type, TString dir, TString variable, TH1F
   h_68->Write();
   h_90->Draw("P same");
   h_90->Write();
-  //h_99->Draw("P same");
+  h_99->Draw("P same");
   h_99->Write();
 
   TLegend* l = new TLegend(0.65,0.65,0.85,0.85);
   l->SetFillStyle(0);
   l->SetBorderSize(0);
   l->SetTextSize(0.04);
-  //l->AddEntry(h_99,"99%","p");
+  l->AddEntry(h_99,"99%","p");
   l->AddEntry(h_90,"90%","p");
   l->AddEntry(h_68,"68%","p");
   l->SetTextFont(42);
