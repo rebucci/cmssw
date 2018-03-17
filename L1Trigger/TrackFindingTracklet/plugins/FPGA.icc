@@ -17,6 +17,7 @@
     bool hitdisk[5];
     int stublayer[6];
     int stublayer1[6][NSector];
+    int stubdisk1[5][NSector];
     for (unsigned int ll=0;ll<6;ll++){
       hitlayer[ll]=false;
       stublayer[ll]=0;
@@ -26,6 +27,9 @@
     }
     for (unsigned int ll=0;ll<5;ll++){
       hitdisk[ll]=false;
+      for (unsigned int jj=0;jj<NSector;jj++){
+        stubdisk1[ll][jj]=0;
+      }
     }	
 
 
@@ -55,7 +59,13 @@
 	               <<" z="<<stub.z()
 	               <<endl;
 
-		       
+
+      double phi=stub.phi();
+      if (phi<0.0) phi+=two_pi;
+      unsigned int isector=NSector*phi/two_pi;
+      assert(isector<NSector);
+
+
 
       if (stub.layer()<7) {
 
@@ -78,13 +88,10 @@
         stublayer[stub.layer()]++;
 
       } else {
+	stubdisk1[abs(stub.disk())-1][isector]++;
         hitdisk[abs(stub.disk())-1]=true;
       }
 
-      double phi=stub.phi();
-      if (phi<0.0) phi+=two_pi;
-      unsigned int isector=NSector*phi/two_pi;
-      assert(isector<NSector);
 
       
 
@@ -209,6 +216,12 @@ if (writeHitEff) {
 	    <<stublayer1[2][jj]<<" "
             <<stublayer1[3][jj]<<" "<<stublayer1[4][jj]<<" "
             <<stublayer1[5][jj]<<endl; 
+      }
+      static ofstream out1("stubsdiskpersector.txt");
+      for(unsigned int jj=0;jj<NSector;jj++){
+        out1 <<stubdisk1[0][jj]<<" "<<stubdisk1[1][jj]<<" "
+	    <<stubdisk1[2][jj]<<" "
+            <<stubdisk1[3][jj]<<" "<<stubdisk1[4][jj]<<endl; 
       }
     }     
 

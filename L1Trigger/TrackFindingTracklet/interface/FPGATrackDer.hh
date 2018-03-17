@@ -44,17 +44,19 @@ public:
 
   }
 
-  void setIndex(int layermask,int diskmask,int alphamask){
+  void setIndex(int layermask,int diskmask,int alphamask, int irinv){
 
     layermask_=layermask;
     diskmask_=diskmask;
     alphamask_=alphamask;
+    irinv_=irinv;
 
   }
 
   int getLayerMask() const {return layermask_;}
   int getDiskMask() const {return diskmask_;}
   int getAlphaMask() const {return alphamask_;}
+  int getirinv() const {return irinv_;}
 
   void setirinvdphi(int i, int irinvdphi) { irinvdphi_[i]=irinvdphi;} 
   void setirinvdzordr(int i, int irinvdzordr) { irinvdzordr_[i]=irinvdzordr;} 
@@ -170,7 +172,8 @@ private:
   int layermask_;
   int diskmask_;
   int alphamask_;
-
+  int irinv_;
+  
 };
 
 

@@ -55,9 +55,9 @@ def SetPlotStyle():
 
   # set the paper & margin sizes
   r.gStyle.SetPaperSize(20,26)
-  r.gStyle.SetPadTopMargin(0.05)
+  r.gStyle.SetPadTopMargin(0.07)
   r.gStyle.SetPadRightMargin(0.05)
-  r.gStyle.SetPadBottomMargin(0.16)
+  r.gStyle.SetPadBottomMargin(0.14)
   r.gStyle.SetPadLeftMargin(0.16)
 
   # set title offsets (for axis label)
@@ -176,6 +176,7 @@ def setMarkerAndLineAttributes(h, colour, style, lineStyle=1 ):
   h.SetLineStyle( lineStyle )
 
 def drawHistogramWithOption(h,drawOption):
+  h.GetXaxis().SetTitleOffset(1.2)
   h.Draw(drawOption)
   if not 'same' in drawOption:
     drawOption +=', same'
@@ -183,7 +184,7 @@ def drawHistogramWithOption(h,drawOption):
 
 def setupLegend(sample, histograms, PULabels, legPosition=""):
   legx = 0.6;
-  legy = 0.2;
+  legy = 0.17;
   if legPosition == 'topright':
     legx = 0.6
     legy = 0.65

@@ -22,7 +22,7 @@ public:
     LayerMemBits_=6;
     DiskMemBits_=7;
     
-    LayerDiskMemBits_=15;
+    LayerDiskMemBits_=18;
 
     alphaBits_=alphaBitsTable;
 
@@ -56,14 +56,15 @@ public:
 
   FPGATrackDer* getDerivatives(unsigned int layermask, 
 			       unsigned int diskmask,
-			       unsigned int alphaindex){
+			       unsigned int alphaindex,
+			       unsigned int rinvindex){
     int index=getIndex(layermask,diskmask);
     //if (index<0||index!=17984||alphaindex!=20) {
     if (index<0) {
       return 0;
     }
-    //cout << "getDerivatives index alphaindex "<<index<<" "<<alphaindex<<endl;
-    return &derivatives_[index+alphaindex];
+    //cout << "getDerivatives index alphaindex "<<index<<" "<<alphaindex<<" "<<rinvindex<<endl;
+    return &derivatives_[index+alphaindex*(1<<nrinvBitsTable)+rinvindex];
   }
 
 
@@ -106,7 +107,7 @@ public:
 
   }
 
-  void addEntry(unsigned int layermask, unsigned int diskmask, int multiplicity){
+  void addEntry(unsigned int layermask, unsigned int diskmask, int multiplicity, int nrinv){
 
     //cout << "layermask diskmatch "<<layermask<<" "<<diskmask<<endl;
     
@@ -147,14 +148,16 @@ public:
 
     LayerDiskMem_[layerdiskaddress]=nextLayerDiskValue_;
 
-    nextLayerDiskValue_+=multiplicity;
+    nextLayerDiskValue_+=multiplicity*nrinv;
 
-    lastMultiplicity_=multiplicity;
+    lastMultiplicity_=multiplicity*nrinv;
 
     for(int i=0;i<multiplicity;i++) {
-      FPGATrackDer tmp;
-      tmp.setIndex(layermask,diskmask,i);
-      derivatives_.push_back(tmp);
+      for (int irinv=0;irinv<nrinv;irinv++) {
+	FPGATrackDer tmp;
+	tmp.setIndex(layermask,diskmask,i,irinv);
+	derivatives_.push_back(tmp);
+      }
     }
 
   }
@@ -194,7 +197,7 @@ public:
 
       //cout << "adding: "<<layers<<" "<<disks<<" "<<multiplicity<<endl;
    
-      addEntry(layers,disks,multiplicity);
+      addEntry(layers,disks,multiplicity,(1<<nrinvBitsTable));
 
     }
 
@@ -213,10 +216,13 @@ public:
       int layermask=der.getLayerMask();
       int diskmask=der.getDiskMask();
       int alphamask=der.getAlphaMask();
+      int irinv=der.getirinv();
 
-      bool print=getIndex(layermask,diskmask)==21264 && alphamask==8;
+      double rinv=(irinv-((1<<(nrinvBitsTable-1))-0.5))*0.0057/(1<<(nrinvBitsTable-1));
+      
+      bool print=getIndex(layermask,diskmask)==21024 && alphamask==4;
       //bool print=getIndex(layermask,diskmask)==300 && alphamask==1;
-      print=false;
+      //print=false;
 
       if (print) {
 	cout << "PRINT i "<<i<<" "<<layermask<<" "<<diskmask<<" "
@@ -241,8 +247,8 @@ public:
       double z[5];
       double alpha[5];
 
-      double t=gett(diskmask);
-      double rinv=0.00000001;
+      double t=gett(diskmask,layermask);
+      //double rinv=0.00000001;
       
       for (unsigned d=0;d<5;d++){
 	if (diskmask&(3<<(2*(4-d)))) {
@@ -289,6 +295,13 @@ public:
       double kfactor[12];
 
 
+      if (print) {
+	cout << "PRINT ndisks alpha[0] z[0] t: "<<ndisks<<" "<<alpha[0]<<" "<<z[0]<<" "<<t<<endl;
+	for(int iii=0;iii<nlayers;iii++) {
+	  cout << "PRINT iii r: "<<iii<<" "<<r[iii]<<endl;
+	}
+      }
+      
       calculateDerivatives(nlayers,r,ndisks,z,alpha,t,rinv,D,iD,MinvDt,iMinvDt,sigma,kfactor);
 
       if (print) {
@@ -1324,7 +1337,7 @@ public:
   */
 
 
-  static double gett(int diskmask) { //should use layers also..
+  static double gett(int diskmask, int layermask) {
 
     if (diskmask==0) return 0.0;
 
@@ -1350,6 +1363,15 @@ public:
 
     }
 
+    for (int l=1;l<=6;l++) {
+
+      if (layermask&(1<<(6-l))) {
+	double lmax=zlength/rmean[l-1];
+	if (lmax<tmax) tmax=lmax;	
+      }
+      
+    }
+    
     //cout << "diskmask tmin tmax : "<<diskmask<<" "<<tmin<<" "<<tmax<<endl;
     
     return 0.5*(tmax+tmin);

@@ -86,8 +86,8 @@ static bool useapprox=true; //use approximate postion based on integer represent
 static double alphamax=5.0/(65.0*65.0);
 static int nbitsalpha=6;
 static double kalpha=alphamax/(1<<(nbitsalpha-1));
-static int alphaBitsTable=3; //For number of bits in track derivative table
-
+static int alphaBitsTable=2; //For number of bits in track derivative table
+static int nrinvBitsTable=3; //number of bits for tabulating rinv dependence
 
 static bool writetrace=false; //Print out details about startup
 static bool debug1=false; //Print information about tracking
@@ -197,7 +197,7 @@ static double zmaxD5=zmeanD5+dzmax;
 static bool   enstubbend = false; 
 static double two_pi=8.0*atan(1.0);
 
-static double ptcut=1.9; //Minimum pt
+static double ptcut=1.91; //Minimum pt
 static double rinvcut=0.01*0.3*3.8/ptcut; //0.01 to convert to cm-1
 static double ptcutte=1.6; //Minimum pt in TE
 static double rinvcutte=0.01*0.3*3.8/ptcutte; //0.01 to convert to cm-1 in TE
@@ -444,7 +444,7 @@ static int rresidbits=7;
 
 
 //Trackfit
-static int fitrinvbitshift=10;  //6 OK?
+static int fitrinvbitshift=9;  //6 OK?
 static int fitphi0bitshift=6;  //4 OK?
 static int fittbitshift=10;     //4 OK? //lower number gives rounding problems
 static int fitz0bitshift=8;    //6 OK?

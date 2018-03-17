@@ -100,7 +100,118 @@ public:
       phimatchcut_[2]=-1;
       zmatchcut_[2]=-1;
     }
-			     
+
+    for(int iseedindex=0;iseedindex<7;iseedindex++){
+      rphicutPS_[iseedindex]=-1.0;
+      rphicut2S_[iseedindex]=-1.0;
+      rcutPS_[iseedindex]=-1.0;
+      rcut2S_[iseedindex]=-1.0;
+    }
+
+    if (abs(disk_)==1){
+      rphicutPS_[0]=0.3;
+      rcutPS_[0]=0.5;
+      rphicut2S_[0]=0.5;
+      rcut2S_[0]=3.8;      
+
+      rphicut2S_[1]=0.8;
+      rcut2S_[1]=3.8;      
+
+      rphicutPS_[4]=0.15;
+      rcutPS_[4]=0.5;
+
+    }
+
+    if (abs(disk_)==2){
+      rphicutPS_[0]=0.2;
+      rcutPS_[0]=0.5;
+      rphicut2S_[0]=0.5;
+      rcut2S_[0]=3.8;      
+
+      rphicut2S_[1]=0.8;
+      rcut2S_[1]=3.8;      
+
+      rphicutPS_[4]=0.15;
+      rcutPS_[4]=0.5;
+
+      rphicutPS_[5]=0.15;
+      rcutPS_[5]=0.5;
+      rphicut2S_[5]=0.5;
+      rcut2S_[5]=3.8;      
+
+      rphicutPS_[6]=0.15;
+      rcutPS_[6]=0.5;
+      rphicut2S_[6]=0.15;
+      rcut2S_[6]=3.4;      
+    }
+
+    if (abs(disk_)==3){
+      rphicutPS_[0]=0.25;
+      rcutPS_[0]=0.5;
+      rphicut2S_[0]=0.5;
+      rcut2S_[0]=3.6;      
+
+
+      rphicutPS_[3]=0.15;
+      rcutPS_[3]=0.5;
+      rphicut2S_[3]=0.15;
+      rcut2S_[3]=3.6;      
+
+      rphicutPS_[5]=0.2;
+      rcutPS_[5]=0.6;
+      rphicut2S_[5]=0.2;
+      rcut2S_[5]=3.6;
+
+      rphicutPS_[6]=0.2;
+      rcutPS_[6]=0.8;
+      rphicut2S_[6]=0.5;
+      rcut2S_[6]=3.8;      
+    }
+
+
+    if (abs(disk_)==4){
+      rphicutPS_[0]=0.5;
+      rcutPS_[0]=0.5;      
+      rphicut2S_[0]=0.5;
+      rcut2S_[0]=3.6;      
+
+
+      rphicutPS_[3]=0.2;
+      rcutPS_[3]=0.5;
+      rphicut2S_[3]=0.2;
+      rcut2S_[3]=3.6;      
+
+      rphicutPS_[5]=0.4;
+      rcutPS_[5]=1.0;
+      rphicut2S_[5]=0.4;
+      rcut2S_[5]=3.5;      
+
+      rphicut2S_[6]=0.5;
+      rcut2S_[6]=3.8;      
+    }
+
+
+
+    if (abs(disk_)==5){
+      rphicutPS_[3]=0.25;
+      rcutPS_[3]=0.75;
+      rphicut2S_[3]=0.4;
+      rcut2S_[3]=3.6;      
+
+      rphicutPS_[4]=0.15;
+      rcutPS_[4]=0.5;
+      rphicut2S_[4]=0.2;
+      rcut2S_[4]=3.4;      
+
+      rphicutPS_[5]=0.5;
+      rcutPS_[5]=2.0;
+      rphicut2S_[5]=0.4;
+      rcut2S_[5]=3.7;      
+
+
+    }
+
+    
   }
 
   void addOutput(FPGAMemoryBase* memory,string output){
@@ -497,13 +608,56 @@ public:
 	}
 
 
-	double drphicut=0.20;
-	double drcut=0.75; 
+
+	int seedlayer=tracklet->layer();
+	int seeddisk=tracklet->disk();
+
+	int seedindex=-1;
+
+	if (seedlayer==1&&seeddisk==0) seedindex=0;  //L1L2
+	if (seedlayer==3&&seeddisk==0) seedindex=1;  //L3L4
+	if (seedlayer==5&&seeddisk==0) seedindex=2;  //L5L6
+	if (seedlayer==0&&abs(seeddisk)==1) seedindex=3;  //D1D2
+	if (seedlayer==0&&abs(seeddisk)==3) seedindex=4;  //D3D4
+	if (seedlayer==1&&abs(seeddisk)==1) seedindex=5;  //L1D1
+	if (seedlayer==2&&abs(seeddisk)==1) seedindex=6;  //L2D1
+
+	if (seedindex<0) {
+	  cout << "seedlayer abs(seeddisk) : "<<seedlayer<<" "<<abs(seeddisk)<<endl;
+	  assert(0);
+	}
+	
+	double drphicut=rphicutPS_[seedindex];
+	double drcut=rcutPS_[seedindex]; 
 	if (!stub->isPSmodule()) {
-	  drcut=3.7; //1.9
-	  drphicut=0.5; 
+	  drphicut=rphicut2S_[seedindex];
+	  drcut=rcut2S_[seedindex]; 
+	}
+	
+
+	if (drphicut<0.0 || drcut<0.0) {
+	  cout << "drphicut drcut : "<<drphicut<<" "<<drcut<<endl;
+	  cout << "disk_ isPS seedindex : "<<disk_<<" "<<stub->isPSmodule()<<" "<<seedindex<<endl;
+	  assert(0);
+	}
+	
+	if (writeResiduals) {
+	  static ofstream out("diskresiduals.txt");
+	  
+	  double pt=0.003*3.8/fabs(tracklet->rinv());
+	  
+	  out << disk_<<" "<<stub->isPSmodule()<<" "<<seedlayer<<" "<<abs(seeddisk)<<" "<<pt<<" "
+	      <<ideltaphi*kphiproj123*stub->r()<<" "<<drphi<<" "
+	    //<<phimatchcut_[seedindex]*kphi1*rmean[layer_-1]<<" "
+	      <<drphicut<<" "
+	      <<ideltar*krprojshiftdisk<<" "<<deltar<<" "
+	    //<<zmatchcut_[seedindex]*kz
+	      <<drcut<<" "
+	      <<endl;	  
 	}
 
+	
+	
 	bool match=(fabs(drphi)<drphicut)&&(fabs(deltar)<drcut);
 	
 	bool imatch=(fabs(ideltaphi)<drphicut/(kphiproj123*stub->r()))&&(fabs(ideltar)<drcut/krprojshiftdisk);
@@ -784,6 +938,11 @@ private:
   double phimin_;
   double phimax_;
   double phioffset_;
+
+  double rphicutPS_[7];
+  double rphicut2S_[7];
+  double rcutPS_[7];
+  double rcut2S_[7];
 
   FPGAAllStubs* allstubs_;
   FPGAAllProjections* allprojs_;

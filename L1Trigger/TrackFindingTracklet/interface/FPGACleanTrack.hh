@@ -127,7 +127,7 @@ public:
     if (writeAllCT) { 
 
       std::string fnameAll="CleanTracksAll.dat";
-      if (first) 
+      if (first && iSector_==0) 
 	out_.open(fnameAll.c_str());
       else 
 	out_.open(fnameAll.c_str(),std::ofstream::app);

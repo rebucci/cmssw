@@ -341,7 +341,7 @@ public:
 	    diskmask|=(1<<(2*(5-d1)));
 	    mult=mult<<alphaBitsTable;
 	  }
-	  
+
 	  alpha[ndisks]=tracklet->alphadisk(d);
 	  assert(fabs(tracklet->phiresidapproxdisk(d))<0.2);
 	  phiresid[nlayers+ndisks]=tracklet->phiresidapproxdisk(d);
@@ -393,7 +393,7 @@ public:
 	  disks[ndisks]=tracklet->disk();
 	  matches2[2*(5-d1)]='1';
 	  diskmask|=(1<<(2*(5-d1)+1));
-	  alpha[ndisks]=0.0;
+	  //alpha[ndisks]=0.0;
 	  ndisks++;
 	  continue;
 	}
@@ -423,8 +423,7 @@ public:
 	    tmp.set(diskmask,10);
 	    mult=mult<<alphaBitsTable;
 	  }
-	  
-
+	 
 	  alpha[ndisks]=tracklet->alphadisk(d);
 	  assert(fabs(tracklet->phiresidapproxdisk(d))<0.2);
 	  phiresid[nlayers+ndisks]=tracklet->phiresidapproxdisk(d);
@@ -441,14 +440,12 @@ public:
 
     } 
 
+    int rinvindex=(1<<(nrinvBitsTable-1))*rinv/0.0057+(1<<(nrinvBitsTable-1));
+    if (rinvindex<0) rinvindex=0;
+    if (rinvindex>=(1<<nrinvBitsTable)) rinvindex=(1<<nrinvBitsTable)-1;
 
-    FPGATrackDer* derivatives=derTable.getDerivatives(layermask, diskmask,alphaindex);
+    FPGATrackDer* derivatives=derTable.getDerivatives(layermask, diskmask,alphaindex,rinvindex);
 
-    //cout << "alphaindex layermask diskmask : "<<alphaindex<<" "<<layermask<<" "<<diskmask<<endl;
-
-    //cout << "derivative : "<<derivatives->getAlphaMask()<<" "<<derivatives->getLayerMask()
-    //	 <<" "<<derivatives->getDiskMask()<<endl;
-    
     if (derivatives==0) {
       FPGAWord tmpl,tmpd;
       tmpl.set(layermask,6);
@@ -458,8 +455,9 @@ public:
       return;
     }
 
-    double ttmp=FPGATrackDerTable::gett(diskmask);
-    if (t<0) ttmp=-ttmp;
+    double ttabi=FPGATrackDerTable::gett(diskmask, layermask);
+    if (t<0.0) ttabi=-ttabi;
+    double ttab=ttabi;
 
     if (debug1) {
       cout << "Doing trackfit in  "<<getName()<<endl;
@@ -476,7 +474,7 @@ public:
     }
     for (unsigned i=0;i<ndisks;i++){
       z[i]=sign*zmean[abs(disks[i])-1];
-      rstub[i+nlayers]=z[i]/ttmp;
+      rstub[i+nlayers]=z[i]/ttabi;
     }
 
     double D[4][12];
@@ -489,32 +487,18 @@ public:
     unsigned int n=nlayers+ndisks;
    
     if (exactderivatives) {
-      //derivatives->fill(tracklet->fpgat().value(),MinvDt,iMinvDt);
-      //cout << "iMinvDt tab  : "<<iMinvDt[0][10]<<" "<<iMinvDt[1][10]<<" "
-      //   <<iMinvDt[2][10]<<" "<<iMinvDt[3][10]<<endl;
-      //cout << "iD tab  : "<<iD[0][10]<<" "<<iD[1][10]<<" "
-      //	   <<iD[2][10]<<" "<<iD[3][10]<<endl;
-      //double rinvtmp=0.00000001;
       FPGATrackDerTable::calculateDerivatives(nlayers,r,ndisks,z,alpha,t,rinv,
 					      D,iD,MinvDt,iMinvDt,sigma,kfactor);
-      //cout << "iMinvDt calc : "<<iMinvDt[0][10]<<" "<<iMinvDt[1][10]<<" "
-      //	   <<iMinvDt[2][10]<<" "<<iMinvDt[3][10]<<" "<<ttmp<<" "<<nlayers<<" "<<ndisks<<endl;
-      //cout << "iD calc : "<<iD[0][10]<<" "<<iD[1][10]<<" "
-      //   <<iD[2][10]<<" "<<iD[3][10]<<endl;
-      //cout << "alpha :";
-      //for (unsigned int iii=0;iii<ndisks;iii++) cout <<" "<<alpha[iii];
-      //cout << endl;
-      //cout << "z :";
-      //for (unsigned int iii=0;iii<ndisks;iii++) cout <<" "<<z[iii];
-      //cout << endl;
+      ttabi=t;
+      ttab=t;
     } else {
       if (exactderivativesforfloating) {
-	derivatives->fill(tracklet->fpgat().value(),MinvDt,iMinvDt);
-	int iMinvDtDummy[4][12];
-	//int iDDummy[4][12]; FIXME - should be from lookup table
-	//double rinvtmp=0.00000001;
 	FPGATrackDerTable::calculateDerivatives(nlayers,r,ndisks,z,alpha,t,rinv,
-						D,iD,MinvDt,iMinvDtDummy,sigma,kfactor);
+						D,iD,MinvDt,iMinvDt,sigma,kfactor);
+
+	int iMinvDtDummy[4][12];
+	derivatives->fill(tracklet->fpgat().value(),MinvDt,iMinvDtDummy);
+	ttab=t;
       } else {
 	derivatives->fill(tracklet->fpgat().value(),MinvDt,iMinvDt);
       }
@@ -547,14 +531,13 @@ public:
     }
 
     int j=0;
-
+    
     for(unsigned int i=0;i<n;i++) {
-
       
       if (i>=nlayers) {
-	iphiresid[i]*=(t/ttmp);
-	phiresid[i]*=(t/ttmp);
-	phiresidexact[i]*=(t/ttmp);
+	iphiresid[i]*=(t/ttabi);
+	phiresid[i]*=(t/ttab);
+	phiresidexact[i]*=(t/ttab);
       }
       
       
@@ -564,15 +547,10 @@ public:
       assert(fabs(phiresidexact[i])<0.2);
       deltaexact[j++]=phiresidexact[i];
 
-      //cout << "phi iresid resid: "<<rstub[i]*kfactor[j-1]*iphiresid[i]/sigma[j-1]<<" "<<rstub[i]*phiresid[i]/sigma[j-1]<<" "<<rstub[i]*phiresidexact[i]/sigma[j-1]<<" sigma(um) "<<sigma[j-1]*10000<<endl;
-      
       idelta[j]=izresid[i];
       delta[j]=zresid[i];
       deltaexact[j++]=zresidexact[i];
 
-      //cout << "z resid   : "<<kfactor[j-1]*izresid[i]/sigma[j-1]<<" "<<zresid[i]/sigma[j-1]<<" "<<zresidexact[i]/sigma[j-1]<<" sigma (cm) "<<sigma[j-1]<<endl;
-
-      
       chisqseed+=(delta[j-2]*delta[j-2]+delta[j-1]*delta[j-1]); 
       chisqseedexact+=(deltaexact[j-2]*deltaexact[j-2]+
 		       deltaexact[j-1]*deltaexact[j-1]);
@@ -631,10 +609,23 @@ public:
       dz0_covexact+=D[3][j]*deltaexact[j];
 
       idrinv+=((iMinvDt[0][j]*idelta[j]));
-      //cout << "j idrinv : "<<j<<" "<<((iMinvDt[0][j]*idelta[j]))<<" "<<iMinvDt[0][j]<<" "<<idelta[j]<<endl;
       idphi0+=((iMinvDt[1][j]*idelta[j]));
       idt+=((iMinvDt[2][j]*idelta[j]));
       idz0+=((iMinvDt[3][j]*idelta[j]));
+
+      /*
+      if (j%2==0) {
+	cout << "j dt idt : "<<j<<" "<<MinvDt[2][j]*delta[j]<<" "<<((iMinvDt[2][j]*idelta[j])>>fittbitshift)*ktpars<<endl;
+	if (j/2>=nlayers) {
+	  cout << "alpha : "<<alpha[j/2-nlayers]*rstub[j/2]*rstub[j/2]<<endl;
+	  cout << "MinvDt iMinvDt : "<<MinvDt[2][j]<<" "<<iMinvDt[2][j]*ktparsdisk/(1<<fittbitshift)/kphiproj123<<endl;
+	  cout << "delta idelta : "<<delta[j]<<" "<<idelta[j]*kphiproj123<<endl;
+	} else {
+	  cout << "MinvDt iMinvDt : "<<MinvDt[2][j]<<" "<<iMinvDt[2][j]*ktpars/(1<<fittbitshift)/kphi1<<endl;
+	  cout << "delta idelta : "<<delta[j]<<" "<<idelta[j]*kphi1<<endl;
+	}
+      }
+      */
 
       //cout <<  "------------------------------------"<<endl;
       //cout << "j delta idelta : "<<j<<" "<<delta[j]<<" "<<idelta[j]*kfactor[j]<<endl;
@@ -689,10 +680,6 @@ public:
     double tfit=tseed-dt;
     double z0fit=z0seed-dz0;
 
-    //cout << "tseed itseed "<<tseed<<" "<<itseed*ktpars<<endl;
-    //cout << "dt idt       "<<dt<<" "<<(idt>>fittbitshift)*ktpars<<endl;
-    //cout << "dz0 idz0     "<<dz0<<" "<<(idz0>>fitz0bitshift)*kzpars<<endl;
-    
     double rinvfitexact=rinvseedexact-drinvexact;
     double phi0fitexact=phi0seedexact-dphi0exact;
 

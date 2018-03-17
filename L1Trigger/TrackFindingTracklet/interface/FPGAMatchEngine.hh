@@ -104,6 +104,15 @@ public:
 	      
 	      //cout << "Bend : "<<projbend<<" "<<stubbend<<endl;
 
+	      double dz=proj->zproj(layer_)-stub.second->z();
+	      //cout << "zproj zstub seedlayer : "<<proj->zproj(layer_)<<" "<<stub.second->z()<<" "<<proj->layer()<<endl;
+
+	      if (proj->layer()==1) {
+		if (fabs(dz)>4.0) continue;
+	      } else {
+		if (fabs(dz)>15.0) continue;
+	      }
+	      
 	      if (fabs(projbend-stubbend)>1.25) continue;
 	      
 	      if (debug1) {
@@ -137,6 +146,28 @@ public:
 	      std::pair<FPGAStub*,L1TStub*> stub=vmstubs_->getStubBin(ibin,i);
 	      countall++;
 
+	      double dr=stub.second->r()-proj->rprojdisk(disk_);
+	      //cout << " r of stub proj dr : "<<stub.second->r()<<" "<<proj->rprojdisk(disk_)<<" "<<dr<<endl;
+
+	      //double drphi=stub.second->r()*(stub.first->phi().value()-proj->fpgaphiprojdisk(disk_).value())*kphiproj123;
+	      //cout << " phi of stub proj drphi : "<<stub.first->phi().value()*kphiproj123<<" "<<proj->fpgaphiprojdisk(disk_).value()*kphiproj123<<" "<<drphi<<endl;
+
+	      double bendproj=0.5*bend(stub.second->r(),proj->rinv());
+	      //if (proj->t()<0.0) bendproj=-bendproj;
+	      
+	      //cout << "bend "<<0.5*(stub.first->bend().value()-15.0)<<" "<<bendproj<<endl;
+
+	      double deltabend=0.5*(stub.first->bend().value()-15.0)-bendproj;
+
+	      if (fabs(deltabend)>1.5) continue;
+	      
+	      if (stub.first->isPSmodule()){
+	      	if (fabs(dr)>1.0) continue;
+	      } else {
+	      	if (fabs(dr)>6.0) continue;
+	      }
+
+	      
 	      countpass++;
 	      candmatches_->addMatch(proj,stub);
 	      if (countall>=MAXME) break;
