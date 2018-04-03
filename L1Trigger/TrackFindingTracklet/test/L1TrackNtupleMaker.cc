@@ -1094,10 +1094,51 @@ void L1TrackNtupleMaker::analyze(const edm::Event& iEvent, const edm::EventSetup
     std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > >, TTStub< Ref_Phase2TrackerDigi_ > > > theStubRefs = MCTruthTTStubHandle->findTTStubRefs(tp_ptr);
     int nStubTP = (int) theStubRefs.size(); 
 
+
+    // how many layers/disks have stubs?
+    int hasStubInLayer[11] = {0};
+    for (unsigned int is=0; is<theStubRefs.size(); is++) {
+      
+      DetId detid( theStubRefs.at(is)->getDetId() );
+
+      int layer = -1;
+      if ( detid.subdetId()==StripSubdetector::TOB ) {
+	layer = static_cast<int>(tTopo->layer(detid)) - 1; //fill in array as entries 0-5
+      }
+      else if ( detid.subdetId()==StripSubdetector::TID ) {
+	layer = static_cast<int>(tTopo->layer(detid)) + 5; //fill in array as entries 6-10
+      }
+      
+      //treat genuine stubs separately (==2 is genuine, ==1 is not)
+      if (MCTruthTTStubHandle->findTrackingParticlePtr(theStubRefs.at(is)).isNull() && hasStubInLayer[layer]<2)
+	hasStubInLayer[layer] = 1;
+      else 
+	hasStubInLayer[layer] = 2;
+    }
+
+    int nStubLayerTP = 0;
+    int nStubLayerTP_g = 0;
+    for (int isum=0; isum<11; isum++) {
+      if ( hasStubInLayer[isum] >= 1) nStubLayerTP   += 1;
+      if ( hasStubInLayer[isum] == 2) nStubLayerTP_g += 1;
+    }
+
+    if (DebugMode) cout << "TP is associated with " << nStubTP << " stubs, and has stubs in " << nStubLayerTP << " different layers/disks, and has GENUINE stubs in "
+<< nStubLayerTP_g << " layers " << endl;
+
+
+
     if (TP_minNStub > 0) {
       if (DebugMode) cout << "Only consider TPs with >= " << TP_minNStub << " stubs" << endl;
       if (nStubTP < TP_minNStub) {
 	if (DebugMode) cout << "TP fails minimum nbr stubs requirement! Continuing..." << endl;
+	continue;
+      }
+    }
+    if (TP_minNStubLayer > 0) {
+      if (DebugMode) cout << "Only consider TPs with stubs in >= " << TP_minNStubLayer << " layers/disks" << endl;
+      if (nStubLayerTP < TP_minNStubLayer) {
+	if (DebugMode) cout << "TP fails stubs in minimum nbr of layers/disks requirement! Continuing..." << endl;
 	continue;
       }
     }
