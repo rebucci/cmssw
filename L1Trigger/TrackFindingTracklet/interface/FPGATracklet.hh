@@ -1027,29 +1027,46 @@ public:
     // On the other hand, proj*_[i] uses i almost like *resid_[i], except the *seeding* layer indices are removed entirely.
     // E.g. An L3L4 track has 0=L1, 1=L2, 2=L4, 3=L5 for the barrels (for proj*_[i])
 
+    assert(innerFPGAStub_->stubindex().nbits()==6);
+    assert(innerFPGAStub_->phiregion().nbits()==3);
+    assert(outerFPGAStub_->stubindex().nbits()==6);
+    assert(outerFPGAStub_->phiregion().nbits()==3);
+	
     if(barrel_) {
       for(int i=0; i<6; i++) {
 
         //check barrel
 	if (layerresid_[i].valid()) {
-          stubIDs[1+i] = layerresid_[i].fpgastubid().value();
+		  // two extra bits to indicate if the matched stub is local or from neighbor
+		  int location = 1;  // local
+		  if (minusNeighbor(i+1)) location = 0; // phi-
+		  if (plusNeighbor(i+1)) location = 2;  // phi+
+		  location<<=layerresid_[i].fpgastubid().nbits();
+		  
+		  stubIDs[1+i] = layerresid_[i].fpgastubid().value()+location;
         }			  		  
 		  
 	//check disk
 	if(diskresid_[i].valid()) {
+	  // two extra bits to indicate if the matched stub is local or from neighbor
+	  int location = 1;  // local
+	  if (minusNeighborDisk(i+1)) location = 0; // phi-
+	  if (plusNeighborDisk(i+1)) location = 2;  // phi+
+	  location<<=diskresid_[i].fpgastubid().nbits();
+
 	  if(itfit().value() < 0) {
-	    stubIDs[-11-i] = diskresid_[i].fpgastubid().value();
+		stubIDs[-11-i] = diskresid_[i].fpgastubid().value()+location;
 	  } else {
-	    stubIDs[11+i] = diskresid_[i].fpgastubid().value();
-	  }
+	    stubIDs[11+i] = diskresid_[i].fpgastubid().value()+location;
+	  }  
 	}	 			  		  		  
       }
 		  
 		  
       //get stubs making up tracklet
       //printf(" inner %i  outer %i layers \n",innerFPGAStub_.layer().value(),outerFPGAStub_.layer().value());
-      stubIDs[innerFPGAStub_->layer().value()+1] = ((innerFPGAStub_->phiregion()-1)<<6)+innerFPGAStub_->stubindex().value();
-      stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion()-1)<<6)+outerFPGAStub_->stubindex().value();
+      stubIDs[innerFPGAStub_->layer().value()+1] = ((innerFPGAStub_->phiregion().value())<<6)+innerFPGAStub_->stubindex().value()+(1<<9);
+      stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion().value())<<6)+outerFPGAStub_->stubindex().value()+(1<<9);
 		  
 		  		  
     } else if (disk_) {
@@ -1057,16 +1074,28 @@ public:
 	
 	//check barrel
 	if(layerresid_[i].valid()) {
-          stubIDs[1+i] = layerresid_[i].fpgastubid().value();			  
+		  // two extra bits to indicate if the matched stub is local or from neighbor
+		  int location = 1;  // local
+		  if (minusNeighbor(i+1)) location = 0; // phi-
+		  if (plusNeighbor(i+1)) location = 2;  // phi+
+		  location<<=layerresid_[i].fpgastubid().nbits();
+		  
+		  stubIDs[1+i] = layerresid_[i].fpgastubid().value()+location;
         }
 	
 	//check disks
-        if(i==4 && layerresid_[1].valid()) continue;
+        if(i==4 && layerresid_[1].valid()) continue; // Don't add D5 if track has L1 stub
 	if(diskresid_[i].valid()) {
+	  // two extra bits to indicate if the matched stub is local or from neighbor
+	  int location = 1;  // local
+	  if (minusNeighborDisk(i+1)) location = 0; // phi-
+	  if (plusNeighborDisk(i+1)) location = 2;  // phi+
+	  location<<=diskresid_[i].fpgastubid().nbits();
+	  
 	  if(innerStub_->disk() < 0) {
-	    stubIDs[-11-i] = diskresid_[i].fpgastubid().value();
+	    stubIDs[-11-i] = diskresid_[i].fpgastubid().value()+location;
 	  } else {
-	    stubIDs[11+i] = diskresid_[i].fpgastubid().value();
+	    stubIDs[11+i] = diskresid_[i].fpgastubid().value()+location;
 	  }
 	}	 			  
       }
@@ -1074,11 +1103,11 @@ public:
       //get stubs making up tracklet
       //printf(" inner %i  outer %i disks \n",innerFPGAStub_.disk().value(),outerFPGAStub_.disk().value());
       if(innerFPGAStub_->disk().value() < 0) { //negative side runs 6-10
-	stubIDs[innerFPGAStub_->disk().value()-10] = ((innerFPGAStub_->phiregion()-1)<<6)+innerFPGAStub_->stubindex().value();
-	stubIDs[outerFPGAStub_->disk().value()-10] = ((outerFPGAStub_->phiregion()-1)<<6)+outerFPGAStub_->stubindex().value();
+    stubIDs[innerFPGAStub_->disk().value()-10] = ((innerFPGAStub_->phiregion().value())<<6)+innerFPGAStub_->stubindex().value()+(1<<9);
+	stubIDs[outerFPGAStub_->disk().value()-10] = ((outerFPGAStub_->phiregion().value())<<6)+outerFPGAStub_->stubindex().value()+(1<<9);
       } else { // positive side runs 11-15]
-	stubIDs[innerFPGAStub_->disk().value()+10] = ((innerFPGAStub_->phiregion()-1)<<6)+innerFPGAStub_->stubindex().value();
-	stubIDs[outerFPGAStub_->disk().value()+10] = ((outerFPGAStub_->phiregion()-1)<<6)+outerFPGAStub_->stubindex().value();
+    stubIDs[innerFPGAStub_->disk().value()+10] = ((innerFPGAStub_->phiregion().value())<<6)+innerFPGAStub_->stubindex().value()+(1<<9);
+    stubIDs[outerFPGAStub_->disk().value()+10] = ((outerFPGAStub_->phiregion().value())<<6)+outerFPGAStub_->stubindex().value()+(1<<9);
       }		  
 
     } else if (overlap_) {
@@ -1087,18 +1116,30 @@ public:
 	
 	//check barrel
 	if(layerresid_[i].valid()) {
-          stubIDs[1+i] = layerresid_[i].fpgastubid().value();	  
+		  // two extra bits to indicate if the matched stub is local or from neighbor
+		  int location = 1;  // local
+		  if (minusNeighbor(i+1)) location = 0; // phi-
+		  if (plusNeighbor(i+1)) location = 2;  // phi+
+		  location<<=layerresid_[i].fpgastubid().nbits();
+		  
+		  stubIDs[1+i] = layerresid_[i].fpgastubid().value()+location;
 	}
 
 	//check disks
 	if(diskresid_[i].valid()) {
-	  if(innerStub_->disk() < 0) {
-            if(innerFPGAStub_->layer().value()!=2 || !layerresid_[0].valid() || i!=3 ) {
-	      stubIDs[-11-i] = diskresid_[i].fpgastubid().value();
+	  // two extra bits to indicate if the matched stub is local or from neighbor
+	  int location = 1;  // local
+	  if (minusNeighborDisk(i+1)) location = 0; // phi-
+	  if (plusNeighborDisk(i+1)) location = 2;  // phi+
+	  location<<=diskresid_[i].fpgastubid().nbits();
+	  
+	  if(innerStub_->disk() < 0) { // if negative overlap
+            if(innerFPGAStub_->layer().value()!=2 || !layerresid_[0].valid() || i!=3 ) { // Don't add D4 if this is an L3L2 track with an L1 stub
+	      stubIDs[-11-i] = diskresid_[i].fpgastubid().value()+location;
             }
 	  } else {
             if(innerFPGAStub_->layer().value()!=2 || !layerresid_[0].valid() || i!=3 ) {
-	      stubIDs[11+i] = diskresid_[i].fpgastubid().value();
+	      stubIDs[11+i] = diskresid_[i].fpgastubid().value()+location;
             }
 	  }
 	}	 			  
@@ -1108,14 +1149,14 @@ public:
       //printf(" inner %i  outer %i layers \n",innerFPGAStub_.layer().value(),outerFPGAStub_.layer().value());
       //printf(" inner %i  outer %i disks \n",innerFPGAStub_.disk().value(),outerFPGAStub_.disk().value());
       if(innerFPGAStub_->layer().value()==2) { // L3L2 track
-	stubIDs[innerFPGAStub_->layer().value()+1] = ((innerFPGAStub_->phiregion()-1)<<6)+innerFPGAStub_->stubindex().value();
-	stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion()-1)<<6)+outerFPGAStub_->stubindex().value();
+    stubIDs[innerFPGAStub_->layer().value()+1] = ((innerFPGAStub_->phiregion().value())<<6)+innerFPGAStub_->stubindex().value()+(1<<9);
+	stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion().value())<<6)+outerFPGAStub_->stubindex().value()+(1<<9);
       } else if(innerFPGAStub_->disk().value() < 0) { //negative side runs -11 - -15
-	stubIDs[innerFPGAStub_->disk().value()-10] = ((innerFPGAStub_->phiregion()-1)<<6)+innerFPGAStub_->stubindex().value();
-	stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion()-1)<<6)+outerFPGAStub_->stubindex().value();
+    stubIDs[innerFPGAStub_->disk().value()-10] = ((innerFPGAStub_->phiregion().value())<<6)+innerFPGAStub_->stubindex().value()+(1<<9);
+    stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion().value())<<6)+outerFPGAStub_->stubindex().value()+(1<<9);
       } else { // positive side runs 11-15]
-	stubIDs[innerFPGAStub_->disk().value()+10] = ((innerFPGAStub_->phiregion()-1)<<6)+innerFPGAStub_->stubindex().value();
-	stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion()-1)<<6)+outerFPGAStub_->stubindex().value();
+    stubIDs[innerFPGAStub_->disk().value()+10] = ((innerFPGAStub_->phiregion().value())<<6)+innerFPGAStub_->stubindex().value()+(1<<9);
+    stubIDs[outerFPGAStub_->layer().value()+1] = ((outerFPGAStub_->phiregion().value())<<6)+outerFPGAStub_->stubindex().value()+(1<<9);
       }		  
 		  
     }
@@ -1125,7 +1166,12 @@ public:
     //for(std::map<int,int>::iterator i=stubIDs.begin(); i!=stubIDs.end(); i++) {
     //      printf("Layer/Disk %i  ID  %i \n",i->first, i->second);
     //}
-    
+
+	//for (const auto & id : stubIDs) {
+	//	if (id.second<0) cout<<"i stubID : "<<id.first<<" " <<id.second<<endl;
+	//	assert(id.second>=0);
+	//}
+	
     return stubIDs;
   }
 

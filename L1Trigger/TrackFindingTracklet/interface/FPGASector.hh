@@ -236,7 +236,13 @@ public:
 
   void writeInputStubs(bool first) {
     for (unsigned int i=0;i<IL_.size();i++){
-      IL_[i]->writeStubs(first, writestubs_in2,padding);
+      IL_[i]->writeStubs(first);
+    }
+  }
+
+  void writeInputStubs_in2(bool first) {
+    for (unsigned int i=0;i<IL_.size();i++){
+      IL_[i]->writeInputStubs(first, writestubs_in2,padding);
     }
   }
 
@@ -466,6 +472,19 @@ public:
     }
     return tmp;
   }
+
+  std::vector<std::pair<FPGAStub*,L1TStub*> > getStubs() const {
+    std::vector<std::pair<FPGAStub*,L1TStub*> > tmp;
+
+    for(unsigned int imem=0;imem<IL_.size();imem++){
+      for(unsigned int istub=0;istub<IL_[imem]->nStubs();istub++){
+	tmp.push_back(IL_[imem]->getStub(istub));
+      }
+    }
+    
+    return tmp;
+  }
+    
 
   double phimin() const {return phimin_;}
   double phimax() const {return phimax_;}

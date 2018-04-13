@@ -188,10 +188,17 @@ if (writeDTCLinks) {
   //cout << "Done write DTC links"<<endl;
  }
 */
-if (writestubs || writestubs_in2) {
+if (writestubs) {
   for (unsigned int k=0;k<NSector;k++) {
     if(k==writememsect)
       sectors[k]->writeInputStubs(first);
+  }
+ }
+
+if (writestubs_in2) {
+  for (unsigned int k=0;k<NSector;k++) {
+    if(k==writememsect)
+      sectors[k]->writeInputStubs_in2(first);
   }
  }
 
@@ -377,20 +384,27 @@ if (writeHitEff) {
       if(RemovalType=="grid") {
         bool grid[450][40] = {{false}};
         for(unsigned int itrk=0; itrk<nTrk; itrk++) {
+          if(nTrk==0) break;
+          if(tracks[itrk]->duplicate()==1) continue;
 
           // Correct phi domain to 0 < phi < 2*PI
           double phiCorr;
-          if(tracks[itrk]->phi0() < 0) phiCorr = 2*M_PI+tracks[itrk]->phi0();
+          if(tracks[itrk]->phi0() < 0)           phiCorr = tracks[itrk]->phi0()+2*M_PI;
           else if(tracks[itrk]->phi0() > 2*M_PI) phiCorr = tracks[itrk]->phi0()-2*M_PI;
-          else phiCorr = tracks[itrk]->phi0();
+          else                                   phiCorr = tracks[itrk]->phi0();
           double phiBin = phiCorr/(2*M_PI/9/50);
+          if((int)phiBin <0) cout << "GLOBAL BIN TOO SMALL" << endl;
+          if((int)phiBin >449) cout << "GLOBAL BIN TOO LARGE" << endl;
 
           double ptBin = 1/tracks[itrk]->pt()*40+20;
           ptBin = std::max(ptBin,0.);
           ptBin = std::min(ptBin,39.);
+          if((int)ptBin <0) cout << "ADJ PT BIN TOO SMALL" << endl;
+          if((int)ptBin >39) cout << "ADJ PT BIN TOO LARGE" << endl;
 
-          if(grid[(int)phiBin][(int)ptBin]==true) tracks[itrk]->setDuplicate(true);
-          else {
+          if(grid[(int)phiBin][(int)ptBin]==true) {
+            tracks[itrk]->setDuplicate(true);
+          } else {
             grid[(int)phiBin][(int)ptBin]=true;
           }
 
@@ -416,6 +430,9 @@ if (writeHitEff) {
             // Skip duplicate tracks
             if(tracks[jtrk]->duplicate()==1) continue;
 
+            // Skip tracks not in an adjacent sector
+            if(abs(tracks[jtrk]->sector()-tracks[itrk]->sector())!=1 && abs(tracks[jtrk]->sector()-tracks[itrk]->sector())!=(int)NSector-1) continue; 
+
             // Get and count secondary stubs
             std::map<int, int> stubsTrk2 = tracks[jtrk]->stubID();
             nStubS[jtrk] = stubsTrk2.size();
@@ -423,7 +440,11 @@ if (writeHitEff) {
             // Count shared stubs
             for(std::map<int, int>::iterator  st=stubsTrk1.begin(); st!=stubsTrk1.end(); st++) {
               if(stubsTrk2.find(st->first) != stubsTrk2.end()) {
-                if(st->second == stubsTrk2[st->first] && st->second != 63) nShare[jtrk]++;
+                if((tracks[itrk]->sector() > tracks[jtrk]->sector()) || (tracks[jtrk]->sector()-tracks[itrk]->sector()==(int)NSector-1)) {
+                  if((st->second+(1<<9))==stubsTrk2[st->first]) nShare[jtrk]++;
+                } else if((tracks[itrk]->sector() < tracks[jtrk]->sector()) || (tracks[itrk]->sector()-tracks[jtrk]->sector()==(int)NSector-1)) {
+                  if((st->second-(1<<9))==stubsTrk2[st->first]) nShare[jtrk]++;
+                }
               }
             }
           } // end counting stubs in common

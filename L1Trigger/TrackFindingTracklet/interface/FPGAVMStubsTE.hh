@@ -54,6 +54,11 @@ public:
       vmbendtable_[i]=true;
     }
 
+    isinner_ = (layer_%2==1 or disk_%2==1);
+    // special cases with overlap seeding
+    if (overlap_ and layer_==2) isinner_ = true;
+    if (overlap_ and layer_==3) isinner_ = false;
+    if (overlap_ and disk_==1) isinner_ = false; 
     
   }
   
@@ -143,59 +148,75 @@ public:
       out_.open(fname.c_str(),std::ofstream::app);
 
     out_ << "BX = "<<(bitset<3>)bx_ << " Event : " << event_ << endl;
-
-    if (layer_%2==1) {
-      for (unsigned int j=0;j<stubs_.size();j++){
-	string stub=stubs_[j].first->stubindex().str();
-	stub+="|";
-    stub+=stubs_[j].first->stubaddressaste().str();
-    stub+="|";
-	FPGAWord tmp;
-	tmp.set(stubs_[j].first->getVMBits().value(),10,true,__LINE__,__FILE__);
-	stub+=tmp.str();  
-	if (j<16) out_ <<"0";
-	out_ << hex << j << dec ;
-	out_ <<" "<<stub<< endl;
+    
+    //if (layer_!=0) { // barrel
+    if (layer_!=0 or disk_!=0) { // same format for barrel and disk?
+      if (isinner_) { // inner VM for TE purpose
+        for (unsigned int j=0;j<stubs_.size();j++){
+          string stub=stubs_[j].first->stubaddressaste().str();
+          stub+="|";
+          stub+=stubs_[j].first->bend().str();
+          stub+="|";
+          FPGAWord iphifinebins;
+          iphifinebins.set(stubs_[j].first->iphivmFineBins(5,1),1,true,
+                           __LINE__,__FILE__);
+          stub+=iphifinebins.str();
+          stub+="|";
+          FPGAWord tmp;
+          tmp.set(stubs_[j].first->getVMBits().value(),10,true,__LINE__,__FILE__);
+          stub+=tmp.str();       
+          if (j<16) out_ <<"0";
+          out_ << hex << j << dec ;
+          out_ <<" "<<stub<< endl;
+        }     
       }
-    } else if (layer_!=0) {
-      for (unsigned int i=0;i<NLONGVMBINS;i++) {
-	for (unsigned int j=0;j<stubsbinned_[i].size();j++){
-	  string stub=stubsbinned_[i][j].first->stubindex().str();
-      stub+="|";
-      stub+=stubsbinned_[i][j].first->stubaddressaste().str();
-	  out_ << hex << i << " " << j << dec << " "<<stub<<endl;
-	}
+      else { // outer VM for TE purpose
+        for (unsigned int i=0;i<NLONGVMBINS;i++) {
+      for (unsigned int j=0;j<stubsbinned_[i].size();j++){
+        string stub=stubsbinned_[i][j].first->stubaddressaste().str();
+        stub+="|";
+        stub+=stubsbinned_[i][j].first->bend().str();
+        stub+="|";
+        FPGAWord iphifinebins;
+        iphifinebins.set(stubsbinned_[i][j].first->iphivmFineBins(4,2),2,true,
+                         __LINE__,__FILE__);
+        stub+=iphifinebins.str();
+        stub+="|";
+        FPGAWord finezbin;
+        finezbin.set(stubsbinned_[i][j].first->getVMBits().value()&7,3,true,
+                     __LINE__,__FILE__);
+        stub+=finezbin.str();      
+        out_ << hex << i << " " << j << dec << " "<<stub<<endl;
+      }
+        }
       }
     }
-
-    //Need to be done smarter to handle overlap region
-    if (!overlap_) {
-      if (disk_%2==1) {
-	for (unsigned int j=0;j<stubs_.size();j++){
-	  string stub=stubs_[j].first->stubindex().str();
-	  stub+="|";
-      stub+=stubs_[j].first->stubaddressaste().str();
-      stub+="|";
-	  FPGAWord tmp;
-	  tmp.set(stubs_[j].first->getVMBits().value(),10,true,__LINE__,__FILE__);
-	  stub+=tmp.str();  
-	  if (j<16) out_ <<"0";
-	  out_ << hex << j << dec ;
-	  out_ <<" "<<stub<< endl;
-	}
-      } else if (disk_!=0) {
-	for (unsigned int i=0;i<NLONGVMBINS;i++) {
-	  for (unsigned int j=0;j<stubsbinned_[i].size();j++){
-	    string stub=stubsbinned_[i][j].first->stubindex().str();
-        stub+="|";
-        stub+=stubsbinned_[i][j].first->stubaddressaste().str();
+    /*  uncomment and modify below in case disk VMStubsTE have different format
+    else if (disk_!=0) { // disk
+      if (isinner_) { // inner disk VM for TE purpose
+        for (unsigned int j=0;j<stubs_.size();j++){
+          string stub=stubs_[j].first->stubaddressaste().str();
+          stub+="|";
+          FPGAWord tmp;
+          tmp.set(stubs_[j].first->getVMBits().value(),10,true,__LINE__,__FILE__);
+          stub+=tmp.str();  
+          if (j<16) out_ <<"0";
+          out_ << hex << j << dec ;
+          out_ <<" "<<stub<< endl;
+        }
+      }
+      else { // outer disk VM for TE purpose
+        for (unsigned int i=0;i<NLONGVMBINS;i++) {
+      for (unsigned int j=0;j<stubsbinned_[i].size();j++){
+	    string stub=stubsbinned_[i][j].first->stubaddressaste().str();
 	    out_ << hex << i << " " << j << dec << " "<<stub<<endl;
 	  }
-	}
+        }
       }
     }
-    
+    */
 
+    
     out_.close();
 
     bx_++;
@@ -275,13 +296,26 @@ public:
     for (unsigned int i=0;i<32;i++){
       vmbendtable_[i]=vmbendtable[i];
     }
+
+	if (iSector_==0&&writeTETables) writeVMBendTable();
   }
 
   bool passbend(unsigned int ibend) const {
     assert(ibend<32);
     return vmbendtable_[ibend];
   }
-  
+
+  void writeVMBendTable() {
+    
+    ofstream outvmbendcut;
+    outvmbendcut.open(getName()+"_vmbendcut.txt");
+    unsigned int vmbendtableSize = sizeof(vmbendtable_)/sizeof(vmbendtable_[0]);
+    assert(vmbendtableSize==32);
+    for (unsigned int i=0;i<vmbendtableSize;i++){
+      outvmbendcut << i << " " << vmbendtable_[i] << endl;
+    }
+    outvmbendcut.close();
+  }
   
 
 private:
@@ -291,6 +325,7 @@ private:
   int phibin_;
   FPGAVMStubsTE* other_;
   bool overlap_;
+  bool isinner_;  // is inner layer/disk for TE purpose
   double phimin_;
   double phimax_;
   bool vmbendtable_[32];

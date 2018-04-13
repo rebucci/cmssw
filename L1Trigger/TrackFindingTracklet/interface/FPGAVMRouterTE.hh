@@ -178,10 +178,10 @@ public:
 
           // stub index mapping to the corresponding AS memory filled by VMRouterME
           int asindex = 0;
-          if (stub.first->phiregion()==1) asindex = indexphi1++;
-          else if (stub.first->phiregion()==2) asindex = indexphi2++;
-          else if (stub.first->phiregion()==3) asindex = indexphi3++;
-          else if (stub.first->phiregion()==4) asindex = indexphi4++;
+          if (stub.first->phiregion().value()==0) asindex = indexphi1++;
+          else if (stub.first->phiregion().value()==1) asindex = indexphi2++;
+          else if (stub.first->phiregion().value()==2) asindex = indexphi3++;
+          else if (stub.first->phiregion().value()==3) asindex = indexphi4++;
           else {
             // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
             asindex = indexphiex++;
@@ -274,8 +274,10 @@ public:
     }
     if (disk_!=0) {
       for(unsigned int j=0;j<stubinputs_.size();j++){
+	//cout << "Input link "<<stubinputs_[j]->getName()<<endl;
 	for(unsigned int i=0;i<stubinputs_[j]->nStubs();i++){
 	  std::pair<FPGAStub*,L1TStub*> stub=stubinputs_[j]->getStub(i);
+
 	  if (!stub.second->isPSmodule()) continue;
 	  
 	  int iphiRaw=stub.first->iphivmRaw();
@@ -284,10 +286,10 @@ public:
 
           // stub index mapping to the corresponding AS memory filled by VMRouterME
           int asindex = 0;
-          if (stub.first->phiregion()==1) asindex = indexphi1++;
-          else if (stub.first->phiregion()==2) asindex = indexphi2++;
-          else if (stub.first->phiregion()==3) asindex = indexphi3++;
-          else if (stub.first->phiregion()==4) asindex = indexphi4++;
+          if (stub.first->phiregion().value()==0) asindex = indexphi1++;
+          else if (stub.first->phiregion().value()==1) asindex = indexphi2++;
+          else if (stub.first->phiregion().value()==2) asindex = indexphi3++;
+          else if (stub.first->phiregion().value()==3) asindex = indexphi4++;
           else {
             // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
             asindex = indexphiex++;
@@ -299,6 +301,9 @@ public:
           stub.first->setAllStubAddressTE(allstubs_[0]->nStubs());
 
           for (unsigned int l=0;l<allstubs_.size();l++){
+	    //if (allstubs_[l]->getName()=="AS_D1PHIQn1") {
+	    //  cout << "Adding stub to memory "<<iSector_<<" "<<allstubs_[l]->getName()<<" r= "<<stub.second->r()<<endl;
+	    //}
 	    allstubs_[l]->addStub(stub);
 	  }
           
@@ -449,6 +454,9 @@ public:
     if (writeAllStubs) {
       static ofstream out("allstubste.txt");
       out<<allstubs_[0]->getName()<<" "<<allstubs_[0]->nStubs()<<endl;
+      //if (allstubs_[0]->getName()=="AS_D1PHIQn1") {
+      //	cout << "Number of stubs in : "<<allstubs_[0]->getName()<<" "<<allstubs_[0]->nStubs()<<endl;
+      //}
     }
 
 

@@ -77,6 +77,8 @@ public:
     for(unsigned int j=0;j<vmprojs_->nTracklets();j++){
       FPGATracklet* proj=vmprojs_->getFPGATracklet(j);
 
+      int nmatches=0;
+      
       if (debug1) {
 	cout << "Found projection in "<<getName()<<endl;
       }
@@ -120,7 +122,10 @@ public:
 	      }
 
 	      countpass++;
-	      candmatches_->addMatch(proj,stub);
+	      if (nmatches<1000) {
+		candmatches_->addMatch(proj,stub);
+	      }
+	      nmatches++;
 	      if (countall>=MAXME) break;
 	    }
 	  }
@@ -169,7 +174,10 @@ public:
 
 	      
 	      countpass++;
-	      candmatches_->addMatch(proj,stub);
+	      if (nmatches<1000) {
+		candmatches_->addMatch(proj,stub);
+	      }
+	      nmatches++;
 	      if (countall>=MAXME) break;
 	      
 	    }
@@ -222,7 +230,11 @@ public:
 	} else { // if (layer_>0)
 	  assert(0);
 	} // if (layer_>0)
-    
+
+	//if (nmatches>0) {
+	//  cout << "Nmaches : "<<nmatches<<endl;
+	//}
+	
     } // outer for loop
      
     

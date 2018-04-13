@@ -75,8 +75,8 @@ static bool writePars=false; //write files for making plots of track parameters
 
 
 
-static bool writestubs=false;
-static bool writestubs_in2=false;
+static bool writestubs=false;  // write input stubs in the normal format
+static bool writestubs_in2=false;  // write input stubs in hardware-ready format
 static bool writeifit=false;
 static bool padding=true;
 
@@ -456,7 +456,7 @@ static int chisqzfactbits=14;
 static int minIndStubs=3;
 static bool AdjacentRemoval=true;
 static string RemovalType="ichi";
-//"ichi" (pairwise, keep track with best ichisq), "nstub" (pairwise, keep track with more stubs), "grid" (TMTT-like removal)
+//"ichi" (pairwise, keep track with best ichisq), "nstub" (pairwise, keep track with more stubs), "grid" (TMTT-like removal), "" (no removal)
 
 #endif
 

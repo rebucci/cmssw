@@ -460,7 +460,9 @@ public:
   std::string str() const {
     
     std::ostringstream oss;
-    oss << stubpt_.str()<<"|"<<r_.str()<<"|"
+    //oss << stubpt_.str()<<"|"<<r_.str()<<"|"
+    //    << z_.str()<<"|"<< phi_.str();
+    oss << bend_.str()<<"|"<<r_.str()<<"|"
         << z_.str()<<"|"<< phi_.str();
 
     return oss.str();
@@ -469,11 +471,17 @@ public:
   std::string strdisk() const {
    
     std::ostringstream oss;
+    //if (isPSmodule())
+    //  oss << stubpt_.str()<<"||"<<r_.str()<<"|"
+    //      << z_.str()<<"|"<< phi_.str();
+    //else
+    //  oss << stubpt_.str()<<"|"<<alpha_.str()<<"|0"<<r_.str()<<"|"
+    //      << z_.str()<<"|"<< phi_.str();
     if (isPSmodule())
-      oss << stubpt_.str()<<"||"<<r_.str()<<"|"
+      oss << bend_.str()<<"|"<<r_.str()<<"|"
           << z_.str()<<"|"<< phi_.str();
     else
-      oss << stubpt_.str()<<"|"<<alpha_.str()<<"|0"<<r_.str()<<"|"
+      oss << bend_.str()<<"|"<<alpha_.str()<<"|0"<<r_.str()<<"|"
           << z_.str()<<"|"<< phi_.str();
 
     return oss.str();
@@ -545,7 +553,9 @@ public:
   std::string strbare() const {
     
     std::ostringstream oss;
-    oss << stubpt_.str()<<r_.str()
+    //oss << stubpt_.str()<<r_.str()
+	//<< z_.str()<< phi_.str();
+    oss << bend_.str()<<r_.str()
 	<< z_.str()<< phi_.str();
 
     return oss.str();
@@ -596,8 +606,8 @@ public:
   std::string phiregionaddressstr() {
 
     std::ostringstream oss;
-	assert(phiregion()>-1);
-	oss << (bitset<3>(phiregion()-1)) << stubindex_.str();
+	assert(phiregion().value()>-1);
+	oss << phiregion().str() << stubindex_.str();
 
 	return oss.str();
 	
@@ -611,31 +621,34 @@ public:
     return 3;
 
   }
-  
-  
-  int phiregion() const {
-
-    if (layer_.value()==0 or layer_.value()==2 or layer_.value()==4) { // L1, L3, L5
-      if (iphivmRaw()>=4 and iphivmRaw()<=11) return 1;
-	  else if (iphivmRaw()>=12 and iphivmRaw()<=19) return 2;
-	  else if (iphivmRaw()>=20 and iphivmRaw()<=27) return 3;
-	  else return 0;
+	
+  FPGAWord phiregion() const {
+	// 3 bits
+	int iphiregion = 7;
+	
+	if (layer_.value()==0 or layer_.value()==2 or layer_.value()==4) { // L1, L3, L5
+      if (iphivmRaw()>=4 and iphivmRaw()<=11) iphiregion = 0;
+	  else if (iphivmRaw()>=12 and iphivmRaw()<=19) iphiregion = 1;
+	  else if (iphivmRaw()>=20 and iphivmRaw()<=27) iphiregion = 2;
     }
     else if (layer_.value()==1 or layer_.value()==3 or layer_.value()==5) { // L2, L4, L6
-      if (iphivmRaw()>=4 and iphivmRaw()<=7) return 1;
-	  else if (iphivmRaw()>=8 and iphivmRaw()<=15) return 2;
-	  else if (iphivmRaw()>=16 and iphivmRaw()<=23) return 3;
-	  else if (iphivmRaw()>=24 and iphivmRaw()<=27) return 4;
-	  else return 0;
+      if (iphivmRaw()>=4 and iphivmRaw()<=7) iphiregion = 0;
+	  else if (iphivmRaw()>=8 and iphivmRaw()<=15) iphiregion = 1;
+	  else if (iphivmRaw()>=16 and iphivmRaw()<=23) iphiregion = 2;
+	  else if (iphivmRaw()>=24 and iphivmRaw()<=27) iphiregion = 3;
     }
     else if (abs(disk_.value())>=1 and abs(disk_.value())<=5) { // Disk
-      if (iphivmRaw()>=4 and iphivmRaw()<=11) return 1;
-	  else if (iphivmRaw()>=12 and iphivmRaw()<=19) return 2;
-	  else if (iphivmRaw()>=20 and iphivmRaw()<=27) return 3;
-	  else return 0;
+      if (iphivmRaw()>=4 and iphivmRaw()<=11) iphiregion = 0;
+	  else if (iphivmRaw()>=12 and iphivmRaw()<=19) iphiregion = 1;
+	  else if (iphivmRaw()>=20 and iphivmRaw()<=27) iphiregion = 2;
     }
-    else
-      return -1;
+    //else
+    //  return -1;
+
+	FPGAWord phi;
+	phi.set(iphiregion,3);
+
+	return phi;
   }
 
  

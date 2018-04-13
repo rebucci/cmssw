@@ -44,10 +44,15 @@
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
 #include "SimDataFormats/Vertex/interface/SimVertex.h"
 #include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingParticle.h"
+#include "SimDataFormats/TrackingAnalysis/interface/TrackingVertex.h"
+#include "SimTracker/TrackTriggerAssociation/interface/TTStubAssociationMap.h"
+#include "SimTracker/TrackTriggerAssociation/interface/TTClusterAssociationMap.h"
 //
 #include "DataFormats/Math/interface/LorentzVector.h"
 #include "DataFormats/Math/interface/Vector3D.h"
 //
+#include "DataFormats/L1TrackTrigger/interface/TTCluster.h"
 #include "DataFormats/L1TrackTrigger/interface/TTStub.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
@@ -156,6 +161,10 @@ private:
   edm::ESHandle<TrackerTopology> tTopoHandle;
   edm::ESHandle<TrackerGeometry> tGeomHandle;
 
+  edm::InputTag MCTruthClusterInputTag;
+  edm::InputTag MCTruthStubInputTag;
+  edm::InputTag TrackingParticleInputTag;
+  edm::InputTag TrackingVertexInputTag;
   edm::InputTag simTrackSrc_;
   edm::InputTag simVertexSrc_;
   edm::InputTag ttStubSrc_;
@@ -166,6 +175,10 @@ private:
   const edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > ttStubToken_;
   const edm::EDGetTokenT< reco::BeamSpot > bsToken_;
 
+  edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > ttClusterMCTruthToken_;
+  edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > ttStubMCTruthToken_;
+  edm::EDGetTokenT< std::vector< TrackingParticle > > TrackingParticleToken_;
+  edm::EDGetTokenT< std::vector< TrackingVertex > > TrackingVertexToken_;
 
   /// ///////////////// ///
   /// MANDATORY METHODS ///
@@ -179,6 +192,10 @@ private:
 // CONSTRUCTOR
 L1TrackProducer::L1TrackProducer(edm::ParameterSet const& iConfig) :
   config(iConfig),
+  MCTruthClusterInputTag(config.getParameter<edm::InputTag>("MCTruthClusterInputTag")),
+  MCTruthStubInputTag(config.getParameter<edm::InputTag>("MCTruthStubInputTag")),
+  TrackingParticleInputTag(iConfig.getParameter<edm::InputTag>("TrackingParticleInputTag")),
+  TrackingVertexInputTag(iConfig.getParameter<edm::InputTag>("TrackingVertexInputTag")),
   simTrackSrc_(config.getParameter<edm::InputTag>("SimTrackSource")),
   simVertexSrc_(config.getParameter<edm::InputTag>("SimVertexSource")),
   ttStubSrc_(config.getParameter<edm::InputTag>("TTStubSource")),
@@ -187,7 +204,11 @@ L1TrackProducer::L1TrackProducer(edm::ParameterSet const& iConfig) :
   simTrackToken_(consumes< edm::SimTrackContainer >(simTrackSrc_)),
   simVertexToken_(consumes< edm::SimVertexContainer >(simVertexSrc_)),
   ttStubToken_(consumes< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > >(ttStubSrc_)),
-  bsToken_(consumes< reco::BeamSpot >(bsSrc_))
+  bsToken_(consumes< reco::BeamSpot >(bsSrc_)),
+  ttClusterMCTruthToken_(consumes< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > >(MCTruthClusterInputTag)),
+  ttStubMCTruthToken_(consumes< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > >(MCTruthStubInputTag)),
+  TrackingParticleToken_(consumes< std::vector< TrackingParticle > >(TrackingParticleInputTag)),
+  TrackingVertexToken_(consumes< std::vector< TrackingVertex > >(TrackingVertexInputTag))
 
 {
 
@@ -240,7 +261,7 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   if (geometryType_ == "flat" || geometryType_ == "D10") isTilted = false;
 
   if (doMyDebug) {
-    if (isTilted) std::cout << "assuming the FILTED barrel geometry!" << std::endl;
+    if (isTilted) std::cout << "assuming the TILTED barrel geometry!" << std::endl;
     else std::cout << "assuming the FLAT barrel geometry!" << std::endl;
   }
 
@@ -291,6 +312,12 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByToken( simTrackToken_, simTrackHandle );
   iEvent.getByToken( simVertexToken_, simVtxHandle );
 
+  // tracking particles
+  edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle;
+  edm::Handle< std::vector< TrackingVertex > > TrackingVertexHandle;
+  iEvent.getByToken(TrackingParticleToken_, TrackingParticleHandle);
+  iEvent.getByToken(TrackingVertexToken_, TrackingVertexHandle);
+
 
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
@@ -302,38 +329,57 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   iEvent.getByToken( ttStubToken_,        Phase2TrackerDigiTTStubHandle );
 
 
-  ////////////////////////
-  /// LOOP OVER SimTracks
+  // MC truth association maps
+  edm::Handle< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTClusterHandle;
+  iEvent.getByToken(ttClusterMCTruthToken_, MCTruthTTClusterHandle);
+  edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTStubHandle;
+  iEvent.getByToken(ttStubMCTruthToken_, MCTruthTTStubHandle);
 
-  if (doMyDebug) std::cout << "loop over sim tracks" << std::endl;
 
-  SimTrackContainer::const_iterator iterSimTracks;
-  for ( iterSimTracks = simTrackHandle->begin();
-	iterSimTracks != simTrackHandle->end();
-	++iterSimTracks ) {
+  ////////////////////////////////////////////////
+  /// LOOP OVER TRACKING PARTICLES & GET SIMTRACKS
 
-    /// Get the corresponding vertex
-    int vertexIndex = iterSimTracks->vertIndex();
-    const SimVertex& theSimVertex = (*simVtxHandle)[vertexIndex];
-    math::XYZTLorentzVectorD trkVtxPos = theSimVertex.position();
-    GlobalPoint trkVtxCorr = GlobalPoint( trkVtxPos.x() - bsPosition.x(), 
-					  trkVtxPos.y() - bsPosition.y(), 
-					  trkVtxPos.z() - bsPosition.z() );
-    
-    double pt=iterSimTracks->momentum().pt();
-    if (pt!=pt) pt=9999.999;
+  if (doMyDebug) std::cout << "loop over tracking particles" << std::endl;
 
-    if (doMyDebug) std::cout << "adding sim track with ID type pt eta phi = " << iterSimTracks->trackId() << " " << iterSimTracks->type() << " " 
-			     << pt << " " << iterSimTracks->momentum().eta() << " " << iterSimTracks->momentum().phi() << std::endl;
+  int this_tp = 0;
+  std::vector< TrackingParticle >::const_iterator iterTP;
+  for (iterTP = TrackingParticleHandle->begin(); iterTP != TrackingParticleHandle->end(); ++iterTP) {
+ 
+    edm::Ptr< TrackingParticle > tp_ptr(TrackingParticleHandle, this_tp);
+    this_tp++;
 
-    ev.addL1SimTrack(iterSimTracks->trackId(),iterSimTracks->type(),pt,
-		     iterSimTracks->momentum().eta(), 
-		     iterSimTracks->momentum().phi(), 
-		     trkVtxCorr.x(),
-		     trkVtxCorr.y(),
-		     trkVtxCorr.z());
-       
-  } /// End of Loop over SimTrack
+    // only keep TPs producing a cluster
+    if (MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).size() < 1) continue;
+
+    if (iterTP->g4Tracks().size()==0) {
+      if (doMyDebug) cout << "TP has no g4Track" << endl;
+    } 
+    else {
+      for (int it=0; it<(int)iterTP->g4Tracks().size(); it++) {
+	int sim_trackid = iterTP->g4Tracks().at(it).trackId();
+	int sim_eventid = iterTP->g4Tracks().at(it).eventId().event();
+	int sim_type = iterTP->g4Tracks().at(it).type();
+	float sim_pt = iterTP->g4Tracks().at(it).momentum().pt();
+	float sim_eta = iterTP->g4Tracks().at(it).momentum().eta();
+	float sim_phi = iterTP->g4Tracks().at(it).momentum().phi();
+
+	/// Get the corresponding vertex
+	int vertexIndex = iterTP->g4Tracks().at(it).vertIndex();
+	const SimVertex& theSimVertex = (*simVtxHandle)[vertexIndex];
+	math::XYZTLorentzVectorD trkVtxPos = theSimVertex.position();
+	GlobalPoint trkVtxCorr = GlobalPoint( trkVtxPos.x() - bsPosition.x(), 
+					      trkVtxPos.y() - bsPosition.y(), 
+					      trkVtxPos.z() - bsPosition.z() );
+
+	if (doMyDebug) std::cout << "adding sim track with eventID trackID type pt eta phi = " << sim_eventid << " " << sim_trackid << " " 
+				 << sim_type << " " << sim_pt << " " << sim_eta << " " << sim_phi << std::endl;
+
+    	ev.addL1SimTrack(sim_eventid, sim_trackid, sim_type, sim_pt, sim_eta, sim_phi, 
+			 trkVtxCorr.x(), trkVtxCorr.y(), trkVtxCorr.z());
+
+      }//end loop over associated sim tracks
+    }//end has simtracks
+  }//end loop over TPs
 
 
 
@@ -343,7 +389,7 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // loop over stubs
   if (doMyDebug) std::cout << "loop over stubs" << std::endl;
-
+  
   for (auto gd=theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
     
     DetId detid = (*gd)->geographicalId();
@@ -372,13 +418,32 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       LocalPoint clustlp = topol->localPosition(coords);
       GlobalPoint posStub  =  theGeomDet->surface().toGlobal(clustlp);
       
+      edm::Ptr< TrackingParticle > my_tp = MCTruthTTStubHandle->findTrackingParticlePtr(tempStubPtr);
+
+      int eventID=-1;
+      int simtrackID=-1;
+      
+      if (my_tp.isNull()) {
+	if (doMyDebug) cout << "TP is null pointer" << endl;
+      } 
+      else {
+	if (doMyDebug) cout << "TP is NOT null pointer" << endl;
+	if (my_tp->g4Tracks().size()==0){
+	  if (doMyDebug) cout << "TP has no g4Track" << endl;
+	} 
+	else {
+	  for (int it=0; it<(int)my_tp->g4Tracks().size(); it++) {
+	    eventID = my_tp->g4Tracks().at(it).eventId().event();
+	    simtrackID = my_tp->g4Tracks().at(it).trackId();
+	  }//end sim loop 
+	}
+      }
+
       int layer=-999999;
       int ladder=-999999;
       int module=-999999;
 
       int strip=460;
-      
-      //double z=posStub.z();
 
       if ( detid.subdetId()==StripSubdetector::TOB ) {
 	layer  = static_cast<int>(tTopo->layer(detid));
@@ -516,7 +581,7 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
       else {
 	if (doMyDebug) std::cout << "... add this stub to the event!" << std::endl;
-	if (ev.addStub(layer,ladder,module,strip,-1,tempStubPtr->getTriggerBend(),
+	if (ev.addStub(layer,ladder,module,strip,eventID,simtrackID,-1,tempStubPtr->getTriggerBend(),
 		       posStub.x(),posStub.y(),posStub.z(),
 		       innerStack,irphi,iz,iladder,imodule,isPSmodule,isFlipped)) {
 	  
@@ -524,21 +589,20 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  stubMap[lastStub]=tempStubPtr;
 	}
       }
-
     }
   }
-
+  
   if (doMyDebug) std::cout << "Will actually do L1 tracking:"<<std::endl;
-
+  
   //////////////////////////
   // NOW RUN THE L1 tracking
-
+  
   if (asciiEventOutName_!="") {
     ev.write(asciiEventOut_);
   }
 
 #include "L1Tracking.icc"  
-  
+
   for (unsigned itrack=0; itrack<purgedTracks.size(); itrack++) {
     L1TTrack track=purgedTracks.get(itrack);
 

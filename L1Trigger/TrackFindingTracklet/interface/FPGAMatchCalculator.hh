@@ -442,7 +442,7 @@ public:
 
 	  tracklet->addMatch(layer_,ideltaphi,ideltaz,
 			     dphi,dz,dphiapprox,dzapprox,
-			     fpgastub->stubindex().value()+(1<<6)*(fpgastub->phiregion()-1),
+				 fpgastub->stubindex().value()+(1<<6)*(fpgastub->phiregion().value()),
 			     stub->r(),tmp);
 	  
 
@@ -745,7 +745,7 @@ public:
 	  tracklet->addMatchDisk(disk,ideltaphi,ideltar,
 				 drphi/stub->r(),dr,drphiapprox/stub->r(),drapprox,
 				 stub->alpha(),
-				 fpgastub->stubindex().value()+((fpgastub->phiregion()-1)<<6),
+				 fpgastub->stubindex().value()+((fpgastub->phiregion().value())<<6),
 				 stub->z(),tmp);
 	  if (debug1) {
 	    cout << "Accepted full match in disk " <<getName()

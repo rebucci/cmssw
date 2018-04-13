@@ -81,19 +81,19 @@ public:
 
       //Special case --- L3 is grouped with D1 for overlap seeding
 	
-      if (layer==3&&subnamelayer=="L3"&&(subname=="PHIW_ZP"||subname=="PHIQ_ZP")) {
-	if (al1stub.z()>40.0) {
-	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW_ZP") add=true;     //overlap
-	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ_ZP") add=true;    //overlap
-	  }
-      }
+      //if (layer==3&&subnamelayer=="L3"&&(subname=="PHIW_ZP"||subname=="PHIQ_ZP")) {
+      //	if (al1stub.z()>40.0) {
+      //	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW_ZP") add=true;     //overlap
+      //	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ_ZP") add=true;    //overlap
+      //	  }
+      //}
 
-      if (layer==3&&subnamelayer=="L3"&&(subname=="PHIW_ZM"||subname=="PHIQ_ZM")) {
-	if (al1stub.z()<-40.0) {
-	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW_ZM") add=true;     //overlap
-	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ_ZM") add=true;    //overlap
-	  }
-      }
+      //if (layer==3&&subnamelayer=="L3"&&(subname=="PHIW_ZM"||subname=="PHIQ_ZM")) {
+      //	if (al1stub.z()<-40.0) {
+      //	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW_ZM") add=true;     //overlap
+      //	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ_ZM") add=true;    //overlap
+      //	  }
+      //}
 
 	
       if (!((layer==1&&subnamelayer=="L1")||
@@ -109,7 +109,7 @@ public:
       //	 <<al1stub.phi()<<" "
       // 	 <<al1stub.z()<<endl;
       
-      int ASPHI = stub.phiregion();  // AllStub phi region
+      int ASPHI = stub.phiregion().value()+1;  // AllStub phi region
       
       if (subnamelayer=="L1"||subnamelayer=="L3"||subnamelayer=="L5"){
 	if (stub.z().value()>0) {
@@ -219,7 +219,7 @@ public:
       int disk=stub.disk().value();
 
       if (abs(disk)==1&&(subnamelayer=="F1"||subnamelayer=="B1")&&(subname=="PHIW"||subname=="PHIQ")) {
-	if (al1stub.r()>40.0) { 
+	if (al1stub.isPSmodule()&&al1stub.r()>40.0) {
 	  if (al1stub.z()>0.0&&subnamelayer=="F1") {
 	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW") add=true;     //overlap
 	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ") add=true;    //overlap
@@ -249,7 +249,7 @@ public:
       //	 <<al1stub.phi()<<" "
       // 	 <<al1stub.z()<<endl;
 
-      int ASPHI = stub.phiregion();  // AllStub phi region
+      int ASPHI = stub.phiregion().value()+1;  // AllStub phi region
       
       if (subnamelayer=="F1"||subnamelayer=="F3"||subnamelayer=="F5"||
 	  subnamelayer=="B1"||subnamelayer=="B3"||subnamelayer=="B5"){
@@ -270,8 +270,10 @@ public:
 	}else{
 	  if (iphivmRaw>=4 && iphivmRaw<=15 && subname=="PHIA") add=true;
 	  if (iphivmRaw>=16 && iphivmRaw<=27 && subname=="PHIB") add=true;
-	  if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIX") add=true;
-	  if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIY") add=true;
+	  if (al1stub.r()<47.0) {
+	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIX") add=true;
+	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIY") add=true;
+	  }
 	}
       }
 
@@ -323,8 +325,43 @@ public:
   L1TStub* getL1TStub(unsigned int i) const {return stubs_[i].second;}
   std::pair<FPGAStub*,L1TStub*> getStub(unsigned int i) const {return stubs_[i];}
 
-  void writeStubs(bool first, bool w2, bool padded) {
+  void writeStubs(bool first)
+  {
+    string fname="MemPrints/InputStubs/InputStubs_";
+    fname+=getName();
+    fname+="_";
+    ostringstream oss;
+    oss << iSector_+1;
+    if (iSector_+1<10) fname+="0";
+    fname+=oss.str();
+    fname+=".dat";
+    if (first) {
+      bx_=0;
+      event_=1;
+      out_.open(fname.c_str());
+    }
+    else 
+      out_.open(fname.c_str(),std::ofstream::app);
 
+    out_ << "BX = "<<(bitset<3>)bx_ << " Event : " << event_ << endl;
+
+    for (unsigned int j=0;j<stubs_.size();j++){
+      assert(stubs_[j].first->isBarrel() or stubs_[j].first->isDisk());
+      string stub = stubs_[j].first->isBarrel() ? stubs_[j].first->str()
+        : stubs_[j].first->strdisk();
+      if (j<16) out_ <<"0";
+      out_ << hex << j << dec;
+      out_ << " " << stub << endl;
+    }
+    out_.close();
+
+    bx_++;
+    event_++;
+    if (bx_>7) bx_=0;
+  }
+	
+  void writeInputStubs(bool first, bool w2, bool padded) {
+    
     //Barrel
     std::string fname="MemPrints/InputStubs/InputStubs_";
     fname+=getName();

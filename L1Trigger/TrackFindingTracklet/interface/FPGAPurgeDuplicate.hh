@@ -88,15 +88,15 @@ public:
       std::sort(inputtracks_.begin(), inputtracks_.end(), [](const FPGATrack* lhs, const FPGATrack* rhs)
           {return lhs->ichisq() < rhs->ichisq();}
       );
-      bool grid[19][40] = {{false}};
+      bool grid[35][40] = {{false}};
 
-      for(unsigned int itrk=0; itrk<numTrk-1; itrk++) { // numTrk-1 since last track has no other to compare to
+      for(unsigned int itrk=0; itrk<numTrk; itrk++) {
 
         if(inputtracks_[itrk]->duplicate()) cout << "WARNING: Track already tagged as duplicate!!" << endl;
 
-        double phiBin = (inputtracks_[itrk]->phi0()-2*3.14159/27*iSector_)/(2*M_PI/9/50) + 1;
+        double phiBin = (inputtracks_[itrk]->phi0()-2*M_PI/27*iSector_)/(2*M_PI/9/50) + 9;
         phiBin = std::max(phiBin,0.);
-        phiBin = std::min(phiBin,18.);
+        phiBin = std::min(phiBin,34.);
 
         double ptBin = 1/inputtracks_[itrk]->pt()*40+20;
         ptBin = std::max(ptBin,0.);
@@ -105,9 +105,9 @@ public:
         if(grid[(int)phiBin][(int)ptBin]) inputtracks_[itrk]->setDuplicate(true);
         grid[(int)phiBin][(int)ptBin] = true;
 
-        double phiTest = inputtracks_[itrk]->phi0()-2*3.141159/27*iSector_;
-        if(phiTest < -3.14159/27) cout << "track phi too small!" << endl;
-        if(phiTest > 2*2*3.14159/27) cout << "track phi too big!" << endl;
+        double phiTest = inputtracks_[itrk]->phi0()-2*M_PI/27*iSector_;
+        if(phiTest < -2*M_PI/27) cout << "track phi too small!" << endl;
+        if(phiTest > 2*2*M_PI/27) cout << "track phi too big!" << endl;
 
       }
     } // end grid removal
@@ -137,7 +137,7 @@ public:
           // Count shared stubs
           for(std::map<int, int>::iterator  st=stubsTrk1.begin(); st!=stubsTrk1.end(); st++) {
             if(stubsTrk2.find(st->first) != stubsTrk2.end()) {
-              if(st->second == stubsTrk2[st->first] && st->second != 63) nShare[jtrk]++;
+              if(st->second == stubsTrk2[st->first]) nShare[jtrk]++;
             }
           }
         }

@@ -36,8 +36,8 @@ public:
       match=match||tracks_[i]->foundTrack(simtrk);
       if (tracks_[i]->foundTrack(simtrk)) {
 	FPGATracklet* tracklet=tracks_[i];
-	int charge = simtrk.id()/abs(simtrk.id());
-	if(abs(simtrk.id())<100) charge = -charge; 
+	int charge = simtrk.trackid()/abs(simtrk.trackid());
+	if(abs(simtrk.trackid())<100) charge = -charge; 
 	double simphi=simtrk.phi();
 	if (simphi<0.0) simphi+=two_pi; 
 	int irinv=tracklet->irinvfit().value();
@@ -127,7 +127,7 @@ public:
     if (writeAllCT) { 
 
       std::string fnameAll="CleanTracksAll.dat";
-      if (first && iSector_==0) 
+      if (first && getName()=="CT_L1L2" && iSector_==0) 
 	out_.open(fnameAll.c_str());
       else 
 	out_.open(fnameAll.c_str(),std::ofstream::app);
