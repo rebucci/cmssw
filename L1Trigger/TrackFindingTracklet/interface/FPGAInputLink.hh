@@ -13,6 +13,7 @@
 #include "FPGAVMRouterPhiCorrTable.hh"
 #include <math.h>
 #include <sstream>
+#include <ctype.h>
 
 using namespace std;
 
@@ -25,6 +26,9 @@ public:
     FPGAMemoryBase(name,iSector){
     phimin_=phimin;
     phimax_=phimax;
+
+    indexphi_.reserve(5);
+    indexphi_ = {0,0,0,0,0};
   }
 
   void addStub(L1TStub& al1stub, FPGAStub& stub) {
@@ -38,9 +42,7 @@ public:
       }
       first=false;
     }
-    
 
-    
     if (stub.layer().value()!=-1) {
 
       FPGAWord r=stub.r();
@@ -56,6 +58,7 @@ public:
     
     bool add=false;
     int iphivmRaw=stub.iphivmRaw();
+    unsigned int asindex = 0;
       
     if (stub.layer().value()!=-1) {
       //cout << "FPGAInputLink::addStub "<<stub.layer().value()<<endl;
@@ -65,6 +68,24 @@ public:
       string subnamelayer=getName().substr(3,2);
       
       int layer=stub.layer().value()+1;
+
+      if (!((layer==1&&subnamelayer=="L1")||
+	    (layer==2&&subnamelayer=="L2")||
+	    (layer==3&&subnamelayer=="L3")||
+	    (layer==4&&subnamelayer=="L4")||
+	    (layer==5&&subnamelayer=="L5")||
+	    (layer==6&&subnamelayer=="L6"))){
+	return;
+      }
+      
+      if (stub.phiregion().value()==0) asindex = indexphi_[0]++;
+      else if (stub.phiregion().value()==1) asindex = indexphi_[1]++;
+      else if (stub.phiregion().value()==2) asindex = indexphi_[2]++;
+      else if (stub.phiregion().value()==3) asindex = indexphi_[3]++;
+      else {
+        // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
+        asindex = indexphi_[4]++;
+      }
       
       if (layer==2&&subnamelayer=="L2"&&(subname=="PHIW_ZP"||subname=="PHIQ_ZP")) {
 	if (al1stub.z()>25.0) {
@@ -94,16 +115,6 @@ public:
       //	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ_ZM") add=true;    //overlap
       //	  }
       //}
-
-	
-      if (!((layer==1&&subnamelayer=="L1")||
-	    (layer==2&&subnamelayer=="L2")||
-	    (layer==3&&subnamelayer=="L3")||
-	    (layer==4&&subnamelayer=="L4")||
-	    (layer==5&&subnamelayer=="L5")||
-	    (layer==6&&subnamelayer=="L6"))){
-	return;
-      }
       
       //cout << "Stub candidate in "<<getName()<<" "<<subnamelayer<<" "<<subname<<" "<<iphivmRaw<<" "
       //	 <<al1stub.phi()<<" "
@@ -218,20 +229,6 @@ public:
       
       int disk=stub.disk().value();
 
-      if (abs(disk)==1&&(subnamelayer=="F1"||subnamelayer=="B1")&&(subname=="PHIW"||subname=="PHIQ")) {
-	if (al1stub.isPSmodule()&&al1stub.r()>40.0) {
-	  if (al1stub.z()>0.0&&subnamelayer=="F1") {
-	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW") add=true;     //overlap
-	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ") add=true;    //overlap
-	  }
-	  if (al1stub.z()<0.0&&subnamelayer=="B1") {
-	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW") add=true;     //overlap
-	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ") add=true;    //overlap
-	  }
-	}
-      }
-    
-      
       if (!((disk==1&&subnamelayer=="F1")||
 	    (disk==2&&subnamelayer=="F2")||
 	    (disk==3&&subnamelayer=="F3")||
@@ -243,6 +240,28 @@ public:
 	    (disk==-4&&subnamelayer=="B4")||
 	    (disk==-5&&subnamelayer=="B5"))){
 	return;
+      }    
+
+      if (stub.phiregion().value()==0) asindex = indexphi_[0]++;
+      else if (stub.phiregion().value()==1) asindex = indexphi_[1]++;
+      else if (stub.phiregion().value()==2) asindex = indexphi_[2]++;
+      else if (stub.phiregion().value()==3) asindex = indexphi_[3]++;
+      else {
+        // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
+        asindex = indexphi_[4]++;
+      }     
+      
+      if (abs(disk)==1&&(subnamelayer=="F1"||subnamelayer=="B1")&&(subname=="PHIW"||subname=="PHIQ")) {
+	if (al1stub.isPSmodule()&&al1stub.r()>40.0) {
+	  if (al1stub.z()>0.0&&subnamelayer=="F1") {
+	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW") add=true;     //overlap
+	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ") add=true;    //overlap
+	  }
+	  if (al1stub.z()<0.0&&subnamelayer=="B1") {
+	    if (iphivmRaw>=0 && iphivmRaw<=19 && subname=="PHIW") add=true;     //overlap
+	    if (iphivmRaw>=12 && iphivmRaw<=31 && subname=="PHIQ") add=true;    //overlap
+	  }
+	}
       }
       
       //cout << "Stub candidate in "<<getName()<<" "<<subnamelayer<<" "<<subname<<" "<<iphivmRaw<<" "
@@ -314,12 +333,21 @@ public:
       L1TStub* l1stub=new L1TStub(al1stub);
       //FPGAStub* stub=new FPGAStub(*l1stub,phimin_,phimax_);
       FPGAStub* stubptr=new FPGAStub(stub);
+
+      // set stub index only for those sent to VMRouterTE
+      if (isalpha(getName()[8])) {
+        l1stub->setAllStubIndex(asindex);
+        stubptr->setAllStubIndex(asindex);
+      }
+      
       std::pair<FPGAStub*,L1TStub*> tmp(stubptr,l1stub);
       stubs_.push_back(tmp);
     }
   }
 
   unsigned int nStubs() const {return stubs_.size();}
+
+  vector<unsigned int> getASPhiIndices() const {return indexphi_;}
 
   FPGAStub* getFPGAStub(unsigned int i) const {return stubs_[i].first;}
   L1TStub* getL1TStub(unsigned int i) const {return stubs_[i].second;}
@@ -834,8 +862,10 @@ private:
 
   double phimin_;
   double phimax_;
-  std::vector<std::pair<FPGAStub*,L1TStub*> > stubs_;
+  vector<std::pair<FPGAStub*,L1TStub*> > stubs_;
 
+  // index array for counting the number of stubs in each phi region for AS memories
+  vector<unsigned int> indexphi_;
 };
 
 #endif

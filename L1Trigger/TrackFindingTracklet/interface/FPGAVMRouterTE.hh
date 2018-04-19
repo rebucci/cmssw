@@ -162,8 +162,7 @@ public:
 
     unsigned int count=0;
 
-    unsigned int indexphi1=0, indexphi2=0, indexphi3=0, indexphi4=0;
-    unsigned int indexphiex=0;
+    vector<unsigned int> asindex_count = {0,0,0,0,0};
  
     if (layer_!=0){  //First handle layer stubs
       for(unsigned int j=0;j<stubinputs_.size();j++){
@@ -175,23 +174,27 @@ public:
 	  int iphiRaw=stub.first->iphivmRaw();
 
 	  bool insert=false;
-
-          // stub index mapping to the corresponding AS memory filled by VMRouterME
-          int asindex = 0;
-          if (stub.first->phiregion().value()==0) asindex = indexphi1++;
-          else if (stub.first->phiregion().value()==1) asindex = indexphi2++;
-          else if (stub.first->phiregion().value()==2) asindex = indexphi3++;
-          else if (stub.first->phiregion().value()==3) asindex = indexphi4++;
-          else {
-            // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
-            asindex = indexphiex++;
-          }
       
-          stub.first->setAllStubIndex(asindex);
-          stub.second->setAllStubIndex(asindex);
+      // get preliminary stub index set in InputLink
+      unsigned int asindex_pre = stub.first->stubindex().value();
+      unsigned int asindex = asindex_pre;
+      // correct the index
+      // necessary if the InputLink is not the first one read by VMRouterTE
+      unsigned int phiregion = stub.first->phiregion().value();
+      if (phiregion==0) asindex = asindex_pre + asindex_count[0];
+      else if (phiregion==1) asindex = asindex_pre + asindex_count[1];
+      else if (phiregion==2) asindex = asindex_pre + asindex_count[2];
+      else if (phiregion==3) asindex = asindex_pre + asindex_count[3];
+      else {
+        // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
+        asindex = asindex_pre + asindex_count[4];
+      }
 
-          stub.first->setAllStubAddressTE(allstubs_[0]->nStubs());
-
+      stub.first->setAllStubIndex(asindex);
+      stub.second->setAllStubIndex(asindex);
+      
+      stub.first->setAllStubAddressTE(allstubs_[0]->nStubs());
+		  
 	  for (unsigned int l=0;l<allstubs_.size();l++){
 	    allstubs_[l]->addStub(stub);
 	  }
@@ -216,36 +219,36 @@ public:
 	      insert=true;
 	    }
 	  }  else {
-            int binlookup=-1;
-            if (overlap_) {
-              assert(layer_==1);
-              binlookup=lookupInnerOverlapLayer(stub.first);
-            } else {
-              switch (layer_) {
-              case 2 : binlookup=lookupOuterLayer(stub.first);
-                break;
-              case 4 : binlookup=lookupOuterLayer(stub.first);
-                break;
-              case 6 : binlookup=lookupOuterLayer(stub.first);
-                break;
-              case 1 : binlookup=lookupInnerLayer(stub.first);
-                break;
-              case 3 : binlookup=lookupInnerLayer(stub.first);
-                break;
-              case 5 : binlookup=lookupInnerLayer(stub.first);
-                break;
-              default : assert(0);
-              }
-            }
-            if (binlookup==-1) continue;
+        int binlookup=-1;
+        if (overlap_) {
+          assert(layer_==1);
+          binlookup=lookupInnerOverlapLayer(stub.first);
+        } else {
+          switch (layer_) {
+          case 2 : binlookup=lookupOuterLayer(stub.first);
+            break;
+          case 4 : binlookup=lookupOuterLayer(stub.first);
+            break;
+          case 6 : binlookup=lookupOuterLayer(stub.first);
+            break;
+          case 1 : binlookup=lookupInnerLayer(stub.first);
+            break;
+          case 3 : binlookup=lookupInnerLayer(stub.first);
+            break;
+          case 5 : binlookup=lookupInnerLayer(stub.first);
+            break;
+          default : assert(0);
+          }
+        }
+        if (binlookup==-1) continue;
             stub.first->setVMBits(binlookup);
 	    if (stub.first->layer().value()%2==0) { //odd layers
 	      iphiRaw-=4;
 	      assert(iphiRaw>=0);
 	      assert(iphiRaw<24);
 	      if (overlap_) {
-                iphiRaw>>=2;
-              }
+            iphiRaw>>=2;
+          }
 	      for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
 		vmstubsPHI_[iphiRaw][l]->addStub(stub);
 		if (debug1) {
@@ -268,8 +271,16 @@ public:
 	  }
 
 	  assert(insert);
-	}
-      }
+	} // end of stubs loop in each InputLink
+
+    auto IL_indices = stubinputs_[j]->getASPhiIndices();
+    asindex_count[0] += IL_indices[0];
+    asindex_count[1] += IL_indices[1];
+    asindex_count[2] += IL_indices[2];
+    asindex_count[3] += IL_indices[3];
+    asindex_count[4] += IL_indices[4];
+    
+      } // end of InputLinks loop
 
     }
     if (disk_!=0) {
@@ -278,139 +289,144 @@ public:
 	for(unsigned int i=0;i<stubinputs_[j]->nStubs();i++){
 	  std::pair<FPGAStub*,L1TStub*> stub=stubinputs_[j]->getStub(i);
 
-	  if (!stub.second->isPSmodule()) continue;
 	  
 	  int iphiRaw=stub.first->iphivmRaw();
 
 	  bool insert=false;
 
-          // stub index mapping to the corresponding AS memory filled by VMRouterME
-          int asindex = 0;
-          if (stub.first->phiregion().value()==0) asindex = indexphi1++;
-          else if (stub.first->phiregion().value()==1) asindex = indexphi2++;
-          else if (stub.first->phiregion().value()==2) asindex = indexphi3++;
-          else if (stub.first->phiregion().value()==3) asindex = indexphi4++;
-          else {
-            // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
-            asindex = indexphiex++;
-          }
+      // get preliminary stub index set in InputLink
+      unsigned int asindex_pre = stub.first->stubindex().value();
+      unsigned int asindex = asindex_pre;
+      // correct the index
+      // necessary if the InputLink is not the first one read by VMRouterTE
+      unsigned int phiregion = stub.first->phiregion().value();
+      if (phiregion==0) asindex = asindex_pre + asindex_count[0];
+      else if (phiregion==1) asindex = asindex_pre + asindex_count[1];
+      else if (phiregion==2) asindex = asindex_pre + asindex_count[2];
+      else if (phiregion==3) asindex = asindex_pre + asindex_count[3];
+      else {
+        // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
+        asindex = asindex_pre + asindex_count[4];
+      }
 
-          stub.first->setAllStubIndex(asindex);
-          stub.second->setAllStubIndex(asindex);
+      stub.first->setAllStubIndex(asindex);
+      stub.second->setAllStubIndex(asindex);
 
-          stub.first->setAllStubAddressTE(allstubs_[0]->nStubs());
-
-          for (unsigned int l=0;l<allstubs_.size();l++){
-	    //if (allstubs_[l]->getName()=="AS_D1PHIQn1") {
-	    //  cout << "Adding stub to memory "<<iSector_<<" "<<allstubs_[l]->getName()<<" r= "<<stub.second->r()<<endl;
-	    //}
-	    allstubs_[l]->addStub(stub);
+	  stub.first->setAllStubAddressTE(allstubs_[0]->nStubs());
+      
+	  if (!stub.second->isPSmodule()) continue;
+	  
+	  for (unsigned int l=0;l<allstubs_.size();l++){
+        //if (allstubs_[l]->getName()=="AS_D1PHIQn1") {
+        //  cout << "Adding stub to memory "<<iSector_<<" "<<allstubs_[l]->getName()<<" r= "<<stub.second->r()<<endl;
+        //}
+        allstubs_[l]->addStub(stub);
 	  }
-          
+	  
 	  if (getName()=="VMRTE_D1PHIW"||getName()=="VMRTE_D1PHIQ") {
-	    //special case where odd disk is treated as outer disk
-
-            if (overlap_){
-              if (stub.first->layer().value()>=0) continue; //FIXME skip layer hit for now
-              int binlookup=lookupOuterOverlapD1(stub.first);
-              assert(binlookup>=0);
-              stub.first->setVMBits(binlookup);
-            } else {
-              assert(0);
-
-            }
+        //special case where odd disk is treated as outer disk
+        
+        if (overlap_){
+          if (stub.first->layer().value()>=0) continue; //FIXME skip layer hit for now
+          int binlookup=lookupOuterOverlapD1(stub.first);
+          assert(binlookup>=0);
+          stub.first->setVMBits(binlookup);
+        } else {
+          assert(0);
+          
+        }
             
-	    iphiRaw/=2;
-	    assert(iphiRaw>=0);
-	    assert(iphiRaw<16);
-	    iphiRaw>>=1; //only 8 VMS in even disks
-	    for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
-	      if (debug1) { 
-		cout << "FPGAVMRouterTE added stub to : "<<vmstubsPHI_[iphiRaw][l]->getName()<<endl;
-	      }
-	      vmstubsPHI_[iphiRaw][l]->addStub(stub);
-	      insert=true;
-	    }
+        iphiRaw/=2;
+        assert(iphiRaw>=0);
+        assert(iphiRaw<16);
+        iphiRaw>>=1; //only 8 VMS in even disks
+        for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
+          if (debug1) { 
+            cout << "FPGAVMRouterTE added stub to : "<<vmstubsPHI_[iphiRaw][l]->getName()<<endl;
+          }
+          vmstubsPHI_[iphiRaw][l]->addStub(stub);
+          insert=true;
+        }
 	  } else {
-	    if (getName()=="VMRTE_D1PHIA"||
-		getName()=="VMRTE_D1PHIB"||
-		getName()=="VMRTE_D1PHIC"||
-		getName()=="VMRTE_D1PHID"||
-		getName()=="VMRTE_D2PHIA"||
-		getName()=="VMRTE_D2PHIB"||
-		getName()=="VMRTE_D2PHIC"||
-		getName()=="VMRTE_D2PHID"
-		) {
+        if (getName()=="VMRTE_D1PHIA"||
+            getName()=="VMRTE_D1PHIB"||
+            getName()=="VMRTE_D1PHIC"||
+            getName()=="VMRTE_D1PHID"||
+            getName()=="VMRTE_D2PHIA"||
+            getName()=="VMRTE_D2PHIB"||
+            getName()=="VMRTE_D2PHIC"||
+            getName()=="VMRTE_D2PHID"
+            ) {
+          
+          int binlookup=-1;
+          
+          switch (disk_) {
+          case 2 : binlookup=lookupOuterDisk(stub.first);
+            break;
+          case 4 : binlookup=lookupOuterDisk(stub.first);
+            break;
+          case 1 : binlookup=lookupInnerDisk(stub.first);
+            break;
+          case 3 : binlookup=lookupInnerDisk(stub.first);
+            break;
+          default : assert(0);  
+          }
+          if (binlookup==-1) continue;
+          stub.first->setVMBits(binlookup);
 
-              int binlookup=-1;
-              
-              switch (disk_) {
-              case 2 : binlookup=lookupOuterDisk(stub.first);
-                break;
-              case 4 : binlookup=lookupOuterDisk(stub.first);
-                break;
-              case 1 : binlookup=lookupInnerDisk(stub.first);
-                break;
-              case 3 : binlookup=lookupInnerDisk(stub.first);
-                break;
-              default : assert(0);  
-              }
-              if (binlookup==-1) continue;
-              stub.first->setVMBits(binlookup);
-
-              
-              
-	      if (abs(stub.first->disk().value())%2==1) {
-		//odd disks here
-		if (overlap_) {
-		  iphiRaw>>=1; //only 12 VMS in odd disks
-		} else {
-		  iphiRaw-=4;
-		  assert(iphiRaw>=0);
-		  assert(iphiRaw<24);
-		  iphiRaw>>=1; //only 12 VMS in odd disks
-		}
-		
-		for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
-		  vmstubsPHI_[iphiRaw][l]->addStub(stub);
-		  insert=true;
-		}
-	      }
-	      else {
-		//even disks here
-		iphiRaw/=2;
-		assert(iphiRaw>=0);
-		assert(iphiRaw<16);
-		for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
-		  vmstubsPHI_[iphiRaw][l]->addStub(stub);
-		  insert=true;
-		}
-	      }
-	    } else {
-
-              int binlookup=-1;
-
-              if (!overlap_) {
-                switch (disk_) {
-                case 2 : binlookup=lookupOuterDisk(stub.first);
-                  break;
-                case 4 : binlookup=lookupOuterDisk(stub.first);
-                  break;
-                case 1 : binlookup=lookupInnerDisk(stub.first);
-                  break;
-                case 3 : binlookup=lookupInnerDisk(stub.first);
-                  break;
-                default : assert(0);  
-                }
-              } else {
-                assert(disk_==1);
-                binlookup=lookupOuterOverlapD1(stub.first);
-              }
-              
-              if (binlookup==-1) continue;
-              stub.first->setVMBits(binlookup);
-
-              
+          
+          
+          if (abs(stub.first->disk().value())%2==1) {
+            //odd disks here
+            if (overlap_) {
+              iphiRaw>>=1; //only 12 VMS in odd disks
+            } else {
+              iphiRaw-=4;
+              assert(iphiRaw>=0);
+              assert(iphiRaw<24);
+              iphiRaw>>=1; //only 12 VMS in odd disks
+            }
+			
+            for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
+              vmstubsPHI_[iphiRaw][l]->addStub(stub);
+              insert=true;
+            }
+          }
+          else {
+            //even disks here
+            iphiRaw/=2;
+            assert(iphiRaw>=0);
+            assert(iphiRaw<16);
+            for (unsigned int l=0;l<vmstubsPHI_[iphiRaw].size();l++){
+              vmstubsPHI_[iphiRaw][l]->addStub(stub);
+              insert=true;
+            }
+          }
+        } else {
+          
+          int binlookup=-1;
+          
+          if (!overlap_) {
+            switch (disk_) {
+            case 2 : binlookup=lookupOuterDisk(stub.first);
+              break;
+            case 4 : binlookup=lookupOuterDisk(stub.first);
+              break;
+            case 1 : binlookup=lookupInnerDisk(stub.first);
+              break;
+            case 3 : binlookup=lookupInnerDisk(stub.first);
+              break;
+            default : assert(0);  
+            }
+          } else {
+            assert(disk_==1);
+            binlookup=lookupOuterOverlapD1(stub.first);
+          }
+          
+          if (binlookup==-1) continue;
+          stub.first->setVMBits(binlookup);
+          
+          
 	      if (abs(stub.first->disk().value())%2==1) {
 		//odd disks here
 		if (overlap_) {
@@ -446,8 +462,16 @@ public:
 	  }
 	  assert(insert);
 
-	}
-      }
+	} // end of stubs loop in each InputLink
+
+    auto IL_indices = stubinputs_[j]->getASPhiIndices();
+    asindex_count[0] += IL_indices[0];
+    asindex_count[1] += IL_indices[1];
+    asindex_count[2] += IL_indices[2];
+    asindex_count[3] += IL_indices[3];
+    asindex_count[4] += IL_indices[4];
+    
+      } // end of InputLinks loop
     }
 
 
