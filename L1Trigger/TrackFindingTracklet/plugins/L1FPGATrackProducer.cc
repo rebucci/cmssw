@@ -673,6 +673,13 @@ void L1FPGATrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 
       // -----------------------------------------------------
 
+      // correct sign for stubs in negative endcap
+      float stub_bend = tempStubPtr->getTriggerBend();
+      float stub_pt = -1;
+      if (layer>999 && posStub.z()<0.0) {
+	//stub_pt=-stub_pt;
+	stub_bend=-stub_bend;
+      }
 
       if (irphi.size()!=0) {
       	strip=irphi[0];
@@ -683,7 +690,7 @@ void L1FPGATrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
       }
       else {
 	if (doMyDebug) std::cout << "... add this stub to the event!" << std::endl;
-	if (ev.addStub(layer,ladder,module,strip,eventID,simtrackID,-1,tempStubPtr->getTriggerBend(),
+	if (ev.addStub(layer,ladder,module,strip,eventID,simtrackID,stub_pt,stub_bend,
 		       posStub.x(),posStub.y(),posStub.z(),
 		       innerStack,irphi,iz,iladder,imodule,isPSmodule,isFlipped)) {
 	  
