@@ -44,13 +44,15 @@ class TTStubAlgorithm_cbc3 : public TTStubAlgorithm< T >
     }
 
     /// Destructor
-    ~TTStubAlgorithm_cbc3(){}
+    ~TTStubAlgorithm_cbc3() override{}
 
     /// Matching operations
     void PatternHitCorrelation( bool &aConfirmation,
                                 int &aDisplacement,
                                 int &anOffset,
-                                const TTStub< T > &aTTStub ) const;
+				float &anROffset,
+				float &anHardBend,
+                                const TTStub< T > &aTTStub ) const override;
 
 }; /// Close class
 
@@ -66,6 +68,8 @@ template< >
 void TTStubAlgorithm_cbc3< Ref_Phase2TrackerDigi_ >::PatternHitCorrelation( bool &aConfirmation,
                                                                     int &aDisplacement,
                                                                     int &anOffset,
+								    float &anROffset,
+								    float &anHardBend,
                                                                     const TTStub< Ref_Phase2TrackerDigi_ > &aTTStub ) const;
 
 /*! \class   ES_TTStubAlgorithm_cbc3
@@ -95,7 +99,7 @@ class ES_TTStubAlgorithm_cbc3 : public edm::ESProducer
     }
 
     /// Destructor
-    virtual ~ES_TTStubAlgorithm_cbc3(){}
+    ~ES_TTStubAlgorithm_cbc3() override{}
 
     /// Implement the producer
     std::shared_ptr< TTStubAlgorithm< T > > produce( const TTStubAlgorithmRecord & record )
