@@ -64,7 +64,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_pdgid=0, int TP_select_eventi
   float L1Tk_maxChi2    = 999999;
   float L1Tk_maxChi2dof = 999999.;
 
-  bool doLooseMatch      = false;    //MC truth matching
+  bool doLooseMatch      = true;    //MC truth matching
 
   bool doDetailedPlots   = false;    //Full set of plots for all pT and eta ranges
   bool doResolutionPlots = false;    //Advanced resolution plots including confidence 
@@ -94,7 +94,7 @@ void L1TrackNtuplePlot(TString type, int TP_select_pdgid=0, int TP_select_eventi
 
   // ---------------------------------------------------------------------------------------------------------
   // Read Ntuples
-  TString srcDIR = "/hadoop/store/user/rbucci/Datasets_Emulator_20180420/";
+  TString srcDIR = "/hadoop/store/user/rbucci/Datasets_Emulator_20180426/";
 
   TChain* tree = new TChain("L1TrackNtuple/eventTree");
   tree->Add(srcDIR+type+".root");

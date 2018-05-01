@@ -27,7 +27,6 @@ public:
     phimin_=phimin;
     phimax_=phimax;
 
-    indexphi_.reserve(5);
     indexphi_ = {0,0,0,0,0};
   }
 
@@ -77,14 +76,17 @@ public:
 	    (layer==6&&subnamelayer=="L6"))){
 	return;
       }
-      
-      if (stub.phiregion().value()==0) asindex = indexphi_[0]++;
-      else if (stub.phiregion().value()==1) asindex = indexphi_[1]++;
-      else if (stub.phiregion().value()==2) asindex = indexphi_[2]++;
-      else if (stub.phiregion().value()==3) asindex = indexphi_[3]++;
-      else {
-        // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
-        asindex = indexphi_[4]++;
+
+      if ((subname.substr(5,2)=="ZP"&&stub.z().value()>0)||
+          (subname.substr(5,2)=="ZM"&&stub.z().value()<=0)) {
+        if (stub.phiregion().value()==0) asindex = indexphi_[0]++;
+        else if (stub.phiregion().value()==1) asindex = indexphi_[1]++;
+        else if (stub.phiregion().value()==2) asindex = indexphi_[2]++;
+        else if (stub.phiregion().value()==3) asindex = indexphi_[3]++;
+        else {
+          // Stub iphiRaw<4 or iphiRaw>27. It is used in TE but not ME, and is not stored in the AS memory filled by VMRouterME. Use an extra index to keep track of them.
+          asindex = indexphi_[4]++;
+        }
       }
       
       if (layer==2&&subnamelayer=="L2"&&(subname=="PHIW_ZP"||subname=="PHIQ_ZP")) {
@@ -855,6 +857,8 @@ public:
       delete stubs_[i].second;
     }
     stubs_.clear();
+    indexphi_.clear();
+    indexphi_.resize(5,0);
   }
 
 

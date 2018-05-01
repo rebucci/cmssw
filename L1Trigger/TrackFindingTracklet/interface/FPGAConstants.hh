@@ -233,7 +233,7 @@ static const double routerPSdisk=65.0;
 //static int NMAXstub  = 250;
 //static int NMAXroute = 250;
 
-static unsigned int MAXOFFSET=0; //set to 0 for regular truncation
+static unsigned int MAXOFFSET=10000; //set to 0 for regular truncation. set to 10000 for no truncation (default)
 
 static unsigned int MAXSTUBSLINK = 36 + MAXOFFSET; //Max stubs per link
 static unsigned int MAXLAYERROUTER = 36 + MAXOFFSET; //Max stubs handled by layer router

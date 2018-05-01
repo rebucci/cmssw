@@ -3,16 +3,16 @@ import datetime
 from lobster import cmssw
 from lobster.core import AdvancedOptions, Category, Config, StorageConfiguration, Workflow
 
-project = 'Emulator_truncON_'
-version = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+project = 'Emulator_truncOFF_20180426'
+#version = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 
 storage = StorageConfiguration(
     output=[
-        "hdfs://eddie.crc.nd.edu:19000/store/user/$USER/" + project + version,
-        "file:///hadoop/store/user/$USER/" + project + version,
-        "root://deepthought.crc.nd.edu//store/user/$USER/" + project + version,
-        "gsiftp://T3_US_NotreDame/store/user/$USER/" + project + version,
-        "srm://T3_US_NotreDame/store/user/$USER/" + project + version
+        "hdfs://eddie.crc.nd.edu:19000/store/user/$USER/" + project,
+        "file:///hadoop/store/user/$USER/" + project,
+        "root://deepthought.crc.nd.edu//store/user/$USER/" + project,
+        "gsiftp://T3_US_NotreDame/store/user/$USER/" + project,
+        "srm://T3_US_NotreDame/store/user/$USER/" + project,
     ]
 )
 
@@ -28,8 +28,8 @@ TTBar_PU0 = Workflow(
     category=Category(
         name='ttbar0',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -49,8 +49,8 @@ TTBar_PU140 = Workflow(
     category=Category(
         name='ttbar140',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -70,8 +70,8 @@ TTBar_PU200 = Workflow(
     category=Category(
         name='ttbar200',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -91,8 +91,8 @@ QCD_PU0 = Workflow(
     category=Category(
         name='qcd0',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -112,8 +112,8 @@ QCD_PU140 = Workflow(
     category=Category(
         name='qcd140',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -133,8 +133,8 @@ QCD_PU200 = Workflow(
     category=Category(
         name='qcd200',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -154,8 +154,8 @@ SingleMu_PU0 = Workflow(
     category=Category(
         name='mu0',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -175,8 +175,8 @@ SingleMu_PU140 = Workflow(
     category=Category(
         name='mu140',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -196,8 +196,8 @@ SingleMu_PU200 = Workflow(
     category=Category(
         name='mu200',
         cores=1,
-        memory=4400,
-        disk=12000,
+        memory=8000,
+        disk=32000,
     ),
     command='cmsRun L1TrackNtupleMaker_cfg.py',
     publish_label='test',
@@ -208,12 +208,14 @@ SingleMu_PU200 = Workflow(
 workflows.append(SingleMu_PU200)
 
 config = Config(
-    workdir='/tmpscratch/users/$USER/' + project + version,
-    plotdir='/afs/crc.nd.edu/user/r/rbucci/www/lobster/' + project + version,
+    workdir='/tmpscratch/users/$USER/' + project,
+    plotdir='/afs/crc.nd.edu/user/r/rbucci/www/lobster/' + project,
     storage=storage,
     workflows=workflows,
     advanced=AdvancedOptions(
         bad_exit_codes=[127, 160],
-        log_level=1
+        log_level=1,
+        threshold_for_failure=50,
+        threshold_for_skipping=50,
     )
 )
