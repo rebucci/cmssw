@@ -715,7 +715,7 @@ public:
 	       <<endl;
 	  cout << "DUMPMATCHDISK2 : "<<disk<<" "
 	       <<tracklet->fpgaphiprojdisk(disk).value()*kphiproj123<<" "
-	       <<iz*kzdisk<<" "
+	       <<iz*kz<<" "
 	       <<iphicorr*kphiproj123<<" ("<<iphicorr<<") "
 	       <<iphi*kphiproj123<<" | "
 	       <<tracklet->fpgarprojdisk(disk).value()*krprojshiftdisk<<" "

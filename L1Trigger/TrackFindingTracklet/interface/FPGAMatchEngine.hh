@@ -3,6 +3,7 @@
 #define FPGAMATCHENGINE_H
 
 #include "FPGAProcessBase.hh"
+#include "FPGATrackletCalculator.hh"
 
 using namespace std;
 

@@ -91,6 +91,8 @@
 #include "L1Trigger/TrackFindingTracklet/interface/FPGASector.hh"
 #include "L1Trigger/TrackFindingTracklet/interface/FPGAWord.hh"
 #include "L1Trigger/TrackFindingTracklet/interface/FPGATimer.hh"
+#include "L1Trigger/TrackFindingTracklet/interface/FPGATrackletCalculator.hh"
+#include "L1Trigger/TrackFindingTracklet/interface/IMATH_TrackletCalculator.hh"
 
 ////////////////
 // PHYSICS TOOLS
@@ -102,6 +104,8 @@
 
 //#include "SLHCUpgradeSimulations/L1TrackTrigger/interface/StubPtConsistency.h"
 
+#include "L1Trigger/TrackFindingTracklet/interface/StubKiller.h"
+
 //////////////
 // STD HEADERS
 #include <memory>
@@ -112,6 +116,12 @@
 //////////////
 // NAMESPACES
 using namespace edm;
+
+
+#ifdef IMATH_ROOT
+TFile* var_base::h_file_=0;
+bool   var_base::use_root = false;
+#endif
 
 
 //////////////////////////////
@@ -239,6 +249,29 @@ L1FPGATrackProducer::L1FPGATrackProducer(edm::ParameterSet const& iConfig) :
   processingModulesFile = iConfig.getParameter<edm::FileInPath> ("processingModulesFile");
   memoryModulesFile = iConfig.getParameter<edm::FileInPath> ("memoryModulesFile");
   wiresFile = iConfig.getParameter<edm::FileInPath> ("wiresFile");
+
+  // --------------------------------------------------------------------------------
+  // get all constants 
+  // --------------------------------------------------------------------------------
+  
+  krinvpars = FPGATrackletCalculator::ITC_L1L2.rinv_final.get_K();
+  kphi0pars = FPGATrackletCalculator::ITC_L1L2.phi0_final.get_K();
+  ktpars    = FPGATrackletCalculator::ITC_L1L2.t_final.get_K();
+  kz0pars   = FPGATrackletCalculator::ITC_L1L2.z0_final.get_K();
+
+  krdisk = kr;
+  kzpars = kz;  
+  krprojshiftdisk = FPGATrackletCalculator::ITC_L1L2.rD_0_final.get_K();
+
+  //those can be made more transparent...
+  kphiproj123=kphi0pars*4;
+  kphiproj456=kphi0pars/2;
+  kzproj=kz;
+  kphider=krinvpars*(1<<phiderbitshift);
+  kzder=ktpars*(1<<zderbitshift);
+  kphiprojdisk=kphi0pars*4.0;
+  krprojderdiskshift=krprojderdisk*(1<<rderdiskbitshift);
+  krprojderdisk=(1.0/ktpars)/(1<<t2bits);
 
 
   eventnum=0;
@@ -401,10 +434,11 @@ void L1FPGATrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
   iSetup.get<TrackerTopologyRcd>().get(tTopoHandle);
   iSetup.get<TrackerDigiGeometryRecord>().get(tGeomHandle);
 
+  eventnum++;
   SLHCEvent ev;
+  ev.setEventNum(eventnum);
   ev.setIPx(bsPosition.x());
   ev.setIPy(bsPosition.y());
-  eventnum++;
 
 
   ///////////////////
@@ -423,6 +457,14 @@ void L1FPGATrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
 
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+
+  // ------------------------------------------------------------------------------------------
+  // check killing stubs for stress test
+  
+  StubKiller* my_stubkiller = new StubKiller();
+  my_stubkiller->initialise(1, tTopo, theTrackerGeom);
+  
+  // ------------------------------------------------------------------------------------------
 
 
   ////////////////////////
@@ -685,9 +727,23 @@ void L1FPGATrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSe
       	strip=irphi[0];
       }
 
+      // ------------------------------------------------------------------------------------------
+      // check killing stubs for stress test
+
+      const TTStub<Ref_Phase2TrackerDigi_> *mystub = &(*tempStubPtr);
+      bool killthis = my_stubkiller->killStub(mystub);
+
+      // ------------------------------------------------------------------------------------------
+
+
       if (tempStubPtr->getTriggerDisplacement() > 100.) {
 	if (doMyDebug) std::cout << "... if FE inefficiencies calculated, this stub is thrown out! " << endl;
       }
+      /*
+      else if (killthis) {
+	if (doMyDebug) std::cout << "killing this stub!" << std::endl;
+      }
+      */
       else {
 	if (doMyDebug) std::cout << "... add this stub to the event!" << std::endl;
 	if (ev.addStub(layer,ladder,module,strip,eventID,simtrackID,stub_pt,stub_bend,

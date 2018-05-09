@@ -94,6 +94,12 @@
 
 //#include "SLHCUpgradeSimulations/L1TrackTrigger/interface/StubPtConsistency.h"
 
+#include "L1Trigger/TrackFindingTracklet/interface/StubKiller.h"
+
+//#include "DataFormats/JetReco/interface/GenJetCollection.h"
+//#include "DataFormats/JetReco/interface/GenJet.h"
+
+
 //////////////
 // STD HEADERS
 #include <memory>
@@ -180,6 +186,10 @@ private:
   edm::EDGetTokenT< std::vector< TrackingParticle > > TrackingParticleToken_;
   edm::EDGetTokenT< std::vector< TrackingVertex > > TrackingVertexToken_;
 
+  //edm::InputTag GenJetInputTag;
+  //edm::EDGetTokenT< std::vector<reco::GenJet> > GenJetToken_;
+
+
   /// ///////////////// ///
   /// MANDATORY METHODS ///
   virtual void beginRun( const edm::Run& run, const edm::EventSetup& iSetup );
@@ -208,7 +218,10 @@ L1TrackProducer::L1TrackProducer(edm::ParameterSet const& iConfig) :
   ttClusterMCTruthToken_(consumes< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > >(MCTruthClusterInputTag)),
   ttStubMCTruthToken_(consumes< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > >(MCTruthStubInputTag)),
   TrackingParticleToken_(consumes< std::vector< TrackingParticle > >(TrackingParticleInputTag)),
-  TrackingVertexToken_(consumes< std::vector< TrackingVertex > >(TrackingVertexInputTag))
+  TrackingVertexToken_(consumes< std::vector< TrackingVertex > >(TrackingVertexInputTag))//,
+
+  //GenJetInputTag(iConfig.getParameter<edm::InputTag>("GenJetInputTag")),
+  //GenJetToken_ (consumes< std::vector< reco::GenJet > >(GenJetInputTag))
 
 {
 
@@ -299,10 +312,11 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   iSetup.get<TrackerTopologyRcd>().get(tTopoHandle);
   iSetup.get<TrackerDigiGeometryRecord>().get(tGeomHandle);
 
+  eventnum++;
   SLHCEvent ev;
+  ev.setEventNum(eventnum);
   ev.setIPx(bsPosition.x());
   ev.setIPy(bsPosition.y());
-  eventnum++;
 
 
   ///////////////////
@@ -321,6 +335,33 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
+
+
+  // ------------------------------------------------------------------------------------------
+  // check killing stubs for stress test
+  
+  StubKiller* my_stubkiller = new StubKiller();
+  my_stubkiller->initialise(1, tTopo, theTrackerGeom);
+  
+  // ------------------------------------------------------------------------------------------
+
+
+  /*
+  edm::Handle< std::vector< reco::GenJet > > GenJetHandle;
+  iEvent.getByToken(GenJetToken_, GenJetHandle);
+
+  bool keepevent = true;
+  if (GenJetHandle.isValid()) {
+    int ij=0;
+    std::vector<reco::GenJet>::const_iterator iterGenJet;
+    for ( iterGenJet = GenJetHandle->begin(); iterGenJet != GenJetHandle->end(); ++iterGenJet ) {
+      reco::GenJet myJet = reco::GenJet(*iterGenJet);
+      ij++;
+      //cout << "myJet " << ij << " pt = " << myJet.pt() << endl;
+      if (myJet.pt() > 500) keepevent = false;
+    }
+  }
+  */
 
 
   ////////////////////////
@@ -344,12 +385,17 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   int this_tp = 0;
   std::vector< TrackingParticle >::const_iterator iterTP;
   for (iterTP = TrackingParticleHandle->begin(); iterTP != TrackingParticleHandle->end(); ++iterTP) {
+
+    //if (!keepevent) break;
  
     edm::Ptr< TrackingParticle > tp_ptr(TrackingParticleHandle, this_tp);
     this_tp++;
 
     // only keep TPs producing a cluster
-    if (MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).size() < 1) continue;
+    if (MCTruthTTClusterHandle->findTTClusterRefs(tp_ptr).size() < 1) {
+      if (doMyDebug) std::cout << "TP didn't produce a cluster" << std::endl;
+      continue;
+    }
 
     if (iterTP->g4Tracks().size()==0) {
       if (doMyDebug) cout << "TP has no g4Track" << endl;
@@ -392,6 +438,8 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   
   for (auto gd=theTrackerGeom->dets().begin(); gd != theTrackerGeom->dets().end(); gd++) {
     
+    //if (!keepevent) break;
+
     DetId detid = (*gd)->geographicalId();
     if(detid.subdetId()!=StripSubdetector::TOB && detid.subdetId()!=StripSubdetector::TID ) continue; // only run on OT
     if(!tTopo->isLower(detid) ) continue; // loop on the stacks: choose the lower arbitrarily
@@ -584,9 +632,23 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
       	strip=irphi[0];
       }
 
+      // ------------------------------------------------------------------------------------------
+      // check killing stubs for stress test
+
+      const TTStub<Ref_Phase2TrackerDigi_> *mystub = &(*tempStubPtr);
+      bool killthis = my_stubkiller->killStub(mystub);
+
+      // ------------------------------------------------------------------------------------------
+
+
       if (tempStubPtr->getTriggerDisplacement() > 100.) {
-	if (doMyDebug) std::cout << "... if FE inefficiencies calculated, this stub is thrown out! " << endl;
+	if (doMyDebug) std::cout << "... if FE inefficiencies calculated, this stub is thrown out! " << std::endl;
       }
+      /*
+      else if (killthis) {
+	if (doMyDebug) std::cout << "killing this stub!" << std::endl;
+      }
+      */
       else {
 	if (doMyDebug) std::cout << "... add this stub to the event!" << std::endl;
 	if (ev.addStub(layer,ladder,module,strip,eventID,simtrackID,stub_pt,stub_bend,
@@ -597,6 +659,7 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  stubMap[lastStub]=tempStubPtr;
 	}
       }
+
     }
   }
   
@@ -605,6 +668,7 @@ void L1TrackProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
   //////////////////////////
   // NOW RUN THE L1 tracking
   
+  //if (asciiEventOutName_!="" && keepevent) {
   if (asciiEventOutName_!="") {
     ev.write(asciiEventOut_);
   }

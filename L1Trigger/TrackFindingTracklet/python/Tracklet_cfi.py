@@ -10,6 +10,7 @@ TTTracksFromTracklet = cms.EDProducer("L1TrackProducer",
                                       TrackingVertexInputTag = cms.InputTag("mix", "MergedTrackTruth"),
                                       BeamSpotSource = cms.InputTag("offlineBeamSpot"),
                                       asciiFileName = cms.untracked.string(""),
+                                      #GenJetInputTag = cms.InputTag("ak4GenJets", ""),
                                       trackerGeometryType  = cms.untracked.string("")  #tilted barrel is assumed, use "flat" if running on flat
     )
 

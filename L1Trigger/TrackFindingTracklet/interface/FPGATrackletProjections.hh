@@ -2,8 +2,8 @@
 #ifndef FPGATRACKLETPROJECTIONS_H
 #define FPGATRACKLETPROJECTIONS_H
 
-#include "FPGATracklet.hh"
 #include "FPGAMemoryBase.hh"
+#include "FPGATracklet.hh"
 
 using namespace std;
 

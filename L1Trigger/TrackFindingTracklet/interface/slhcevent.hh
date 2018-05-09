@@ -241,6 +241,8 @@ public:
   void setIPx(double x) { x_offset=x;}
   void setIPy(double y) { y_offset=y;}
 
+  void setEventNum(int eventnum) { eventnum_=eventnum; }
+
   void addL1SimTrack(int eventid,int trackid,int type,double pt,double eta,double phi,
 		     double vx,double vy,double vz){
 

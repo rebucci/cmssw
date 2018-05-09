@@ -774,7 +774,7 @@ public:
       }
       return r_.value()*kr*lr+rmean[layer_.value()];
     }
-    return r_.value()*krdisk+rmindisk;
+    return r_.value()*kr+rmindisk;
   }
 
   double zapprox() {

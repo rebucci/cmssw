@@ -646,7 +646,7 @@ public:
 	cout << "DUMPFITLINNEW2"<<" "<<j
 	     <<" "<<tracklet->fpgarinv().value()*krinvpars
 	     <<" + "<<((iMinvDt[0][j]*idelta[j]))*krinvpars/1024.0
-	     <<" "<<iMinvDt[0][j]*krinvparsdisk/kphiprojdisk/1024.0
+	     <<" "<<iMinvDt[0][j]*krinvpars/kphiprojdisk/1024.0
 	     <<" "<<idelta[j]*kphiproj123*rstub[j/2]*10000
 	     <<" "<<idelta[j]
 	     <<endl;
@@ -833,8 +833,12 @@ public:
 
     std::vector<FPGATracklet*> tmp;
 
+
+    
 	std::vector<unsigned int> indexArray;
 	for (unsigned int i=0;i<fullmatch.size();i++) {
+	  if(debug1 && fullmatch[i]->nMatches()!=0) cout<<"orderedMatches: "<<fullmatch[i]->getName()<<" "<< fullmatch[i]->nMatches()<<"\n";
+
 	  indexArray.push_back(0);
 	  for (unsigned int j=0;j<fullmatch[i]->nMatches();j++){
 	    assert(iSector_==fullmatch[i]->getFPGATracklet(j)->homeSector());
@@ -968,7 +972,9 @@ public:
 	  nMatches++;
 	}
       }
-      
+
+      if(debug1) cout<<getName()<<" : nMatches = "<<nMatches<<"\n";
+	
       if (nMatches>=2) {
 	trackFitNew(bestTracklet);
 	if (bestTracklet->fit()){

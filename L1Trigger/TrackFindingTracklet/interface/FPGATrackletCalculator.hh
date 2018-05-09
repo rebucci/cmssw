@@ -2,8 +2,12 @@
 #ifndef FPGATRACKLETCALCULATOR_H
 #define FPGATRACKLETCALCULATOR_H
 
+#include "IMATH_TrackletCalculator.hh"
+#include "IMATH_TrackletCalculatorDisk.hh"
+#include "IMATH_TrackletCalculatorOverlap.hh"
+
 #include "FPGAProcessBase.hh"
-#include "FPGAInverseTable.hh"
+#include "FPGATrackletProjections.hh"
 
 using namespace std;
 
@@ -202,41 +206,6 @@ public:
      zprojoverlap_[3]=zmeanD5;
    }
       
-   if (name_=="TC_D1L2A"||name_=="TC_D1L2B") {
-     invRTable_.initR(9,round_int((rmean[2]-rmean[1])/kr),idrinvbits,false);
-     return;
-   }
-
-   invTTable_.initT(12,1,28,true);
-   invTTableNeg_.initT(12,1,28,false);
-
-   if (layer_!=0){
-     //layer seeded
-     //     invRTable_.initR(9,round_int((rmean[layer_]-rmean[layer_-1])/kr),idrinvbits,false);
-// for Ed's math need 25
-     invRTable_.initR(9,round_int((rmean[layer_]-rmean[layer_-1])/kr),25,false);
-     int region = name_[10]-'0';
-     invTTable_.initT(10,2,28,(region>=3));
-     if (writeInvTable) {
-       string fname="InvRTable_"+name+".dat";     
-       invRTable_.write(fname);
-       fname="InvTTable_"+name+".dat";     
-       invTTable_.write(fname);
-     }
-   }
-   else if(name_[5] == 'D'){
-     //disk seeded
-     invRTable_.initR(9,0,23,true);
-     //bool pos = ((name_[3]=='D')||(name_[3]=='F'));
-     if (writeInvTable) {
-       string fname="InvRTable_"+name+".dat";     
-       invRTable_.write(fname);
-       fname="InvTTable_"+name+".dat";     
-       invTTable_.write(fname);
-     }
-     
-   }
-
   }
 
   void addOutputProjection(FPGATrackletProjections* &outputProj, FPGAMemoryBase* memory){
@@ -797,108 +766,14 @@ public:
 
   }
 
-
-  void ed_approxtracklet(double r1, double z1, double phi1,
-		      double r2, double z2, double phi2, double sigmaz,
-		      double &rinv, double &phi0,
-		      double &t, double &z0,
-		      double phiproj[4], double zproj[4], 
-		      double phider[4], double zder[4],
-		      double phiprojdisk[5], double rprojdisk[5], 
-		      double phiderdisk[5], double rderdisk[5]) {
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-    double deltaphi = 0;
-
-    if (phi1<0.0) phi1+=two_pi;
-    deltaphi=phi2-phi1;
-    if (deltaphi>0.5*two_pi) deltaphi-=two_pi;
-    if (deltaphi<-0.5*two_pi) deltaphi+=two_pi;
-    assert(fabs(deltaphi)<0.5*two_pi);
-    
-    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;
-    assert(phi1tmp>-1e-10);
-    double dr=r2-r1;
-    double dz=z2-z1;
-    double drinv=1.0/dr;
-    double delta0 = deltaphi*drinv;
-    double delta1 = r1 * delta0;
-    double delta2 = r2 * delta0;
-    double deltaZ = dz * drinv;
-    double a2 = 2-delta1*delta2;
-    rinv=-delta0*a2;
-    phi0=phi1tmp-delta1*(1-delta0*delta2*(r2+r1)/6.);
-    t= deltaZ*a2/2.;
-    z0=z1-r1*deltaZ;
-
-    // outapprox<<std::setprecision(4)<<outapprox_pt<<"\t"<<outapprox_eta<<"\t"<<outapprox_phi<<"\t"<<tmp_outapprox_phi<<"\t"<<outapprox_z0<<"\t"
-    // 	     <<r1<<"\t"<<z1<<"\t"<<r2<<"\t"<<z2<<"\t"
-    // 	     <<rinv<<"\t"<<phi0<<"\t"<<t<<"\t"<<z0<<"\t";
-
-    //calculate projection
-    for (int i=0;i<4;i++) {
-      // double tmp1,tmp2, tmp3, tmp4;
-      // exactproj(rproj_[i], outapprox_rinv, tmp_outapprox_phi, outapprox_t, outapprox_z0,
-      // 		 tmp1,tmp2,tmp3,tmp4);
-      ed_approxproj(rproj_[i],rinv,phi0,t,z0,
-		 phiproj[i],zproj[i],phider[i],zder[i]);
-
-      // outapprox<<setprecision(4)<<asin(sin(phiproj[i]-tmp1))<<"\t"<<zproj[i]-tmp2<<"\t"<<phider[i]-tmp3<<"\t"<<zder[i]-tmp4<<"\t" ;
-
-      if (writeNeighborProj) {
-	static ofstream out1("neighborproj.txt");
-	if (fabs(z0)<15.0&&fabs(rinv)<0.0057) {
-	  double phipr=phiproj[i];
-	  if (phipr>0.5*two_pi) phipr-=two_pi;
-	  if (phipr<-0.5*two_pi) phipr+=two_pi;
-	  if ((fabs(zproj[i])<270.0)&&(phipr<(phimax_-phimin_)/6)){
-	    out1<<layer_<<" -1 "<<phipr<<endl;
-	  } else  if ((fabs(zproj[i])<270.0)&&(phipr>7.0*(phimax_-phimin_)/6)){
-	    out1<<layer_<<" +1 "<<phipr<<endl;
-	  } else if (fabs(zproj[i])<270.0){
-	    out1<<layer_<<" 0 "<<phipr<<endl;
-	  }
-	}
-      }
-    }
-    
-
-    for (int i=0;i<5;i++) {
-      //int sign=1;
-      //if (t<0) sign=-1;
-      // double tmp1,tmp2, tmp3, tmp4;
-      // exactprojdisk(sign*zmean[i], outapprox_rinv, tmp_outapprox_phi, outapprox_t, outapprox_z0,
-      // 		     tmp1,tmp2,tmp3,tmp4);
-      ed_approxprojdisk(zmean[i],rinv,phi0,t,z0,
-		     phiprojdisk[i],rprojdisk[i],phiderdisk[i],rderdisk[i]);
-
-      // outapprox<<setprecision(4)<<asin(sin(phiprojdisk[i]-tmp1))<<"\t"<<rprojdisk[i]-tmp2<<"\t"<<phiderdisk[i]-tmp3<<"\t"<<rderdisk[i]-tmp4<<"\t" ;
-      //cout << "DUMPDISKPROJ1: "<<i<<" "<<rprojdisk[i]
-      //	   <<" t="<<t<<" z0="<<z0<<" zdisk="<<zmean[i]<<endl;
-
-    }
-    
-    // outapprox<<"\n";
-
-  }
-
-
-
-  void approxtracklet(double r1, double z1, double phi1,
-		      double r2, double z2, double phi2, double sigmaz,
-		      double &rinv, double &phi0,
-		      double &t, double &z0,
-		      double phiproj[4], double zproj[4], 
-		      double phider[4], double zder[4],
-		      double phiprojdisk[5], double rprojdisk[5], 
-		      double phiderdisk[5], double rderdisk[5]) {
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-
+  void exacttrackletOverlap(double r1, double z1, double phi1,
+			    double r2, double z2, double phi2, double sigmaz,
+			    double& rinv, double& phi0,
+			    double& t, double& z0,
+			    double phiprojLayer[3], double zprojLayer[3], 
+			    double phiderLayer[3], double zderLayer[3],
+			    double phiproj[3], double rproj[3], 
+			    double phider[3], double rder[3]) {
 
     double deltaphi=phi1-phi2;
 
@@ -906,893 +781,67 @@ public:
     if (deltaphi<-0.5*two_pi) deltaphi+=two_pi;
     assert(fabs(deltaphi)<0.5*two_pi);
 
-    if (phi1<0.0) phi1+=two_pi;
-    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;
-    //cout << "phi1 phimin_ phimax_:"<<phi1<<" "<<phimin_<<" "<<phimax_<<endl;
-    assert(phi1tmp>-1e-10);
+    if (sigmaz<-10.0) {
+      cout << "Negative sigmaz"<<endl;
+    }
 
-    double dr=r2-r1;
-    double dz=z1-z2;
-    double drinv=1.0/dr;
-    double t2=deltaphi*drinv;
-    double delta=0.5*r1*r2*t2*t2;//*(1+deltaphi*deltaphi/12.0);
-    double t5=1.0-delta+1.5*delta*delta;//-2.5*delta*delta*delta;
-    double deltainv=t5*drinv;
-    rinv=2.0*deltaphi*deltainv;//*(1-deltaphi*deltaphi/6.0);
-    t=-dz*deltainv;//*(1.0-deltaphi*deltaphi/6.0); 
-    double t7=0.5*r1*rinv;
-    double t9=1+t7*t7/6.0;//+3.0*t7*t7*t7*t7/40.0;
-    phi0=phi1tmp+t7*t9;
-    double t12=t*r1*t9;
-    z0=z1-t12;
+    double dist=sqrt(r2*r2+r1*r1-2*r1*r2*cos(deltaphi));
+    
+    rinv=2*sin(deltaphi)/dist;
+
+    if (r1>r2) rinv=-rinv;
+
+    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;    
+
+    //cout << "phi1 phi2 phi1tmp : "<<phi1<<" "<<phi2<<" "<<phi1tmp<<endl;
+
+    phi0=phi1tmp+asin(0.5*r1*rinv);
+    
+    if (phi0>0.5*two_pi) phi0-=two_pi;
+    if (phi0<-0.5*two_pi) phi0+=two_pi;
+    if (!(fabs(phi0)<0.5*two_pi)) {
+      cout << "phi1tmp r1 rinv phi0 deltaphi dist: "
+	   <<phi1tmp<<" "<<r1<<" "<<rinv<<" "<<phi0
+	   <<" "<<deltaphi<<" "<<dist<<endl;
+      exit(1);
+    }
+    
+    double rhopsi1=2*asin(0.5*r1*rinv)/rinv;
+	    
+    double rhopsi2=2*asin(0.5*r2*rinv)/rinv;
+    
+    t=(z1-z2)/(rhopsi1-rhopsi2);
+    
+    z0=z1-t*rhopsi1;
 
 
-    if (layer_==1) {
+    if (disk_==1) {
       if (dumppars) {
 	cout << "------------------------------------------------"<<endl;
-	cout << "DUMPPARS1:" 
-	     << -deltaphi
-	     <<" "<<z2-z1
-	     <<" "<<r2-r1
-	     <<" "<<1.0/(r2-r1)
-	     <<" "<<delta
-	     <<" "<<t5
-	     <<" "<<deltainv
-	     <<" | "<<t
-	     <<" | "<<r1
-	     <<" "<<t7
-	     <<" | "<<t9
-	     <<" "<<phi1tmp
-	     <<" "<<phi0
-	     <<" * "<<t12
-	     <<" "<<z0
+	cout << "DUMPPARS0:" 
+	     <<" dz= "<<z2-z1
+	     <<" rinv= "<<rinv
+	     <<" phi0= "<<phi0
+	     <<" t= "<<t
+	     <<" z0= "<<z0
 	     <<endl;
       }
-      /*
-
-      cout << "Approx tracklet: dphi="<<-deltaphi<<" dz="<<z2-z1
-	   << " dr="<<r2-r1<<" drinv="<<1.0/(r2-r1)
-	   <<" delta="<<delta
-	   <<" t5="<<t5
-           <<" deltainv="<<deltainv
-	   <<" rinv="<<rinv
-	   <<" t="<<t
-	   <<" r1abs="<<r1
-	   <<" t7="<<t7
-	   <<" t9="<<t9
-	   <<" phi1="<<phi1tmp
-	   <<" ***phi0="<<phi0
-	   <<" t12="<<t12
-	   <<" z1="<<z1
-	   <<" z0="<<z0
-	   <<endl;
-
-    */
-
     }
-   
 
-    //calculate projection
 
     for (int i=0;i<4;i++) {
-      approxproj(rproj_[i],rinv,phi0,t,z0,
-		 phiproj[i],zproj[i],phider[i],zder[i]);
-      if (writeNeighborProj) {
-	static ofstream out1("neighborproj.txt");
-	if (fabs(z0)<15.0&&fabs(rinv)<0.0057) {
-	  double phipr=phiproj[i];
-	  if (phipr>0.5*two_pi) phipr-=two_pi;
-	  if (phipr<-0.5*two_pi) phipr+=two_pi;
-	  if ((fabs(zproj[i])<270.0)&&(phipr<(phimax_-phimin_)/6)){
-	    out1<<layer_<<" -1 "<<phipr<<endl;
-	  } else  if ((fabs(zproj[i])<270.0)&&(phipr>7.0*(phimax_-phimin_)/6)){
-	    out1<<layer_<<" +1 "<<phipr<<endl;
-	  } else if (fabs(zproj[i])<270.0){
-	    out1<<layer_<<" 0 "<<phipr<<endl;
-	  }
-	}
-      }
-    }
-    
-
-    for (int i=0;i<5;i++) {
-      //int sign=1;
-      //if (t<0) sign=-1;
-      approxprojdisk(zmean[i],rinv,phi0,t,z0,
-		     phiprojdisk[i],rprojdisk[i],phiderdisk[i],rderdisk[i]);
-      //cout << "DUMPDISKPROJ1: "<<i<<" "<<rprojdisk[i]
-      //	   <<" t="<<t<<" z0="<<z0<<" zdisk="<<zmean[i]<<endl;
-
-    }
-
-  }
-
-  bool ed_binarytracklet(FPGAStub* innerFPGAStub, 
-			 FPGAStub* outerFPGAStub,
-			 double sigmaz,
-			 int& irinv, int& iphi0,
-			 int& it, int& iz0, bool validproj[4],
-			 int iphiproj[4], int izproj[4],
-			 int iphider[4], int izder[4],
-			 bool minusNeighbor[4], bool plusNeighbor[4],
-			 bool validprojdisk[5],
-			 int iphiprojdisk[5], int irprojdisk[5],
-			 int iphiderdisk[5], int irderdisk[5],
-			 bool minusNeighborDisk[5], bool plusNeighborDisk[5]){
-
-    if (sigmaz<-10.0) {
-      assert(0);
-      cout << "Negative sigmaz"<<endl;
-    }
-
-    int ir1=innerFPGAStub->ir();
-    int iphi1=innerFPGAStub->iphi();
-    int iz1=innerFPGAStub->iz();
-
-    int ir2=outerFPGAStub->ir();
-    int iphi2=outerFPGAStub->iphi();
-    int iz2=outerFPGAStub->iz();
-
-    //Simplify to work in common number of bits for all layers
-    if (layer_<4) iphi1<<=(nbitsphistubL456-nbitsphistubL123);
-    if (layer_<3) iphi2<<=(nbitsphistubL456-nbitsphistubL123);
-
-    if (layer_<4) ir1<<=(nbitsrL456-nbitsrL123);
-    if (layer_<3) ir2<<=(nbitsrL456-nbitsrL123);
-
-    if (layer_>3) iz1<<=(nbitszL123-nbitszL456);
-    if (layer_>2) iz2<<=(nbitszL123-nbitszL456);
-
-    int r1=ir1;
-    int phi1=iphi1;
-    int z1=iz1;
-
-    int r2=ir2;
-    int phi2=iphi2;
-    int z2=iz2;
-
-    //and now - the calculation
-
-    // inv_rho math:
-    long int dphi = phi2 - phi1;                 // unsigned=0, Nbits=17
-    long int dr = r2 - r1;                       // unsigned=0, Nbits=14
-    long int r1mean =  round_int(rmean[layer_-1]/kr);
-    long int r2mean =  round_int(rmean[layer_]/kr);
-    //long int dr12 = r2mean - r1mean;             // unsigned=0, Nbits=14
-    //long int drabs = dr + dr12;                  // unsigned=0, Nbits=12
-    //long int invdr = (1<<25)/drabs;              // unsigned=0, Nbits=17
-    //cout << "will calc. invdr dr = " <<dr<< endl;
-    long int invdr = invRTable_.lookup((dr&511));
-    //cout << "done calc. invdr" << endl;
-
-    long int delta_0 = (dphi * invdr)>>16;       // unsigned=0, Nbits=17
-    long int r1abs = r1 + r1mean;                // unsigned=0, Nbits=14
-    long int delta_1 = (delta_0 * r1abs)>>14;    // unsigned=0, Nbits=17
-    long int r2abs = r2 + r2mean;                // unsigned=0, Nbits=14
-    long int delta_2 = (delta_0 * r2abs)>>14;    // unsigned=0, Nbits=17
-    long int a2a = (delta_1 * delta_2)>>17;      // unsigned=0, Nbits=17
-    int factor=1466*(28.0/NSector)*(28.0/NSector);
-    long int a2mA = (a2a*factor)>>12;              // unsigned=0, Nbits=17
-    long int a2m = -1024 + a2mA;                 // unsigned=0, Nbits=12
-    long int inv_rho = (delta_0 * a2m)>>11;      // unsigned=0, Nbits=14
-
-    // phi0 math:
-    long int R = r1 + r2;                        // unsigned=0, Nbits=14
-    long int r12 = r2mean + r1mean;              // unsigned=0, Nbits=14
-    long int Rabs = R + r12;                     // unsigned=0, Nbits=15
-    long int R6 = (682 * Rabs)>>12;              // unsigned=0, Nbits=13
-    long int x4 = (delta_0 * R6)>>13;            // unsigned=0, Nbits=17
-    long int x6a = (delta_2 * x4)>>17;           // unsigned=0, Nbits=17
-    factor=1466*(28.0/NSector)*(28.0/NSector);
-    long int x6mA = (x6a*factor)>>12;              // unsigned=0, Nbits=17
-    long int x6m = -1024 + x6mA;                 // unsigned=0, Nbits=12
-    long int phi0a = (delta_1 * x6m)>>5;         // unsigned=0, Nbits=17
-    long int phi0s = phi1 + phi0a;               // unsigned=0, Nbits=18
-    long int phi0  = phi0s>>1;                   // unsigned=0, Nbits=18
-
-    // t math:
-    long int dz = z2 - z1;                       // unsigned=0, Nbits=11
-    long int delta_z = (dz * invdr)>>11;         // unsigned=0, Nbits=17
-    long int x3 = (delta_z)>>1;                  // unsigned=0, Nbits=16
-    long int a2 = -1 * a2m;                      // unsigned=0, Nbits=12
-    long int t = (x3 * a2+(1<<11))>>12;                  // unsigned=0, Nbits=14
-    // z0 math:
-    long int z0a = (delta_z * r1abs)>>13;        // undigned=0, Nbits=17
-    long int z0 = ((z1<<1) - z0a)>>1;               // undigned=0, Nbits=10
-    
-    //output tracklet parameters:
-    irinv = inv_rho; //K = 1.31423e+06
-    iphi0 = phi0;    //K = 219038
-    it = t;          //K = 854.817 
-    iz0 = z0;        //K = 17.8087
-
-    //cout <<"Tracklet pars rinv z0: "<<irinv*krinvpars<<" "<<iz0*kzpars<<endl;
-
-    //test
-    if (fabs(irinv*krinvpars)>rinvcut*2) {        // *2 is HACK associated with "irinv/=2" below, the irinv calculation should be corrected earlier!!
-      if (debug1) {
-	cout << "Failed tracklet pt cut in layer = "<<layer_<<endl;
-      }
-      //cout << "Failed tracklet pt cut in layer = "<<layer_<<" "<<0.5*irinv*krinvpars<<endl;
-      return false;
-    }
-
-    if (layer_==1&&fabs(iz0*kzpars)>z0cut) {
-      if (debug1) {
-	cout << "Failed tracklet z0 cut "<<iz0*kzpars<<" in layer 1"<<endl;
-      }
-      //cout << "Failed tracklet z0 cut "<<iz0*kzpars<<" in layer 1"<<endl;
-      return false;
-    }
-    if (layer_>=2&&fabs(iz0*kzpars)>1.5*z0cut) { 
-      if (debug1) {
-	cout << "Failed tracklet z0 cut "<<iz0*kzpars<<" in layer "<<layer_<<endl;
-      }      
-      return false;
-    }
-
-    //calculate projections
-    for (int i=0;i<4;i++) {
-      int rp = rproj_[i]/kr;
-      ed_binaryproj(rp,phi0s,it,iz0,validproj[i],
-		    iphiproj[i],izproj[i],iphider[i],izder[i],
-		    minusNeighbor[i], plusNeighbor[i],
-		    //extras
-		    delta_0, a2m, a2);
-      if (iphiproj[i]>=(1<<nbitsphistubL456)) iphiproj[i]=(1<<nbitsphistubL456)-2; //-2 not to hit atExtreme
+      exactprojdisk(zprojoverlap_[i],rinv,phi0,t,z0,
+		    phiproj[i],rproj[i],
+		    phider[i],rder[i]);
     }
 
 
-
-    long int x2 = (delta_0)>>1;  //to pass to disk proj
-    for (int i=0;i<5;i++) {
-      //int sign=1;
-      //if (it<0) sign=-1;
-      int zp = (zmean[i])/kz;
-      ed_binaryprojdisk(zp,phi0s,it,iz0,validprojdisk[i],
-			iphiprojdisk[i],irprojdisk[i],iphiderdisk[i],irderdisk[i],
-			minusNeighborDisk[i], plusNeighborDisk[i],
-			//extras
-			x2, a2/2);
-    }
-      
-      irinv/=2;
-      it/=2;
-      
-
-      
-    return true;
-  }
-
-  void ed_binaryproj(int rp, int iphi0, int it, int iz0, bool &validproj,
-		     int &iphiproj, int &izproj, int &iphider, int &izder,
-		     bool &minusNeighbor, bool &plusNeighbor,
-		     //plus some internal stuff from tracklet par calculations
-		     long int delta_0, long int a2m, long int a2
-		     ) 
-  {
-
-    //wire inputs
-    int phi0s = iphi0;
-    int t     = it;
-    int z0    = iz0;
-
-    // layer proj math:
-
-    long int x2 = (delta_0)>>1;                  // unsigned=0, Nbits=16
-    long int x1 = (x2 * rp)>>12;                 // unsigned=0, Nbits=17
-    long int x8 = (x1 * a2m)>>8;                 // unsigned=0, Nbits=17
-    long int x20 = (683 * x8)>>12;               // unsigned=0, Nbits=15
-    long int x12 = (x8 * x8)>>24;                // unsigned=0, Nbits=10
-    int factor=1466*(28.0/NSector)*(28.0/NSector);
-    long int x10A = (x12*factor)>>12;              // unsigned=0, Nbits=10
-    long int x10 = 1536 + x10A;                  // unsigned=0, Nbits=12
-    long int x22 = (x20 * x10)>>6;               // unsigned=0, Nbits=17
-    long int phiL = phi0s - x22;                 // unsigned=0, Nbits=19
-
-    
-    long int x11 = (rp * t)>>5;                  // unsigned=0, Nbits=17
-    long int x21 = (2731 * x11)>>12;              // unsigned=0, Nbits=15
-    long int x23 = (x21 * x10)>>15;              // unsigned=0, Nbits=15
-    long int zL = ((z0<<1) + x23+1)>>1;                      // unsigned=0, Nbits=12
-
-    long int der_phiL = (x2 * a2)>>18;           // unsigned=0, Nbits=6
-    
-    long int der_zL = t>>6;                      // unsigned=0, Nbits=7
-
-
-    //wire outputs
-    iphiproj = phiL;     //K = 438076         (if rp<60, 1/8);
-    izproj   = zL;       //K = 17.8087        (if rp>60, 1/16);
-    iphider  = der_phiL; // K =  10267.4
-    izder    = der_zL;   // K = 13.3565
-
-    
-
-    //from the original
-    minusNeighbor=false;
-    plusNeighbor=false;
-    validproj=true;
-    
-    if (iphiproj<(1<<nbitsphistubL456)/8) {
-      minusNeighbor=true;
-      iphiproj+=3*(1<<nbitsphistubL456)/4;
-    }
-    if (iphiproj>=7*(1<<nbitsphistubL456)/8) {
-      plusNeighbor=true;
-      iphiproj-=3*(1<<nbitsphistubL456)/4;
+    for (int i=0;i<1;i++) {
+      exactproj(rmean[i],rinv,phi0,t,z0,
+		    phiprojLayer[i],zprojLayer[i],
+		    phiderLayer[i],zderLayer[i]);
     }
 
-    // if(iphiproj>(1<<nbitsphistubL456)||iphiproj<0){
-    //   cout<<iphiproj<<"\t"<<outapprox_pt<<"\t"<<outapprox_eta<<"\t"<<minusNeighbor<<" "<<plusNeighbor<<"\n";
-    // }
-    //assert(iphiproj>=0);
-    //assert(iphiproj<(1<<nbitsphistubL456));
-
-    float rproj = rp * kr;
-    if (rproj<60.0) iphiproj>>=(nbitsphistubL456-nbitsphistubL123);
-
-    if (izproj<-(1<<(nbitszprojL123-1))) validproj=false;
-    if (izproj>=(1<<(nbitszprojL123-1))) validproj=false;
-
-    if (rproj>60.) {
-      izproj>>=(nbitszprojL123-nbitszprojL456);
-    }
-
-  }
-
-  void ed_binaryprojdisk(int zp, int iphi0, int it, int iz0,
-			 bool &validprojdisk,
-			 int &iphiproj, int &irproj, int &iphider, int &irder,
-			 bool &minusNeighbor, bool &plusNeighbor,
-			 //plus extra from tracklet pars calculation
-			 long int x2, long int a2 ) 
-  {
-
-    //wire inputs
-    int phi0s = iphi0;
-    int t    = it;
-    if(t==0) t = 1;
-    int z0 = iz0;
-    if (it<0) zp=-zp;
-
-    //cout << "rproj it iz = "<<it*ktpars<<" "<<(zp-z0)*kz<<" "<<((zp-z0)*kz)/(it*ktpars)<<endl;
-    // disk proj math:
-
-    long int x5 = zp - z0;                  // unsigned=0, Nbits=15
-    long int x7 = (x2 * a2)>>7;             // unsigned=0, Nbits=17
-    long int x13 = (x5 * x7)>>13;           // unsigned=0, Nbits=17
-    //long int invt = (1<<28)/t;              // unsigned=0, Nbits=20
-    int ntshift = layer_ > 0? 2 : 1;
-    long int invt = 0;
-    //cout << "will calculate invt"<<endl;
-    if (it>0) {
-      invt=invTTable_.lookup(((t+1)>>ntshift)&4095);
-      //invt=(1<<28)/(t);
-      //int invtshift=(1<<28)/(t);
-      //cout << "Pos t invt : "<<t<<" "<<invt<<endl;
-      //	   <<invtshift<<endl;
-    } else {
-      invt=invTTableNeg_.lookup(((t+1)>>ntshift)&4095);
-      //invt=(1<<28)/(t);
-      //cout << "Neg invtold invt : "<<invtold<<" "<<invt<<endl;
-    }    
-    long int x25 = (x13 * invt)>>18;        // unsigned=0, Nbits=17
-    long int phiDs = phi0s + (x25<<3);      // unsigned=0, Nbits=19
-    long int phiD = phiDs>>3;               // unsigned=0, Nbits=16
-
-    //long int x9 = (682 * x5)>>12;           // unsigned=0, Nbits=13
-    long int x9 = (21845 * x5)>>14;           // unsigned=0, Nbits=13
-    long int x24 = (x9 * invt)>>15;         // unsigned=0, Nbits=17
-    long int x26 = (x25 * x25)>>18;         // unsigned=0, Nbits=10
-    int factor=1466*(28.0/NSector)*(28.0/NSector);
-    long int x27A = (x26*factor)>>15;         // unsigned=0, Nbits=11
-    long int x27 = -384*8 + x27A;             // unsigned=0, Nbits=11
-    long int x27m = -1 * x27;               // unsigned=0, Nbits=11
-    long int rD = (x24 * x27m+(1<<15))>>16;          // unsigned=0, Nbits=12    ...Anders changed this...
-     
-      // cout << "rd x24 x27m x9 invt "<<rD<<" "<<x24<<" "<<x27m<<" "<<x9<<" "<<invt<<endl;
-	     
-    long int der_phiD = (invt * x7)>>29;    // unsigned=0, Nbits=6
-    long int der_rD = invt>>12;             // unsigned=0, Nbits=8 
-
-
-    //wire outputs
-    iphiproj = phiD; //K = 54759.5
-    irproj   = rD;   //K =  10.6667   
-    iphider  = der_phiD; // K = 12299.5
-    irder    = der_rD;   // K = 76.6667
-
-
-    //from original
-    minusNeighbor=false;
-    plusNeighbor=false;
-    if (iphiproj<(1<<nbitsphistubL123)/8) {
-      minusNeighbor=true;
-      iphiproj+=3*(1<<nbitsphistubL123)/4;
-    }
-    if (iphiproj>=7*(1<<nbitsphistubL123)/8) {
-      plusNeighbor=true;
-      iphiproj-=3*(1<<nbitsphistubL123)/4;
-    }
-
-    if (iphiproj<0) iphiproj=0;
-    if (iphiproj>=(1<<nbitsphistubL123)) iphiproj=(1<<nbitsphistubL123)-1;
-    if(iphider>=(1<<6)) iphider = (1<<6)-1;
-    if(iphider<-(1<<6)) iphider = -(1<<6);
-    if(irder>=(1<<7)) irder = (1<<7)-1;
-    if(irder<-(1<<7)) irder = -(1<<7);
-
-    validprojdisk=true;
-
-    if (irproj<=0) {
-      validprojdisk=false;
-      irproj=0;
-      iphiproj=0;
-      iphider=0;
-      irder=0;
-      return;      
-    }
-
-    assert(irproj>0);
-
-    if (irproj*krprojshiftdisk>120.0) {
-      validprojdisk=false;
-      irproj=0;
-      iphiproj=0;
-      iphider=0;
-      irder=0;
-      return;      
-    }
-    
-  }
-
-  bool ed_binarytrackletdisk(FPGAStub* innerFPGAStub, 
-			     FPGAStub* outerFPGAStub,
-			     double sigmaz,
-			     int& irinv, int& iphi0,
-			     int& it, int& iz0,
-			     bool validproj[6],
-			     int iphiprojLayer[6], int izprojLayer[6],
-			     int iphiderLayer[6], int izderLayer[6],
-			     bool minusNeighborLayer[6], bool plusNeighborLayer[6],
-			     bool validprojdisk[4],
-			     int iphiproj[4], int irproj[4],
-			     int iphider[4], int irder[4],
-			     bool minusNeighbor[4], bool plusNeighbor[4]){
-    
-    if (sigmaz<-10.0) {
-      assert(0);
-      cout << "Negative sigmaz"<<endl;
-    }
-
-    int ir1=innerFPGAStub->ir();
-    int iphi1=innerFPGAStub->iphi();
-    int iz1=innerFPGAStub->iz();
-
-    int ir2=outerFPGAStub->ir();
-    int iphi2=outerFPGAStub->iphi();
-    int iz2=outerFPGAStub->iz();
-
-    //To get same precission as for layers.
-    iphi1<<=(nbitsphistubL456-nbitsphistubL123);
-    iphi2<<=(nbitsphistubL456-nbitsphistubL123);
-
-    //parameters
-    int rmin  = round_int(rmindisk / kr);
-    int sign= (disk_>0)? 1: -1;
-    //int z2mean = sign*zmean[abs(disk_)]/kzdisk;
-    int z1mean = zmean[abs(disk_)-1]/kzdisk;
-    //cout << "kzdisk "<<kzdisk<<" "<<z1mean<<" "
-    //	 <<round_int(zmean[abs(disk_)-1]/kzdisk)<<endl;
-    z1mean*=sign;
-    //int dz12 = z2mean - z1mean;             // undigned=0, Nbits=15
-
-    int dz12=sign*round_int(8*(zmean[abs(disk_)]-zmean[abs(disk_)-1])/kzdisk);
-
-    //wire inputs
-    int phi2  = iphi2;
-    int phi1  = iphi1;
-    int r2    = ir2<<1;
-    int r1    = ir1<<1;
-    int z2rel = iz2;
-    int z1rel = iz1;
-
-    // inv_rho math:
-    long int dphi = phi2 - phi1;                 // unsigned=0, Nbits=17
-    long int dr = r2 - r1;                       // unsigned=0, Nbits=11
-    //    long int invdr = (1<<23)/dr;                 // unsigned=0, Nbits=17
-    //cout << "will calc. invdr 2" << endl;
-    long int invdr = invRTable_.lookup((dr&511));
-    if (dr>511) {
-      if (debug1) cout << "Table out of range" << endl;
-      invdr = (1<<23)/dr;
-    }
-    //cout << "done calc. invdr 2" << endl;
-
-    
-    long int delta_0 = (dphi * invdr)>>14;       // unsigned=0, Nbits=17
-    long int r1abs = r1 + rmin;                  // unsigned=0, Nbits=14
-    long int delta_1 = (delta_0 * r1abs)>>14;    // unsigned=0, Nbits=17
-    long int r2abs = r2 + rmin;                  // unsigned=0, Nbits=14
-    long int delta_2 = (delta_0 * r2abs)>>14;    // unsigned=0, Nbits=17
-    long int a2a = (delta_1 * delta_2)>>17;      // unsigned=0, Nbits=17
-    int factor=1466*(28.0/NSector)*(28.0/NSector);
-    long int a2mA = (a2a*factor)>>12;              // unsigned=0, Nbits=17
-    long int a2m = -1024 + a2mA;                 // unsigned=0, Nbits=12
-    long int inv_rho = (delta_0 * a2m)>>11;      // unsigned=0, Nbits=14
-
-    // phi0 math:
-    long int R = r1abs + r2abs;                  // unsigned=0, Nbits=15
-    long int R6 = (682 * R)>>12;                 // unsigned=0, Nbits=13
-    long int x4 = (delta_0 * R6)>>13;            // unsigned=0, Nbits=17
-    long int x6a = (delta_2 * x4)>>17;           // unsigned=0, Nbits=17
-    factor=1466*(28.0/NSector)*(28.0/NSector);
-    long int x6mA = (x6a*factor)>>12;              // unsigned=0, Nbits=17
-    long int x6m = -1024 + x6mA;                 // unsigned=0, Nbits=12
-    long int phi0a = (delta_1 * x6m)>>5;         // unsigned=0, Nbits=17
-    long int phi0s = phi1 + phi0a;               // unsigned=0, Nbits=18
-    long int phi0 = phi0s>>1;                    // unsigned=0, Nbits=18
-
-
-    // t math:
-    long int dzrel = z2rel - z1rel;              // unsigned=0, Nbits=15
-    long int dz = dzrel*8 + dz12;                  // unsigned=0, Nbits=11
-    long int delta_z = (dz * invdr)>>8;         // unsigned=0, Nbits=17
-    long int x3 = (delta_z)>>6;                  // unsigned=0, Nbits=16
-    long int a2 = -1 * a2m;                      // unsigned=0, Nbits=12
-    long int t = (x3 * a2)>>11;                  // unsigned=0, Nbits=14
-
-    // z0 math:
-    long int z1 = z1rel + z1mean;                // unsigned=0, Nbits=15
-    long int z0a = (delta_z * r1abs)>>18;        // unsigned=0, Nbits=15
-    long int z0 = z1 - z0a;                      // unsigned=0, Nbits=10
-
-	     
-    //output tracklet parameters:
-    irinv = inv_rho; //K = 1.31423e+06 
-    iphi0 = phi0;    //K = 219038
-    it = t;          //K = 854.817
-    iz0 = z0;        //K = 17.8087
-
-   
-    if (fabs(iz0*kzdisk)>z0cut) {
-      if (debug1) {
-	cout << "FPGATrackletCalculator::eb_binarytrackletdisk iz0 too large: "<<iz0*kzdisk<<endl;
-      }
-      return false;
-    }
-    //if (fabs(irinv*krinvparsdisk)>0.0057) {
-    if (fabs(irinv*krinvparsdisk)>rinvcut) {
-      if (debug1) {
-	cout << "FPGATrackletCalculator::eb_binarytrackletdisk irinv too large: "<<irinv*krinvparsdisk<<endl;
-      }
-
-      //cout << "DUMP irinv too large: "<<irinv*krinvparsdisk<<endl;
-      return false;
-    }
-
-    //calculate projections
-    for (int i=0;i<3;i++) {
-      int rp = rmean[i]/kr;
-      ed_binaryproj(rp,phi0s,it*2,iz0,validproj[i],
-		    iphiprojLayer[i],izprojLayer[i],iphiderLayer[i],izderLayer[i],
-		    minusNeighborLayer[i], plusNeighborLayer[i],
-		    //extras
-		    delta_0*2, a2m, a2);
-    }
-
-    long int x2 = (delta_0)>>1;  //to pass to disk proj
-    for (int i=0;i<3;i++) {
-      int zp = zproj_[i]/kz;
-      //cout << "rproj izp zp : "<<zp<<" "<<zp*kz<<" "<<zproj_[i]<<endl;
-      ed_binaryprojdisk(zp,phi0s,it,iz0,validprojdisk[i],
-			iphiproj[i],irproj[i],iphider[i],irder[i],
-			minusNeighbor[i], plusNeighbor[i],
-			//extras
-			x2, a2);
-    }
-
-    //it/=2; //Big hack.... should be corrected earlier, but need to change ed_binaryprojdisk
-    
-    return true;
-
- }
-
-
-  bool binarytracklet(FPGAStub* innerFPGAStub, 
-		      FPGAStub* outerFPGAStub,
-		      double sigmaz,
-		      int& irinv, int& iphi0,
-		      int& it, int& iz0, bool validproj[4],
-		      int iphiproj[4], int izproj[4],
-		      int iphider[4], int izder[4],
-		      bool minusNeighbor[4], bool plusNeighbor[4],
-		      bool validprojdisk[5],
-		      int iphiprojdisk[5], int irprojdisk[5],
-		      int iphiderdisk[5], int irderdisk[5],
-		      bool minusNeighborDisk[5], bool plusNeighborDisk[5]){
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-
-    //cout << "Layer : "<<layer_<<" "<<innerFPGAStub->str()
-    //	 <<" "<<outerFPGAStub->str()<<endl;
-
-    //double phi1tmp=innerFPGAStub.phitmp();
-    //double phimintmp=innerFPGAStub.phimin();
- 
-    int ir1=innerFPGAStub->ir();
-    int iphi1=innerFPGAStub->iphi();
-    int iz1=innerFPGAStub->iz();
-
-    int ir2=outerFPGAStub->ir();
-    int iphi2=outerFPGAStub->iphi();
-    int iz2=outerFPGAStub->iz();
-
-    int layer=layer_;
-
-    if (getName()=="TC_D1L2A"||getName()=="TC_D1L2B") {
-      layer=2;
-    }
-    
-    //Simplify to work in common number of bits for all layers
-    if (layer<4) iphi1<<=(nbitsphistubL456-nbitsphistubL123);
-    if (layer<3) iphi2<<=(nbitsphistubL456-nbitsphistubL123);
-
-    if (layer<4) ir1<<=(nbitsrL456-nbitsrL123);
-    if (layer<3) ir2<<=(nbitsrL456-nbitsrL123);
-
-    if (layer>3) iz1<<=(nbitszL123-nbitszL456);
-    if (layer>2) iz2<<=(nbitszL123-nbitszL456);
-
-
-    //Here is where the actual calculation starts
-    //Can the first few steps be combined?
-    //step 1
-    int ideltaphi=iphi2-iphi1; 
-    assert(abs(ideltaphi)<(1<<15));
-    //step 2
-    int idz=iz2-iz1;
-    assert(abs(idz)<(1<<11));
-    //step 3
-    int idrrel=ir2-ir1;
-    assert(abs(idrrel)<(1<<8));
-    //step 4
-    int ir1abs=round_int(rmean[layer-1]/kr)+ir1;
-    assert(ir1abs<(1<<13));
-    //step 5
-    int ir2abs=round_int(rmean[layer]/kr)+ir2;
-    assert(ir2abs<(1<<13));
-    //step 6
-    //    int idrinv=invTable_.lookup(idrrel&((1<<9)-1)); //Take top 9 bits
-    //cout << "will calc. invdr 3" << endl;
-    int idrinv=invRTable_.lookup(idrrel&((1<<9)-1));
-    //cout << "will calc. invdr 3" << endl;
-
-//Same result, but compatible with new LUTs
-    // int nmore = 25-idrinvbits;
-    // idrinv = idrinv>>nmore;
-
-    //int idr=round_int((rmean[layer_]-rmean[layer_-1])/kr)+idrrel; 
-    //int idrinvtmp=round_int((1<<idrinvbits)/(1.0*idr));  //not actually using idrinvbits since 
-                                     //idr is largish. Implement in lookup 
-                                     //table, just a fcn of ir1-ir2
-                                     //for a given layer
-    //cout << "idrrel idrinv= "<<idrrel<<" "<<(idrrel&((1<<9)-1))
-    //	 <<" "<<idrinv<<" "<<idrinvtmp<<endl;
-    //assert(idrinv==idrinvtmp);
-
-    assert(idrinv<(1<<12));  //11
-    //step 7
-    int it1=(ir1abs*ir2abs)>>it1shift;
-    assert(it1<(1<<2));
-    //step 8 
-    int it2=(idrinv*ideltaphi)>>it2shift;
-    assert(abs(it2)<(1<<10));
-    //step 9
-    int it3=(it2*it2)>>it3shift;
-    assert(it3<(1<<6));
-    assert(it3>=0);
-    //step 10
-    int idelta=0.5*it1*it3;
-    assert(idelta<(1<<6));
-    assert(idelta>=0);
-    //step 11
-    int ideltatmp=round_int(idelta*(kdelta*(1<<it4bits)));
-    assert(ideltatmp<(1<<6));
-    //step 12
-    int it4=(1<<it4bits)-3*(ideltatmp>>1);
-    assert(it4<(1<<(it4bits+1)));
-    //step 13    
-    int it5=(1<<it5bits)-((ideltatmp*it4)>>(2*it4bits-it5bits));
-    assert(it5<(1<<(it5bits+1)));
-    //step 14
-    int iDeltainv=(idrinv*it5)>>it5bits;  
-    assert(fabs(iDeltainv)<(1<<12));  //11
-    //step 15
-    assert(rinvbitshift>0);
-    irinv=-((ideltaphi*iDeltainv)>>(rinvbitshift-1)); //-1 because of *2 
-    assert(fabs(irinv)<(1<<14));
-    //step 16
-    it=(idz*iDeltainv)>>tbitshift;
-    assert(fabs(it)<(1<<12));
-    //step 17
-    assert(it7shift+irinvshift-rinvbitshift>=0);
-    int it7=((ir1abs>>1)*irinv)>>(it7shift+irinvshift-rinvbitshift);
-    assert(fabs(it7)<(1<<17));
-    //step 18
-    int it7tmp=(it7*it7tmpfactor)>>it7tmpshift;
-    assert(fabs(it7tmp)<(1<<7));
-    //step 19
-    int it9=(1<<it9bits)+((it7tmp*it7tmp)>>(2*it7tmpbits-2*it7tmpshift-2*it7shift-it9bits));
-    assert(fabs(it9)<(1<<13));
-    //step 20
-    int shifttmp1=it9bits+idrinvbits-irinvshift-it7shift-it7shift2;
-    iphi0=(iphi1+(((it7>>it7shift2)*it9)>>shifttmp1))>>phi0bitshift;
-    assert(fabs(iphi0)<(1<<17));  
-    //step 21
-    assert(it12shift+itshift-tbitshift>=0);
-    int it12=(it*ir1abs)>>(it12shift+itshift-tbitshift);
-    assert(fabs(it12)<(1<<18)); 
-    //step 22
-    int shifttmp2=it9bits+idrinvbits-itshift-it12shift;
-    iz0=(iz1-((it12*it9)>>shifttmp2))>>z0bitshift;
-    if (fabs(iz0)>(1<<10)) cout << "FPGATrackletCalculator Warning"<<endl;
-    assert(fabs(iz0)<(1<<10));
-
-
-    if (layer_==1) {
-      
-      if (dumppars) {
-	cout << "DUMPPARS2: " 
-	     << ideltaphi*kphi1
-	     <<" "<<idz*kz
-	     <<" "<<idrinv*kdrinv
-	     <<" "<<idelta*kdelta
-	     <<" "<<it5*kt5
-	     <<" "<<iDeltainv*kdrinv
-	     <<" | "<<it*ktpars
-	     <<" | "<<ir1abs*kr
-	     <<" "<<it7*kt7
-	     <<" | "<<((it7tmp*it7tmp)>>(2*it7tmpbits-2*it7tmpshift-2*it7shift-it9bits))*kt9
-	     <<" "<<it9*kt9
-	     <<" "<<iphi1*kphi1
-	     <<" "<<iphi0*kphi0pars
-	     <<" * "<<it12*kt12<<" ("<<it12<<")" 
-	     <<" "<<iz0*kzpars
-	     <<endl;
-      }
-	
-    }
-
-    if (writez0andrinv) {
-      static ofstream out("z0_and_rinv.txt");
-      out << layer <<" "<<iz0*kzpars<<" "<<irinv*krinvpars<<endl;
-    }
-
-    if (fabs(irinv*krinvpars)>rinvcut) {
-      //cout << "Failed tracklet pt cut"<<endl;
-      return false;
-    }
-    if (layer==1&&fabs(iz0*kzpars)>z0cut) { 
-      //cout << "Failed tracklet z0 cut "<<iz0*kzpars<<endl;
-      return false;
-    }
-    if (layer>=2&&fabs(iz0*kzpars)>1.5*z0cut) { 
-      //cout << "Failed tracklet z0 cut "<<iz0*kzpars<<endl;
-      return false;
-    }
-
-
-
-    assert(rinvbitshift>=0);
-    assert(phi0bitshift>=0);
-    assert(tbitshift>=0);
-    assert(z0bitshift>=0);
-    
-    assert(fabs(iz0)<(1<<(nbitsz0-1)));
-
-    if (iz0>=(1<<(nbitsz0-1))) iz0=(1<<(nbitsz0-1))-1; 
-    if (iz0<=-(1<<(nbitsz0-1))) iz0=1-(1<<(nbitsz0-1));
-    if (irinv>=(1<<(nbitsrinv-1))) irinv=(1<<(nbitsrinv-1))-1;
-    if (irinv<=-(1<<(nbitsrinv-1))) irinv=1-(1<<(nbitsrinv-1));
-
-    //calculate projections
-
-    for (int i=0;i<4;i++) {
-      binaryproj(rproj_[i],irinv,iphi0,it,iz0,validproj[i],
-		 iphiproj[i],izproj[i],iphider[i],izder[i],
-		 minusNeighbor[i], plusNeighbor[i]);
-      //cout << "Calculating projection to r = "<<rproj_[i]<<" iphi = "<<iphiproj[i]<<endl;
-    }
-
-
-    for (int i=0;i<5;i++) {
-      //int sign=1;
-      //if (it<0) sign=-1;
-      //cout << "Calculating projection to z = "<<sign*zmean[i]<<endl;
-      binaryprojdisk(zmean[i],irinv,iphi0,it,iz0,validprojdisk[i],
-		     iphiprojdisk[i],irprojdisk[i],iphiderdisk[i],irderdisk[i],
-		     minusNeighborDisk[i], plusNeighborDisk[i]);
-      //cout << "Calculating projection to z = "<<sign*zmean[i]<<" ir = "<<irprojdisk[i]<<endl;
-      //cout << "DUMPDISKPROJ2: "<<i<<" "<<irprojdisk[i]*krprojshiftdisk<<endl;
-    }
-
-
-
-    //cout << "irinv iphi0 it iz0: "<<irinv<<" "<<iphi0<<" "<<it<<" "<<iz0<<endl;
-
-    return true;
-
-  }
-
-  void ed_approxproj(double rproj,double rinv,double phi0,
-		  double t, double z0,
-		  double &phiproj, double &zproj,
-		  double &phider, double &zder) {
-
-    double x8  = rproj*rinv/2.;
-    double x10 = 6 + x8*x8;
-
-    phiproj = phi0 - x8*x10/6.;
-    zproj   = z0 + rproj*t*x10/6.;
-    phider  = -rinv/2.;
-    zder    = t;
-
-  }
-
-
-  void approxproj(double rproj,double rinv,double phi0,
-		  double t, double z0,
-		  double &phiproj, double &zproj,
-		  double &phider, double &zder) {
-
-    //This code was written when traveling across the
-    //northpole A.R. 2014-04-09
-
-    double s1=0.5*rproj*rinv;
-
-    double s2=s1*s1;
-
-    double s3=1.0+s2/6.0;
-    
-    double s4=s1*s3;
-
-    phiproj=phi0-s4;
-
-    double s5=t*rproj;
-
-    double s6=s5*s3;
-
-    zproj=z0+s6;
-
-    phider=-0.5*rinv; //-0.25*rinv*s2;
-
-    zder=t; //+0.5*t*s2;
-
-   
-    if (dumpproj) {
-      if (fabs(rproj-50.0)<10.0) {
-	cout << "DUMPPROJ: "
-	     << rproj
-	     << " "<<rinv
-	     << " "<<s1
-	     << " "<<s2
-	     << " "<<s3
-	     << " "<<s4
-	     << " "<<phi0
-	     << " "<<phiproj
-	     << " * "<<t
-	     << " "<<s5
-	     << " "<<s6
-	     << " # "<<zproj
-	     << " "<<phider
-	     << " "<<zder
-	     << endl;
-      }
-    }
 
   }
 
@@ -1809,213 +858,6 @@ public:
     zder=t/sqrt(1-pow(0.5*rproj*rinv,2));
 
   }
-
-
-
-  void binaryproj(double rproj,int irinv, int iphi0, int it, int iz0,
-		  bool &validproj,
-		  int &iphiproj, int &izproj, int &iphider, int &izder,
-		  bool &minusNeighbor, bool &plusNeighbor) {
-
-
-    int irproj=rproj/kr;  //fixed constant
-
-
-    int is1=((irproj*irinv)>>1)>>is1shift;
-
-    assert(abs(is1)<(1<<16));
-
-    int is2=(is1*is1)>>is2shift;
-
-    assert(is2<(1<<8));
-   
-    assert(is2>=0);
-
-    int is3=(1<<is3bits)+is2*((ks2/6.0)*(1<<is3bits)); 
-    //Above is exact, but (ks2/6.0)*(1<<is3bits) is 0.119
-    //which is close to 1/8=0.125. So we approximate:
-    //assert(fabs((ks2/6.0)*(1<<is3bits)-0.125)<0.01);
-    //int is3=(1<<is3bits)+(is2>>3); 
-    
-
-
-    //cout << "is3 : "<<is3<<" "<<(1<<is3bits)
-    //	 <<" "<<is2*((ks2/6.0)*(1<<is3bits))
-    //	 <<" "<<is2
-    //	 <<" "<<(ks2/6.0)*(1<<is3bits)<<endl;
-
-    assert(is3<(1<<(is3bits+1)));
-
-    int shifttmp=idrinvbits+phi0bitshift-is1shift+is3bits-rinvbitshift;
-    
-    int is4=(is1*is3)>>shifttmp;
-
-    assert(abs(is4)<(1<<17));
- 
-    iphiproj=iphi0-is4; 
-    
-    int is5=(it*irproj)>>is5shift;
-
-    assert(abs(is5)<(1<<15));
-
-    int bitshift=is3bits+idrinvbits-tbitshift-is5shift;
-
-    izproj=((iz0<<bitshift)+is5*is3)>>bitshift;
-
-    //cout << "is1 ... is5 : "<<is1<<" "<<is2<<" "<<is3<<" "
-    //	 <<is4<<" "<<is5<<endl;
-
-
-    //cout << "bitshift = "<<bitshift<<endl;
-
-    //izproj=iz0+((is6+(1<<(bitshift-1)))>>bitshift); //This fixes a
-                                                      //bias in the
-                                                      //calcualted t
-    //izproj=iz0+(is6>>bitshift); //has a bias
-
-    iphider=-0.5*irinv;
-
-    izder=it;
-    
-    iphiproj<<=1; //correct for L456 to match with stubs. Not good... FIXME
-    minusNeighbor=false;
-    plusNeighbor=false;
-
-    if (iphiproj<(1<<nbitsphistubL456)/8) {
-      minusNeighbor=true;
-      iphiproj+=3*(1<<nbitsphistubL456)/4;
-    }
-    if (iphiproj>=7*(1<<nbitsphistubL456)/8) {
-      plusNeighbor=true;
-      iphiproj-=3*(1<<nbitsphistubL456)/4;
-    }
-
-    //cout << "iphiproj (1<<nbitsphistubL456) "
-    //	 <<iphiproj<<" "<<(1<<nbitsphistubL456)<<endl;
-
-    assert(iphiproj>=0);
-    assert(iphiproj<(1<<nbitsphistubL456));
-
-    if (rproj<60.0) iphiproj>>=(nbitsphistubL456-nbitsphistubL123);
-
-    //cout << " izproj "<<izproj*kz<<endl;
-
-    if (dumpproj) {
-      double kphiproj=kphiproj123;
-      if (fabs(rproj-50.0)<10.0) {
-	//cout << "kphi0pars kphiproj "<<kphi0pars<<" "<<kphiproj<<endl;
-	cout << "DUMPPROJ2 :"<<irproj*kr
-	     << " "<<irinv*krinvpars
-	     << " "<<is1*ks1
-	     << " "<<is2*ks2
-	     << " "<<is3*ks3
-	     << " "<<is4*ks4
-	     << " "<<iphi0*kphi0pars
-	     << " "<<iphiproj*kphiproj
-	     << " * "<<it*ktpars 
-	     << " "<<is5*ks5
-	     << " # "<<izproj*kz
-	     << " "<<iphider*krinvpars
-	     << " "<<izder*ktpars
-	     <<endl;
-      }
-    }
-
-    validproj=true;
-
-    if (izproj<-(1<<(nbitszprojL123-1))) validproj=false;
-    if (izproj>=(1<<(nbitszprojL123-1))) validproj=false;
-
-    if (rproj>60.) {
-      izproj>>=(nbitszprojL123-nbitszprojL456);
-    }
-    iphider>>=phiderbitshift;
-    izder>>=zderbitshift;
-
-  }
-
-  void ed_approxprojdisk(double zproj,double rinv,double phi0,
-		      double t, double z0,
-		      double &phiproj, double &rproj,
-		      double &phider, double &rder) {
-
-    //cout << "rproj t deltaz = "<<t<<" "<<zproj-z0<<" "<<(zproj-z0)/t<<endl;
-
-    if (t<0) zproj=-zproj;
-    
-    double x5 = zproj - z0;
-    double x7 = rinv / 2.;
-    double x9 = x5/6.;
-    double x24 = x9 / t;
-    double x25 = x5*x7/t;
-    double x27 = 6 - x25*x25;
-
-    phiproj = phi0 - x25;
-    rproj   = x24 * x27;
-    phider = -x7/t; 
-    rder = 1/t;
-
-  }
-
-  void approxprojdisk(double zproj,double rinv,double phi0,
-		      double t, double z0,
-		      double &phiproj, double &rproj,
-		      double &phider, double &rder) {
-
-
-    //double tmp=rinv*(zproj-z0)/(2.0*t);
-    //double rprojexact=(2.0/rinv)*sin(tmp);
-
-    if (t<0.0) zproj=-zproj;
-    
-    double t1=zproj-z0;
-
-    double t2=1.0/t;
-
-    double t3=t1*t2;
-    
-    double t4=t3*rinv;
-
-    phiproj=phi0-t4/2.0;
-
-    double t5=t4*t4;
-
-    double t6=1.0-t5/24.0;
-
-    rproj=t3*t6;
-
-    //cout << "rresid rprojexact rproj "<<rprojexact<<" "<<rproj<<endl;
-
-    rder=t2; 
-
-    phider=-0.5*t2*rinv; 
-
-    //assert(fabs(phider)<0.1);
-
-    //cout << "disk_ zproj "<<disk_<<" "<<zproj<<endl;
-
-    if (dumpproj) {
-      if (fabs(zproj+300.0)<10.0) {
-	cout << "DUMPPROJDISK: "
-	     << " "<<phi0
-	     << " "<<zproj
-	     << " "<<z0
-	     << " "<<rinv
-	     << " "<<t1
-	     << " "<<t2
-	     << " "<<t3
-	     << " "<<t4
-	     << " phi="<<phiproj
-	     << " "<<t5
-	     << " "<<t6
-	     << " r="<<rproj
-	     << " "<<phider
-	     << " "<<rder
-	     << endl;
-      }
-    }
-  }
-
 
 
   void exactprojdisk(double zproj,double rinv,double phi0,
@@ -2050,675 +892,7 @@ public:
 
     //assert(fabs(phider)<0.1);
 
-  }
-
-
-
-  void binaryprojdisk(double zproj,int irinv, int iphi0, int it, int iz0,
-		      bool &validproj,
-		      int &iphiproj, int &irproj, int &iphider, int &irder,
-		      bool &minusNeighbor, bool &plusNeighbor) {
-
-    assert(zproj>100.0);
-
-    //cout << "it "<<it<<" "<<it*ktparsdisk<<" zproj = "<<zproj<<endl;
-
-    //Check if track can hit disk
-    if (fabs(it*ktparsdisk)<0.7) {
-      irproj=0;
-      iphiproj=0;
-      iphider=0;
-      irder=0;
-      return;
-    }
-
-    int izproj=zproj/kzdisk;  //fixed constant
-    if (it<0) izproj=-izproj;
-    
-    int t1=izproj-iz0;
-
-    int t2=(1<<t2bits)/it;
-
-    int t3=(t1*t2)>>t3shift;
-    
-    int t4=(t3*irinv)>>t4shift;
-
-    //cout << "kt4disk/kphi0parsdisk :"<<kt4disk/kphi0parsdisk<<" "
-    //	 << t3shift+t4shift+rinvbitshiftdisk-t2bits-tbitshift-phi0bitshiftdisk
-    //	 << endl;
-
-    //The +1 is for division by 2
-    int tmpshift=1+t2bits+tbitshift+phi0bitshiftdisk-t3shift-t4shift-rinvbitshiftdisk;
-
-    iphiproj=iphi0-(t4>>tmpshift);
-
-  
-    int t5=(t4>>t4shift2)*(t4>>t4shift2);
-
-    //cout << "t4 = "<<t4<<endl;
-
-    assert(t5>=0);
-
-
-    int t6=(1<<t6bits)-(t5/24.0)*kst5disk*(1<<t6bits);
-
-    irproj=(t3*t6)>>t6bits;
-
-    irder=t2; 
- 
-    iphider=-0.5*t2*irinv; 
-
-    iphiproj<<=1; //bit that was shifted away...
-
-    minusNeighbor=false;
-    plusNeighbor=false;
-    if (iphiproj<(1<<nbitsphistubL456)/8) {
-      minusNeighbor=true;
-      iphiproj+=3*(1<<nbitsphistubL456)/4;
-    }
-    if (iphiproj>=7*(1<<nbitsphistubL456)/8) {
-      plusNeighbor=true;
-      iphiproj-=3*(1<<nbitsphistubL456)/4;
-    }
-
-    
-    if (iphiproj<0) iphiproj=0;
-    if (iphiproj>=(1<<nbitsphistubL456)) iphiproj=(1<<nbitsphistubL456)-1;
-
-
-    assert(iphiproj<(1<<nbitsphistubL456));
-   
-    //cout << "irproj :"<<irproj<<" "<<irproj*krprojdisk<<endl;
-
-    if (dumpproj) {
-      if (fabs(zproj+300.0)<10.0) {
-	cout << "DUMPPROJDISK2: "
-	     << " "<<iphi0*kphi0parsdisk  
-	     << " "<<izproj*kzdisk
-	     << " "<<iz0*kzdisk
-	     << " "<<irinv*krinvparsdisk
-	     << " "<<t1*kzdisk
-	     << " "<<t2*kt2disk
-	     << " "<<t3*kt3disk
-	     << " "<<t4*kt4disk
-	     << " phi="<<iphiproj*kphi0parsdisk*0.5
-	     << " "<<t5*kst5disk
-	     << " "<<t6*kt6disk
-	     << " r="<<irproj*krprojdisk
-	     << " "<<iphider*kphiprojderdisk
-	     << " "<<irder*krprojderdisk
-	     << endl;
-      }
-    }
-
-    iphiproj>>=(nbitsphistubL456-nbitsphistubL123);
-
-    irproj>>=rprojdiskbitshift;
-    iphider>>=phiderdiskbitshift;
-    irder>>=rderdiskbitshift;
-
-    validproj=true;
-    
-    if (irproj<=0) {
-      validproj=false;
-      irproj=0;
-      iphiproj=0;
-      iphider=0;
-      irder=0;
-      return;      
-    }
-
-    assert(irproj>0);
-
-    if (irproj*krprojshiftdisk>120.0) {
-      validproj=false;
-      irproj=0;
-      iphiproj=0;
-      iphider=0;
-      irder=0;
-      return;      
-    }
-    
-
-
-    //cout <<"iphiproj : "<<iphiproj<<endl;
-
-    //assert(irproj*krprojshiftdisk<116);
-
-    //cout << "FPGADisk projection: irproj="<<irproj<<" "<<irproj*krprojshiftdisk
-    //	 <<"   iphiproj="<<iphiproj<<" "<<iphiproj*kphi0parsdisk<<endl;
-
-
-  }
-
-
-
-  bool binarytrackletdisk(FPGAStub* innerFPGAStub, 
-			  FPGAStub* outerFPGAStub,
-			  double sigmaz,
-			  int& irinv, int& iphi0,
-			  int& it, int& iz0,
-			  bool validproj[6],
-			  int iphiprojLayer[6], int izprojLayer[6],
-			  int iphiderLayer[6], int izderLayer[6],
-			  bool minusNeighborLayer[6], bool plusNeighborLayer[6],
-			  bool validprojdisk[4],
-			  int iphiproj[4], int izproj[4],
-			  int iphider[4], int izder[4],
-			  bool minusNeighbor[4], bool plusNeighbor[4]){
-    
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-
- 
-    int ir1=innerFPGAStub->ir();
-    int iphi1=innerFPGAStub->iphi();
-    int iz1=innerFPGAStub->iz();
-
-    int ir2=outerFPGAStub->ir();
-    int iphi2=outerFPGAStub->iphi();
-    int iz2=outerFPGAStub->iz();
-
-    //To get same precission as for layers.
-    iphi1<<=(nbitsphistubL456-nbitsphistubL123);
-    iphi2<<=(nbitsphistubL456-nbitsphistubL123);
-
-
-    //Here is where the actual calculation starts
-    //Can the first few steps be combined?
-    //step 1
-    int ideltaphi=iphi2-iphi1;  //should make this positive and keep sign bit?
-    //step 2
-    int sign=1;
-    if (disk_<0) {
-      sign=-1;
-    }
-
-    int idz=sign*(zmean[abs(disk_)]-zmean[abs(disk_)-1])/kzdisk+iz2-iz1;
-    //step 3
-    int idr=ir2-ir1;  
-    //step 4
-    int ir1abs=rmindisk/krdisk+ir1;
-    //step 5
-    int ir2abs=rmindisk/krdisk+ir2;
-    //step 6
-    if (idr==0) idr=1;
-    int idrinv=(1<<idrinvbits)/idr;  //not actually using 15 bits since idr is largish.
-                             //implement in lookup table, just a fcn of ir1-ir2
-
-    //step 7
-    int it1=(ir1abs*ir2abs)>>it1shiftdisk;
-    //step 8 
-    int it2=(idrinv*ideltaphi)>>it2shiftdisk;
-    //step 9
-    int it3=(it2*it2)>>it3shiftdisk;
-    //step 10
-    int idelta=0.5*it1*it3;
-    //step 11
-    int ideltatmp=idelta*(kdeltadisk*(1<<it4bitsdisk));
-    //step 12
-    int it4=(1<<it4bitsdisk)-3*(ideltatmp>>1);
-    //step 13    
-    int it5=(1<<it5bitsdisk)-((ideltatmp*it4)>>(2*it4bitsdisk-it5bitsdisk));
-    //step 14
-    int iDeltainv=(idrinv*it5)>>it5bitsdisk;  
-    //step 15
-    assert(rinvbitshiftdisk>0);
-    irinv=-((ideltaphi*iDeltainv)>>(rinvbitshiftdisk-1)); //-1 because of *2 
-    //step 16
-    it=(idz*iDeltainv)>>tbitshift;
-    //step 17
-    assert(it7shiftdisk+irinvshiftdisk-rinvbitshiftdisk>=0);
-    int it7=((ir1abs>>1)*irinv)>>(it7shiftdisk+irinvshiftdisk-rinvbitshiftdisk);
-    //step 18
-    int it7tmp=(it7*it7tmpfactordisk)>>it7tmpshiftdisk;
-    //step 19
-    int it9=(1<<it9bitsdisk)+((it7tmp*it7tmp)>>(2*it7tmpbitsdisk-2*it7tmpshiftdisk-2*it7shiftdisk-it9bitsdisk));
-    //step 20
-    int shifttmp1=it9bitsdisk+idrinvbits-irinvshiftdisk-it7shiftdisk-it7shift2disk;
-    iphi0=(iphi1+(((it7>>it7shift2disk)*it9)>>shifttmp1))>>phi0bitshiftdisk;
-    //step 21
-    assert(it12shiftdisk+itshift-tbitshift>=0);
-    int it12=(it*ir1abs)>>(it12shiftdisk+itshift-tbitshift);
-    //step 23
-    iz1+=sign*zmean[abs(disk_)-1]/kzdisk;
-    //step 24
-    int shifttmp2=it9bitsdisk+idrinvbits-itshift-it12shiftdisk;
-    iz0=(iz1-((it12*it9)>>shifttmp2))>>z0bitshift;
-
- 
-    if (abs(disk_)==1) {
-      
-       if (dumppars) {
-	cout << "DUMPPARS2:" 
-	     << ideltaphi*kphi1
-	     <<" "<<idz*kzdisk
-	     <<" "<<idr*krdisk
-	     <<" > "<<ir1abs*krdisk
-	     <<" "<<ir2abs*krdisk
-	     <<" "<<idrinv*kdrinvdisk
-	     <<" "<<idelta*kdeltadisk
-	     <<" "<<it5*kt5disk
-	     <<" "<<iDeltainv*kdrinvdisk
-	     <<" "<<irinv*krinvpars
-	     <<" t= "<<it*ktpars
-	     <<" | "<<ir1abs*krdisk
-	     <<" "<<it7*kt7disk
-	     <<" | "<<it9*kt9
-	     <<" "<<iphi1*kphi1
-	     <<" phi0= "<<iphi0*kphi0pars
-	     <<" * "<<it12*kt12disk
-	     <<" "<<iz1*kzdisk
-	     <<" z0= "<<iz0*kzpars
-	     <<endl;
-      }
-   
-
-    }
-
-    if (fabs(iz0*kzdisk)>z0cut) {
-      //cout << "DUMP iz0 too large: "<<iz0*kzdisk<<endl;
-      return false;
-    }
-
-    //if (fabs(irinv*krinvparsdisk)>0.0057) {
-    if (fabs(irinv*krinvparsdisk)>rinvcut) {
-      //cout << "DUMP irinv too large: "<<irinv*krinvparsdisk<<endl;
-      return false;
-    }
-
-
-    assert(fabs(iz0)<(1<<(nbitsz0-1)));
-
-    if (iz0>=(1<<(nbitsz0-1))) iz0=(1<<(nbitsz0-1))-1; 
-    if (iz0<=-(1<<(nbitsz0-1))) iz0=1-(1<<(nbitsz0-1));
-    if (irinv>=(1<<(nbitsrinv-1))) irinv=(1<<(nbitsrinv-1))-1;
-    if (irinv<=-(1<<(nbitsrinv-1))) irinv=1-(1<<(nbitsrinv-1));
-
-
-    //calculate projections
-
-    //cout << "DUMP calling projectbinary disk_="<<disk_<<endl;
-
-    for (int i=0;i<3;i++) {
-      binaryprojdisk(zproj_[i],irinv,iphi0,it,iz0,validprojdisk[i],
-		     iphiproj[i],izproj[i],iphider[i],izder[i],
-		     minusNeighbor[i], plusNeighbor[i]);
-    }
-
-
-    for (int i=0;i<3;i++) {
-      binaryproj(rmean[i],irinv,iphi0,it,iz0,
-		 validproj[i],
-		 iphiprojLayer[i],izprojLayer[i],
-		 iphiderLayer[i],izderLayer[i],
-		 minusNeighborLayer[i], plusNeighborLayer[i]);
-      //cout << "iphiprojLayer : "<<iphiprojLayer[i]<<endl;
-    }
-
-
-
-    
-
-
-
-
-    //cout << "irinv iphi0 it iz0: "<<irinv<<" "<<iphi0<<" "<<it<<" "<<iz0<<endl;
-    
-    return true;
-
-  }
-
-
-  
-
-  bool binarytrackletOverlap(FPGAStub* innerFPGAStub, 
-			     FPGAStub* outerFPGAStub,
-			     double sigmaz,
-			     int& irinv, int& iphi0,
-			     int& it, int& iz0,
-			     bool validproj[6],
-			     int iphiprojLayer[6], int izprojLayer[6],
-			     int iphiderLayer[6], int izderLayer[6],
-			     bool minusNeighborLayer[6], 
-			     bool plusNeighborLayer[6],
-			     bool validprojdisk[4],
-			     int iphiproj[4], int izproj[4],
-			     int iphider[4], int izder[4],
-			     bool minusNeighbor[4], bool plusNeighbor[4]){
-
-    //cout << "In binarytrackletoverlap : "<<disk_<<endl;
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
- 
-    int ir1=innerFPGAStub->ir();
-    int iphi1=innerFPGAStub->iphi();
-    int iz1=innerFPGAStub->iz();
-
-    int ir2=outerFPGAStub->ir();
-    int iphi2=outerFPGAStub->iphi();
-    int iz2=outerFPGAStub->iz();
-
-    //cout << "iz2 iz1 disk_ : "<<iz2<<" "<<iz1<<" "<<disk_<<endl;
-    
-    
-    //To get same precission as for disks.
-    iphi1<<=3;
-    iphi2<<=3;
-
-    //Radial position in layers are less precise than disks.
-    //to make them the same we need to add a bit. ???
-    ir2<<=1;
-
-    //Here is where the actual calculation starts
-    //Can the first few steps be combined?
-    //step 1
-    int ideltaphi=iphi2-iphi1;  //should make this positive and keep sign bit?
-    //step 2
-    int sign=1;
-    if (disk_<0) {
-      sign=-1;
-    }
-
-    //cout << "disk_ = "<<disk_<<endl;
-    assert(abs(disk_)==1);
-    int idz=-sign*zmean[abs(disk_)-1]/kzdisk+iz2-iz1;
-    //step 3
-    int idr=rmean[outerFPGAStub->layer().value()]/kr+ir2-rmindisk/krdisk-ir1;  
-    //step 4
-    int ir1abs=rmindisk/krdisk+ir1;
-    //step 5
-    int ir2abs=rmean[outerFPGAStub->layer().value()]/kr+ir2;
-    //step 6
-    if (idr==0) idr=1;
-    int idrinv=(1<<idrinvbits)/idr;  //not actually using 15 bits since idr is largish.
-                             //implement in lookup table, just a fcn of ir1-ir2
-
-    //step 7
-    int it1=(ir1abs*ir2abs)>>it1shiftdisk;
-    //step 8 
-    int it2=(idrinv*ideltaphi)>>it2shiftdisk;
-    //step 9
-    int it3=(it2*it2)>>it3shiftdisk;
-    //step 10
-    int idelta=0.5*it1*it3;
-    //step 11
-    int ideltatmp=idelta*(kdeltadisk*(1<<it4bitsdisk));
-    //step 12
-    int it4=(1<<it4bitsdisk)-3*(ideltatmp>>1);
-    //step 13    
-    int it5=(1<<it5bitsdisk)-((ideltatmp*it4)>>(2*it4bitsdisk-it5bitsdisk));
-    //step 14
-    int iDeltainv=(idrinv*it5)>>it5bitsdisk;  
-    //step 15
-    assert(rinvbitshiftdisk>0);
-    irinv=-((ideltaphi*iDeltainv)>>(rinvbitshiftdisk-1)); //-1 because of *2 
-    //step 16
-    it=(idz*iDeltainv)>>tbitshift;
-    //step 17
-    assert(it7shiftdisk+irinvshiftdisk-rinvbitshiftdisk>=0);
-    int it7=((ir1abs>>1)*irinv)>>(it7shiftdisk+irinvshiftdisk-rinvbitshiftdisk);
-    //step 18
-    int it7tmp=(it7*it7tmpfactordisk)>>it7tmpshiftdisk;
-    //step 19
-    int it9=(1<<it9bitsdisk)+((it7tmp*it7tmp)>>(2*it7tmpbitsdisk-2*it7tmpshiftdisk-2*it7shiftdisk-it9bitsdisk));
-    //step 20
-    int shifttmp1=it9bitsdisk+idrinvbits-irinvshiftdisk-it7shiftdisk-it7shift2disk;
-    iphi0=(iphi1+(((it7>>it7shift2disk)*it9)>>shifttmp1))>>phi0bitshiftdisk;
-    //step 22
-    assert(it12shiftdisk+itshift-tbitshift>=0);
-    int it12=(it*ir1abs)>>(it12shiftdisk+itshift-tbitshift);
-    //step 23
-    iz1+=sign*zmean[abs(disk_)-1]/kzdisk;
-    //step 24
-    int shifttmp2=it9bitsdisk+idrinvbits-itshift-it12shiftdisk;
-    iz0=(iz1-((it12*it9)>>shifttmp2))>>z0bitshift;
-
-    if (dumppars) {   //overlap
-      cout << "DUMPPARS2:"
-	   << ideltaphi*kphi1
-	   <<" "<<idz*kzdisk
-	   <<" "<<idr*krdisk
-	   <<" > "<<ir1abs*krdisk
-	   <<" "<<ir2abs*krdisk
-	   <<" "<<idrinv*kdrinvdisk
-	   <<" "<<idelta*kdeltadisk
-	   <<" "<<it5*kt5disk
-	   <<" "<<iDeltainv*kdrinvdisk
-	   <<" "<<irinv*krinvpars
-	   <<" t= "<<it*ktpars
-	   <<" | "<<ir1abs*krdisk
-	   <<" "<<it7*kt7disk
-	   <<" | "<<it9*kt9disk
-	   <<" "<<iphi1*kphi1
-	   <<" phi0= "<<iphi0*kphi0pars
-	   <<" * "<<it12*kt12disk
-	   <<" "<<iz1*kzdisk
-	   <<" z0= "<<iz0*kzpars
-	   <<endl;
-      
-    }
-
-    //cout << "overlap z0 and rinv it : "<<iz0*kzdisk<<" "<<irinv*krinvparsdisk<<" "<<it*ktparsdisk<<" "<<it<<endl;
-
-    if (fabs(it*ktparsdisk)>10.0) {
-      return false;
-    }
-    
-    if (fabs(iz0*kzdisk)>z0cut) {
-      //cout << "DUMP overlap iz0 too large: "<<iz0*kzdisk<<endl;
-      return false;
-    }
-
-    if (fabs(irinv*krinvparsdisk)>rinvcut) {
-      //cout << "DUMP overlap irinv too large: "<<irinv*krinvparsdisk<<endl;
-      return false;
-    }
-
-    assert(fabs(iz0)<(1<<(nbitsz0-1)));
-
-    if (iz0>=(1<<(nbitsz0-1))) iz0=(1<<(nbitsz0-1))-1; 
-    if (iz0<=-(1<<(nbitsz0-1))) iz0=1-(1<<(nbitsz0-1));
-    if (irinv>=(1<<(nbitsrinv-1))) irinv=(1<<(nbitsrinv-1))-1;
-    if (irinv<=-(1<<(nbitsrinv-1))) irinv=1-(1<<(nbitsrinv-1));
-
-    //calculate projections
-
-    //cout << "DUMP calling projectbinary disk_="<<disk_<<endl;
-
-    for (int i=0;i<4;i++) {
-      binaryprojdisk(zprojoverlap_[i],irinv,iphi0,it,iz0,
-		     validprojdisk[i],
-		     iphiproj[i],izproj[i],iphider[i],izder[i],
-		     minusNeighbor[i], plusNeighbor[i]);
-      //cout << "zproj 1 der : "<<izder[i]<<" "<<it<<endl;
-    }
-
-
-    iphiprojLayer[0]=0;
-    izprojLayer[0]=0;
-    iphiderLayer[0]=0;
-    izderLayer[0]=0;
-    minusNeighborLayer[0]=false;
-    plusNeighborLayer[0]=false;
-  
-    if (outerFPGAStub->layer().value()+1==2){
-      for (int i=0;i<1;i++) {
-	//cout << "Will call binaryproj r = "<<rmean[i]<<" "<<getName()<<" "<<layer_<<" "<<outerFPGAStub->layer().value()+1<<endl;
-	//cout << "Inner fga stub : "<<innerFPGAStub->layer().value()+1<<endl;
-	binaryproj(rmean[i],irinv,iphi0,it,iz0,
-		   validproj[i],
-		   iphiprojLayer[i],izprojLayer[i],
-		   iphiderLayer[i],izderLayer[i],
-		   minusNeighborLayer[i], plusNeighborLayer[i]);
-	izderLayer[i]*=2; //FIXME
-	//cout << "iphiprojLayer : "<<iphiprojLayer[i]<<endl;
-	//cout << "zproj 2 der : "<<izderLayer[i]<<" "<<it<<endl;
-      }
-    } else {
-      //cout << getName() << " Skipping calculating projections to r = "<<rmean[0]<<endl;
-    }
-
-
-
-    
-
-
-
-
-    //cout << "irinv iphi0 it iz0: "<<irinv<<" "<<iphi0<<" "<<it<<" "<<iz0<<endl;
-    
-    return true;
-
-  }
-
-  void ed_approxtrackletdisk(double r1, double z1, double phi1,
-			  double r2, double z2, double phi2, double sigmaz,
-			  double &rinv, double &phi0,
-			  double &t, double &z0,
-			  double phiprojLayer[4], double rprojLayer[4], 
-			  double phiderLayer[4], double rderLayer[4],
-			  double phiproj[4], double rproj[4], 
-			  double phider[4], double rder[4]) {
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-    double deltaphi = 0;
-    if (phi1<0.0) phi1+=two_pi;
-    deltaphi=phi2-phi1;
-    if (deltaphi>0.5*two_pi) deltaphi-=two_pi;
-    if (deltaphi<-0.5*two_pi) deltaphi+=two_pi;
-    assert(fabs(deltaphi)<0.5*two_pi);
-    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;
-    //cout << "phi1 phimin_ phimax_:"<<phi1<<" "<<phimin_<<" "<<phimax_<<endl;
-    assert(phi1tmp>-1e-10);
-    double dr=r2-r1;
-    double dz=z2-z1;
-    double drinv=1.0/dr;
-    double delta0 = deltaphi*drinv;
-    double delta1 = r1 * delta0;
-    double delta2 = r2 * delta0;
-    double deltaZ = dz * drinv;
-    double a2 = 2-delta1*delta2;
-    rinv=-delta0*a2;
-    phi0=phi1tmp-delta1*(1-delta0*delta2*(r2+r1)/6.);
-    t= deltaZ/2.*a2;
-    z0=z1-r1*deltaZ;
-
-    //calculate projections
-    for (int i=0;i<3;i++) {
-      ed_approxproj(rmean[i],rinv,phi0,t,z0,
-		 phiprojLayer[i],rprojLayer[i],
-		 phiderLayer[i],rderLayer[i]);
-    }
-
-    for (int i=0;i<3;i++) {
-      ed_approxprojdisk(zproj_[i],rinv,phi0,t,z0,
-		     phiproj[i],rproj[i],phider[i],rder[i]);
-    }
-
-
-
-  }
-
-  void approxtrackletdisk(double r1, double z1, double phi1,
-			  double r2, double z2, double phi2, double sigmaz,
-			  double &rinv, double &phi0,
-			  double &t, double &z0,
-			  double phiprojLayer[4], double rprojLayer[4], 
-			  double phiderLayer[4], double rderLayer[4],
-			  double phiproj[4], double rproj[4], 
-			  double phider[4], double rder[4]) {
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-
-
-    double deltaphi=phi1-phi2;
-
-    if (deltaphi>0.5*two_pi) deltaphi-=two_pi;
-    if (deltaphi<-0.5*two_pi) deltaphi+=two_pi;
-    assert(fabs(deltaphi)<0.5*two_pi);
-
-    if (phi1<0.0) phi1+=two_pi;
-    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;
-    //cout << "phi1 phimin_ phimax_:"<<phi1<<" "<<phimin_<<" "<<phimax_<<endl;
-    assert(phi1tmp>0.0);
-
-    double dr=r2-r1;
-    double dz=z1-z2;
-    double drinv=1.0/dr;
-    double t2=deltaphi*drinv;
-    double delta=0.5*r1*r2*t2*t2;// *(1+deltaphi*deltaphi/12.0);
-    double t5=1.0-delta+1.5*delta*delta;// -2.5*delta*delta*delta;
-    double deltainv=t5*drinv;
-    rinv=2.0*deltaphi*deltainv;// *(1-deltaphi*deltaphi/6.0);
-    t=-dz*deltainv;// *(1.0-deltaphi*deltaphi/6.0); 
-    double t7=0.5*r1*rinv;
-    double t9=1+t7*t7/6.0;// +3.0*t7*t7*t7*t7/40.0;
-    phi0=phi1tmp+t7*t9;
-    double t12=t*r1*t9;
-    z0=z1-t12;
-
-
-    if (abs(disk_)==1) {
-      if (dumppars) {
-	cout << "------------------------------------------------"<<endl;
-	cout << "t7*t9 : "<<t7*t9<<endl;
-	cout << "DUMPPARS1:" 
-	     << -deltaphi
-	     <<" "<<z2-z1
-	     <<" > "<<r1
-	     <<" "<<r2
-	     <<" "<<1.0/(r2-r1)
-	     <<" "<<delta
-	     <<" "<<t5
-	     <<" "<<deltainv
-	     <<" "<<rinv
-	     <<" t= "<<t
-	     <<" | "<<r1
-	     <<" "<<t7
-	     <<" | "<<t9
-	     <<" "<<phi1tmp
-	     <<" phi0= "<<phi0
-	     <<" * "<<t12
-	     <<" "<<z1
-	     <<" z0= "<<z0
-	     <<endl;
-      }
-      
-
-
-    }
-   
-
-    //calculate projection
-
-
-    for (int i=0;i<3;i++) {
-      approxproj(rmean[i],rinv,phi0,t,z0,
-		 phiprojLayer[i],rprojLayer[i],
-		 phiderLayer[i],rderLayer[i]);
-    }
-
-
-    //static ofstream out1("neighborproj.txt");
-
-    for (int i=0;i<3;i++) {
-      approxprojdisk(zproj_[i],rinv,phi0,t,z0,
-		     phiproj[i],rproj[i],phider[i],rder[i]);
-    }
-
-  }
-
-
-
- 
+  } 
 
   void execute() {
 
@@ -2808,186 +982,6 @@ public:
 
 
   }
-
-
-
-  void exacttrackletOverlap(double r1, double z1, double phi1,
-			    double r2, double z2, double phi2, double sigmaz,
-			    double& rinv, double& phi0,
-			    double& t, double& z0,
-			    double phiprojLayer[3], double zprojLayer[3], 
-			    double phiderLayer[3], double zderLayer[3],
-			    double phiproj[3], double rproj[3], 
-			    double phider[3], double rder[3]) {
-
-    double deltaphi=phi1-phi2;
-
-    if (deltaphi>0.5*two_pi) deltaphi-=two_pi;
-    if (deltaphi<-0.5*two_pi) deltaphi+=two_pi;
-    assert(fabs(deltaphi)<0.5*two_pi);
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-
-    double dist=sqrt(r2*r2+r1*r1-2*r1*r2*cos(deltaphi));
-    
-    rinv=2*sin(deltaphi)/dist;
-
-    if (r1>r2) rinv=-rinv;
-
-    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;    
-
-    //cout << "phi1 phi2 phi1tmp : "<<phi1<<" "<<phi2<<" "<<phi1tmp<<endl;
-
-    phi0=phi1tmp+asin(0.5*r1*rinv);
-    
-    if (phi0>0.5*two_pi) phi0-=two_pi;
-    if (phi0<-0.5*two_pi) phi0+=two_pi;
-    if (!(fabs(phi0)<0.5*two_pi)) {
-      cout << "phi1tmp r1 rinv phi0 deltaphi dist: "
-	   <<phi1tmp<<" "<<r1<<" "<<rinv<<" "<<phi0
-	   <<" "<<deltaphi<<" "<<dist<<endl;
-      exit(1);
-    }
-    
-    double rhopsi1=2*asin(0.5*r1*rinv)/rinv;
-	    
-    double rhopsi2=2*asin(0.5*r2*rinv)/rinv;
-    
-    t=(z1-z2)/(rhopsi1-rhopsi2);
-    
-    z0=z1-t*rhopsi1;
-
-
-    if (disk_==1) {
-      if (dumppars) {
-	cout << "------------------------------------------------"<<endl;
-	cout << "DUMPPARS0:" 
-	     <<" dz= "<<z2-z1
-	     <<" rinv= "<<rinv
-	     <<" phi0= "<<phi0
-	     <<" t= "<<t
-	     <<" z0= "<<z0
-	     <<endl;
-      }
-    }
-
-
-    for (int i=0;i<4;i++) {
-      exactprojdisk(zprojoverlap_[i],rinv,phi0,t,z0,
-		    phiproj[i],rproj[i],
-		    phider[i],rder[i]);
-    }
-
-
-    for (int i=0;i<1;i++) {
-      exactproj(rmean[i],rinv,phi0,t,z0,
-		    phiprojLayer[i],zprojLayer[i],
-		    phiderLayer[i],zderLayer[i]);
-    }
-
-
-  }
-
-
-  void approxtrackletoverlap(double r1, double z1, double phi1,
-			     double r2, double z2, double phi2, double sigmaz,
-			     double &rinv, double &phi0,
-			     double &t, double &z0,
-			     double phiprojLayer[4], double rprojLayer[4], 
-			     double phiderLayer[4], double rderLayer[4],
-			     double phiproj[4], double rproj[4], 
-			     double phider[4], double rder[4]) {
-
-    if (sigmaz<-10.0) {
-      cout << "Negative sigmaz"<<endl;
-    }
-
-
-    double deltaphi=phi1-phi2;
-
-    if (deltaphi>0.5*two_pi) deltaphi-=two_pi;
-    if (deltaphi<-0.5*two_pi) deltaphi+=two_pi;
-    assert(fabs(deltaphi)<0.5*two_pi);
-
-    if (phi1<0.0) phi1+=two_pi;
-    double phi1tmp=phi1-phimin_+(phimax_-phimin_)/6.0;
-    if (phi1tmp>two_pi) phi1-=two_pi;
-    //cout << "phi1 phimin_ phimax_:"<<phi1<<" "<<phimin_
-    //	 <<" "<<phimax_<<" "<<phi1tmp<<endl;
-    assert(phi1tmp>-1e-10);
-
-    //cout << "DUMPPARS01 : "<<r1<<" "<<r2<<endl;
-
-    double dr=r2-r1;
-    double dz=z1-z2;
-    double drinv=1.0/dr;
-    double t2=deltaphi*drinv;
-    double delta=0.5*r1*r2*t2*t2;// *(1+deltaphi*deltaphi/12.0);
-    double t5=1.0-delta+1.5*delta*delta;// -2.5*delta*delta*delta;
-    double deltainv=t5*drinv;
-    rinv=2.0*deltaphi*deltainv;// *(1-deltaphi*deltaphi/6.0);
-    t=-dz*deltainv;// *(1.0-deltaphi*deltaphi/6.0); 
-    double t7=0.5*r1*rinv;
-    double t9=1+t7*t7/6.0;// +3.0*t7*t7*t7*t7/40.0;
-    phi0=phi1tmp+t7*t9;
-    double t12=t*r1*t9;
-    z0=z1-t12;
-
-
-    if (abs(disk_)==1) {
-      if (dumppars) {
-	cout << "------------------------------------------------"<<endl;
-	cout << "DUMPPARS1:"  //overlap 
-	     << -deltaphi
-	     <<" "<<z2-z1
-	     <<" "<<r2-r1
-	     <<" > "<<r1
-	     <<" "<<r2
-	     <<" "<<1.0/(r2-r1)
-	     <<" "<<delta
-	     <<" "<<t5
-	     <<" "<<deltainv
-	     <<" "<<rinv
-	     <<" t= "<<t
-	     <<" | "<<r1
-	     <<" "<<t7
-	     <<" | "<<t9
-	     <<" "<<phi1tmp
-	     <<" phi0= "<<phi0
-	     <<" * "<<t12
-	     <<" "<<z1
-	     <<" z0= "<<z0
-	     <<endl;
-      }
-      
-
-
-    }
-   
-
-    //calculate projection
-
-
-
-    for (int i=0;i<1;i++) {
-      approxproj(rmean[i],rinv,phi0,t,z0,
-		 phiprojLayer[i],rprojLayer[i],
-		 phiderLayer[i],rderLayer[i]);
-    }
-
-
-    //static ofstream out1("neighborproj.txt");
-
-    for (int i=0;i<4;i++) {
-      approxprojdisk(zprojoverlap_[i],rinv,phi0,t,z0,
-		     phiproj[i],rproj[i],phider[i],rder[i]);
-    }
-
-
-  }
-
 
 
   void addDiskProj(FPGATracklet* tracklet, int disk){
@@ -3097,7 +1091,8 @@ public:
 
     FPGAWord fpgaz=tracklet->fpgazproj(layer);
     FPGAWord fpgaphi=tracklet->fpgaphiproj(layer);
-    
+
+    if(fpgaphi.atExtreme()) cout<<"at extreme! "<<fpgaphi.value()<<"\n";
     assert(!fpgaphi.atExtreme());
     
     if (fpgaz.atExtreme()) return false;
@@ -3272,16 +1267,7 @@ public:
     
     assert(layer_==1||layer_==3||layer_==5);
 
-    
-    FPGAWord iphi1=innerFPGAStub->phi();
-    FPGAWord iz1=innerFPGAStub->z();
-    FPGAWord ir1=innerFPGAStub->r();
-    
-    FPGAWord iphi2=outerFPGAStub->phi();
-    FPGAWord iz2=outerFPGAStub->z();
-    FPGAWord ir2=outerFPGAStub->r();
-    
-	  
+    	  
     double r1=innerStub->r();
     double z1=innerStub->z();
     double phi1=innerStub->phi();
@@ -3324,12 +1310,106 @@ public:
     double phiprojdiskapprox[5],rprojdiskapprox[5];
     double phiderdiskapprox[5],rderdiskapprox[5];
     
-    approxtracklet(r1,z1,phi1,r2,z2,phi2,outerStub->sigmaz(),
-    //ed_approxtracklet(r1,z1,phi1,r2,z2,phi2,outerStub->sigmaz(),
-		   rinvapprox,phi0approx,tapprox,z0approx,
-		   phiprojapprox,zprojapprox,phiderapprox,zderapprox,
-		   phiprojdiskapprox,rprojdiskapprox,
-		   phiderdiskapprox,rderdiskapprox);
+    IMATH_TrackletCalculator *ITC;
+    if(layer_==1)      ITC = &ITC_L1L2;
+    else if(layer_==3) ITC = &ITC_L3L4;
+    else               ITC = &ITC_L5L6;
+    
+    ITC->r1.set_fval(r1-rmean[layer_-1]);
+    ITC->r2.set_fval(r2-rmean[layer_]);
+    ITC->z1.set_fval(z1);
+    ITC->z2.set_fval(z2);
+    double sphi1 = phi1 - phioffset_;
+    if(sphi1<0) sphi1 += 8*atan(1.);
+    if(sphi1>8*atan(1.)) sphi1 -= 8*atan(1.);
+    double sphi2 = phi2 - phioffset_;
+    if(sphi2<0) sphi2 += 8*atan(1.);
+    if(sphi2>8*atan(1.)) sphi2 -= 8*atan(1.);
+    ITC->phi1.set_fval(sphi1);
+    ITC->phi2.set_fval(sphi2);
+
+    ITC->rproj0.set_fval(rproj_[0]);
+    ITC->rproj1.set_fval(rproj_[1]);
+    ITC->rproj2.set_fval(rproj_[2]);
+    ITC->rproj3.set_fval(rproj_[3]);
+
+    ITC->zproj0.set_fval(t>0? zmean[0] : -zmean[0]);
+    ITC->zproj1.set_fval(t>0? zmean[1] : -zmean[1]);
+    ITC->zproj2.set_fval(t>0? zmean[2] : -zmean[2]);
+    ITC->zproj3.set_fval(t>0? zmean[3] : -zmean[3]);
+    ITC->zproj4.set_fval(t>0? zmean[4] : -zmean[4]);
+
+    ITC->rinv_final.calculate();
+    ITC->phi0_final.calculate();
+    ITC->t_final.calculate();
+    ITC->z0_final.calculate();
+
+    ITC->phiL_0_final.calculate();
+    ITC->phiL_1_final.calculate();
+    ITC->phiL_2_final.calculate();
+    ITC->phiL_3_final.calculate();
+
+    ITC->zL_0_final.calculate();
+    ITC->zL_1_final.calculate();
+    ITC->zL_2_final.calculate();
+    ITC->zL_3_final.calculate();
+
+    ITC->phiD_0_final.calculate();
+    ITC->phiD_1_final.calculate();
+    ITC->phiD_2_final.calculate();
+    ITC->phiD_3_final.calculate();
+    ITC->phiD_4_final.calculate();
+
+    ITC->rD_0_final.calculate();
+    ITC->rD_1_final.calculate();
+    ITC->rD_2_final.calculate();
+    ITC->rD_3_final.calculate();
+    ITC->rD_4_final.calculate();
+
+    ITC->der_phiL_final.calculate();
+    ITC->der_zL_final.calculate();
+    ITC->der_phiD_final.calculate();
+    ITC->der_rD_final.calculate();
+
+    //store the approcximate results
+    rinvapprox = ITC->rinv_final.get_fval();
+    phi0approx = ITC->phi0_final.get_fval();
+    tapprox    = ITC->t_final.get_fval();
+    z0approx   = ITC->z0_final.get_fval();
+
+    phiprojapprox[0] = ITC->phiL_0_final.get_fval();
+    phiprojapprox[1] = ITC->phiL_1_final.get_fval();
+    phiprojapprox[2] = ITC->phiL_2_final.get_fval();
+    phiprojapprox[3] = ITC->phiL_3_final.get_fval();
+
+    zprojapprox[0]   = ITC->zL_0_final.get_fval();
+    zprojapprox[1]   = ITC->zL_1_final.get_fval();
+    zprojapprox[2]   = ITC->zL_2_final.get_fval();
+    zprojapprox[3]   = ITC->zL_3_final.get_fval();
+
+    for(int i=0; i<4; ++i){
+      phiderapprox[i] = ITC->der_phiL_final.get_fval();
+      zderapprox[i]   = ITC->der_zL_final.get_fval();
+    }
+
+    phiprojdiskapprox[0] = ITC->phiD_0_final.get_fval();
+    phiprojdiskapprox[1] = ITC->phiD_1_final.get_fval();
+    phiprojdiskapprox[2] = ITC->phiD_2_final.get_fval();
+    phiprojdiskapprox[3] = ITC->phiD_3_final.get_fval();
+    phiprojdiskapprox[4] = ITC->phiD_4_final.get_fval();
+
+    rprojdiskapprox[0] = ITC->rD_0_final.get_fval();
+    rprojdiskapprox[1] = ITC->rD_1_final.get_fval();
+    rprojdiskapprox[2] = ITC->rD_2_final.get_fval();
+    rprojdiskapprox[3] = ITC->rD_3_final.get_fval();
+    rprojdiskapprox[4] = ITC->rD_4_final.get_fval();
+
+    for(int i=0; i<5; ++i){
+      phiderdiskapprox[i] = ITC->der_phiD_final.get_fval();
+      rderdiskapprox[i]   = ITC->der_rD_final.get_fval();
+    }
+
+    //now binary
     
     int irinv,iphi0,it,iz0;
     bool validproj[4];
@@ -3339,19 +1419,169 @@ public:
     int iphiprojdisk[5],irprojdisk[5],iphiderdisk[5],irderdisk[5];
     bool minusNeighborDisk[5],plusNeighborDisk[5];
     
-    //bool success=binarytracklet(innerFPGAStub,outerFPGAStub,
-    bool success=ed_binarytracklet(innerFPGAStub,outerFPGAStub,
-				   outerStub->sigmaz(),
-				   irinv,iphi0,it,iz0,
-				   validproj,
-				   iphiproj,izproj,iphider,izder,
-				   minusNeighbor,plusNeighbor,
-				   validprojdisk,
-				   iphiprojdisk,irprojdisk,
-				   iphiderdisk,irderdisk,
-				   minusNeighborDisk,plusNeighborDisk);
+    int ir1=innerFPGAStub->ir();
+    int iphi1=innerFPGAStub->iphi();
+    int iz1=innerFPGAStub->iz();
+      
+    int ir2=outerFPGAStub->ir();
+    int iphi2=outerFPGAStub->iphi();
+    int iz2=outerFPGAStub->iz();
     
-	  
+    if (layer_<4) iphi1<<=(nbitsphistubL456-nbitsphistubL123);
+    if (layer_<3) iphi2<<=(nbitsphistubL456-nbitsphistubL123);
+    if (layer_<4) ir1<<=(nbitsrL456-nbitsrL123);
+    if (layer_<3) ir2<<=(nbitsrL456-nbitsrL123);
+    if (layer_>3) iz1<<=(nbitszL123-nbitszL456);
+    if (layer_>2) iz2<<=(nbitszL123-nbitszL456);  
+      
+    ITC->r1.set_ival(ir1);
+    ITC->r2.set_ival(ir2);
+    ITC->z1.set_ival(iz1);
+    ITC->z2.set_ival(iz2);
+    ITC->phi1.set_ival(iphi1);
+    ITC->phi2.set_ival(iphi2);
+    
+    ITC->rinv_final.calculate();
+    ITC->phi0_final.calculate();
+    ITC->t_final.calculate();
+    ITC->z0_final.calculate();
+
+    ITC->phiL_0_final.calculate();
+    ITC->phiL_1_final.calculate();
+    ITC->phiL_2_final.calculate();
+    ITC->phiL_3_final.calculate();
+
+    ITC->zL_0_final.calculate();
+    ITC->zL_1_final.calculate();
+    ITC->zL_2_final.calculate();
+    ITC->zL_3_final.calculate();
+
+    ITC->phiD_0_final.calculate();
+    ITC->phiD_1_final.calculate();
+    ITC->phiD_2_final.calculate();
+    ITC->phiD_3_final.calculate();
+    ITC->phiD_4_final.calculate();
+
+    ITC->rD_0_final.calculate();
+    ITC->rD_1_final.calculate();
+    ITC->rD_2_final.calculate();
+    ITC->rD_3_final.calculate();
+    ITC->rD_4_final.calculate();
+
+    ITC->der_phiL_final.calculate();
+    ITC->der_zL_final.calculate();
+    ITC->der_phiD_final.calculate();
+    ITC->der_rD_final.calculate();
+
+    //store the binary results
+    irinv = ITC->rinv_final.get_ival();
+    iphi0 = ITC->phi0_final.get_ival();
+    it    = ITC->t_final.get_ival();
+    iz0   = ITC->z0_final.get_ival();
+
+    iphiproj[0] = ITC->phiL_0_final.get_ival();
+    iphiproj[1] = ITC->phiL_1_final.get_ival();
+    iphiproj[2] = ITC->phiL_2_final.get_ival();
+    iphiproj[3] = ITC->phiL_3_final.get_ival();
+    
+    izproj[0]   = ITC->zL_0_final.get_ival();
+    izproj[1]   = ITC->zL_1_final.get_ival();
+    izproj[2]   = ITC->zL_2_final.get_ival();
+    izproj[3]   = ITC->zL_3_final.get_ival();
+
+    for(int i=0; i<4; ++i){
+      iphider[i] = ITC->der_phiL_final.get_ival();
+      izder[i]   = ITC->der_zL_final.get_ival();
+
+      validproj[i] = true;
+      if (izproj[i]<-(1<<(nbitszprojL123-1))) validproj[i]=false;
+      if (izproj[i]>=(1<<(nbitszprojL123-1))) validproj[i]=false;
+      
+      minusNeighbor[i]=false;
+      plusNeighbor[i]=false;
+      if (iphiproj[i]<(1<<nbitsphistubL456)/8) {
+	minusNeighbor[i]=true;
+	iphiproj[i]+=3*(1<<nbitsphistubL456)/4;
+      }
+      if (iphiproj[i]>=7*(1<<nbitsphistubL456)/8) {
+	plusNeighbor[i]=true;
+	iphiproj[i]-=3*(1<<nbitsphistubL456)/4;
+      }
+
+      //this is left from the original....
+      if (iphiproj[i]>=(1<<nbitsphistubL456)) iphiproj[i]=(1<<nbitsphistubL456)-2; //-2 not to hit atExtreme
+      if (iphiproj[i]==0) iphiproj[i]=1;
+      
+      if (rproj_[i]<60.0)
+	iphiproj[i]>>=(nbitsphistubL456-nbitsphistubL123);
+      else
+	izproj[i]>>=(nbitszprojL123-nbitszprojL456);
+      
+    }
+
+    iphiprojdisk[0] = ITC->phiD_0_final.get_ival();
+    iphiprojdisk[1] = ITC->phiD_1_final.get_ival();
+    iphiprojdisk[2] = ITC->phiD_2_final.get_ival();
+    iphiprojdisk[3] = ITC->phiD_3_final.get_ival();
+    iphiprojdisk[4] = ITC->phiD_4_final.get_ival();
+
+    irprojdisk[0]   = ITC->rD_0_final.get_ival();
+    irprojdisk[1]   = ITC->rD_1_final.get_ival();
+    irprojdisk[2]   = ITC->rD_2_final.get_ival();
+    irprojdisk[3]   = ITC->rD_3_final.get_ival();
+    irprojdisk[4]   = ITC->rD_4_final.get_ival();
+
+    for(int i=0; i<5; ++i){
+      iphiderdisk[i] = ITC->der_phiD_final.get_ival();
+      irderdisk[i]   = ITC->der_rD_final.get_ival();
+      //"protection" from the original
+      if(iphiderdisk[i]>=(1<<6)) iphiderdisk[i] = (1<<6)-1;
+      if(iphiderdisk[i]<-(1<<6)) iphiderdisk[i] = -(1<<6);
+      if(irderdisk[i]>=(1<<7)) irderdisk[i] = (1<<7)-1;
+      if(irderdisk[i]<-(1<<7)) irderdisk[i] = -(1<<7);
+
+      
+      minusNeighborDisk[i]=false;
+      plusNeighborDisk[i]=false;
+      if (iphiprojdisk[i]<(1<<nbitsphistubL123)/8) {
+	minusNeighborDisk[i]=true;
+	iphiprojdisk[i]+=3*(1<<nbitsphistubL123)/4;
+      }
+      if (iphiprojdisk[i]>=7*(1<<nbitsphistubL123)/8) {
+	plusNeighborDisk[i]=true;
+	iphiprojdisk[i]-=3*(1<<nbitsphistubL123)/4;
+      }
+      
+      //"protection" from the original
+      if (iphiprojdisk[i]<0) iphiprojdisk[i]=0;
+      if (iphiprojdisk[i]>=(1<<nbitsphistubL123)) iphiprojdisk[i]=(1<<nbitsphistubL123)-1;
+      
+      validprojdisk[i]=true;
+      if(irprojdisk[i]<=0 || irprojdisk[i] > 120. / ITC->rD_0_final.get_K() ){
+	validprojdisk[i]=false;
+	irprojdisk[i] = 0;
+	iphiprojdisk[i] = 0;
+	iphiderdisk[i]  = 0;
+	irderdisk[i]    = 0;
+      }
+    }
+
+    bool success = true;
+    if(fabs(ITC->rinv_final.get_ival()*ITC->rinv_final.get_K())>rinvcut){
+      if (debug1) 
+	cout << "FPGATrackletCalculator::BarrelSeeding irinv too large: "
+	     <<ITC->rinv_final.get_fval()<<"("<<ITC->rinv_final.get_ival()<<")\n";
+      success = false;
+    }
+    if (layer_==1&&fabs(ITC->z0_final.get_ival()*ITC->z0_final.get_K())>z0cut) {
+      if (debug1) cout << "Failed tracklet z0 cut "<<ITC->z0_final.get_fval()<<" in layer 1"<<endl;
+      success = false;
+    }
+    if (layer_>=2&&fabs(ITC->z0_final.get_ival()*ITC->z0_final.get_K())>1.5*z0cut) { 
+      if (debug1) cout << "Failed tracklet z0 cut "<<ITC->z0_final.get_fval()<<" in layer "<<layer_<<endl;
+      success = false;
+    }
+    
     if (!success) return false;
     
     for(unsigned int j=0;j<5;j++){
@@ -3380,36 +1610,12 @@ public:
     if (writeTrackletPars) {
       static ofstream out("trackletpars.txt");
       out <<"Trackpars "<<layer_
-	  <<"   "<<rinv<<" "<<rinvapprox<<" "<<irinv*krinvpars
-	  <<"   "<<phi0<<" "<<phi0approx<<" "<<iphi0*kphi0pars
-	  <<"   "<<t<<" "<<tapprox<<" "<<it*ktpars
-	  <<"   "<<z0<<" "<<z0approx<<" "<<iz0*kzpars
+	  <<"   "<<rinv<<" "<<rinvapprox<<" "<<ITC->rinv_final.get_fval()
+	  <<"   "<<phi0<<" "<<phi0approx<<" "<<ITC->phi0_final.get_fval()
+	  <<"   "<<t<<" "<<tapprox<<" "<<ITC->t_final.get_fval()
+	  <<"   "<<z0<<" "<<z0approx<<" "<<ITC->z0_final.get_fval()
 	  <<endl;
-    }	    
-    
-    if (writeTrackProj) {
-      static ofstream out1("trackproj.txt");
-      for (int i=0;i<4;i++) {
-	double kphiproj=kphiproj123;
-	int lz=1;
-	if (rproj_[i]>60.0) {
-	  kphiproj=kphiproj123;
-	  lz=16;
-	}
-	out1 <<"Trackproj "<<layer_<<" "<<rproj_[i]
-	     <<"   "<<phiproj[i]<<" "<<phiprojapprox[i]
-	     <<" "<<iphiproj[i]*kphiproj
-	     <<"   "<<zproj[i]<<" "<<zprojapprox[i]
-	     <<" "<<izproj[i]*kzproj*lz
-	     <<"   "<<phider[i]<<" "<<phiderapprox[i]
-	     <<" "<<iphider[i]*kphider
-	     <<"   "<<zder[i]<<" "<<zderapprox[i]
-	     <<" "<<izder[i]*kzder
-	     <<endl;
-      }
-	    
-    }
-    
+    }	        
         
     FPGATracklet* tracklet=new FPGATracklet(innerStub,outerStub,
 					    innerFPGAStub,outerFPGAStub,
@@ -3456,7 +1662,7 @@ public:
       //	    cout<<" LL to L "<<lproj[j]<<"\n";
       bool added=false;
       if (tracklet->validProj(lproj_[j])) {
-	//cout << "Add tracklet "<<tracklet<<" for layer "<<lproj_[j]<<endl;
+	//cout << "Add tracklet "<<tracklet<<" for layer "<<lproj_[j]<<": "<<phiproj[j]<<" "<<iphiproj[j]<<endl;
 	added=addLayerProj(tracklet,lproj_[j]);
 	if (added&&lproj_[j]==3) addL3=true;
 	if (added&&lproj_[j]==4) addL4=true;
@@ -3502,15 +1708,6 @@ public:
     assert(innerStub->isPSmodule());
     assert(outerStub->isPSmodule());
 	    
-    FPGAWord iphi1=innerFPGAStub->phi();
-    FPGAWord iz1=innerFPGAStub->z();
-    FPGAWord ir1=innerFPGAStub->r();
-    
-    FPGAWord iphi2=outerFPGAStub->phi();
-    FPGAWord iz2=outerFPGAStub->z();
-    FPGAWord ir2=outerFPGAStub->r();
-    
-    
     double r1=innerStub->r();
     double z1=innerStub->z();
     double phi1=innerStub->phi();
@@ -3550,20 +1747,98 @@ public:
       r2=outerFPGAStub->rapprox();
     }
     
-	    
-	    
-	    
     double rinvapprox,phi0approx,tapprox,z0approx;
     double phiprojapprox[3],zprojapprox[3],phiderapprox[3],zderapprox[3];
-    double phiprojapproxdisk[3],rprojapproxdisk[3],
-      phiderapproxdisk[3],rderapproxdisk[3];
+    double phiprojdiskapprox[3],rprojdiskapprox[3],
+      phiderdiskapprox[3],rderdiskapprox[3];
+	    
+    IMATH_TrackletCalculatorDisk *ITC;
+    if(disk_==1)       ITC = &ITC_F1F2;
+    else if(disk_==3)  ITC = &ITC_F3F4;
+    else if(disk_==-1) ITC = &ITC_B1B2;
+    else               ITC = &ITC_B3B4;
     
-    ed_approxtrackletdisk(r1,z1,phi1,r2,z2,phi2,outerStub->sigmaz(),
-			  rinvapprox,phi0approx,tapprox,z0approx,
-			  phiprojapprox,zprojapprox,
-			  phiderapprox,zderapprox,
-			  phiprojapproxdisk,rprojapproxdisk,
-			  phiderapproxdisk,rderapproxdisk);
+    ITC->r1.set_fval(r1);
+    ITC->r2.set_fval(r2);
+    int signt = t>0? 1 : -1;
+    ITC->z1.set_fval(z1-signt*zmean[abs(disk_)-1]);
+    ITC->z2.set_fval(z2-signt*zmean[abs(disk_)]);
+    double sphi1 = phi1 - phioffset_;
+    if(sphi1<0) sphi1 += 8*atan(1.);
+    if(sphi1>8*atan(1.)) sphi1 -= 8*atan(1.);
+    double sphi2 = phi2 - phioffset_;
+    if(sphi2<0) sphi2 += 8*atan(1.);
+    if(sphi2>8*atan(1.)) sphi2 -= 8*atan(1.);
+    ITC->phi1.set_fval(sphi1);
+    ITC->phi2.set_fval(sphi2);
+	    
+    ITC->rproj0.set_fval(rmean[0]);
+    ITC->rproj1.set_fval(rmean[1]);
+    ITC->rproj2.set_fval(rmean[2]);
+
+    ITC->zproj0.set_fval(t>0? zproj_[0] : -zproj_[0]);
+    ITC->zproj1.set_fval(t>0? zproj_[1] : -zproj_[1]);
+    ITC->zproj2.set_fval(t>0? zproj_[2] : -zproj_[2]);
+
+    ITC->rinv_final.calculate();
+    ITC->phi0_final.calculate();
+    ITC->t_final.calculate();
+    ITC->z0_final.calculate();
+
+    ITC->phiL_0_final.calculate();
+    ITC->phiL_1_final.calculate();
+    ITC->phiL_2_final.calculate();
+
+    ITC->zL_0_final.calculate();
+    ITC->zL_1_final.calculate();
+    ITC->zL_2_final.calculate();
+
+    ITC->phiD_0_final.calculate();
+    ITC->phiD_1_final.calculate();
+    ITC->phiD_2_final.calculate();
+
+    ITC->rD_0_final.calculate();
+    ITC->rD_1_final.calculate();
+    ITC->rD_2_final.calculate();
+
+    ITC->der_phiL_final.calculate();
+    ITC->der_zL_final.calculate();
+    ITC->der_phiD_final.calculate();
+    ITC->der_rD_final.calculate();
+
+    //store the approximate results
+    rinvapprox = ITC->rinv_final.get_fval();
+    phi0approx = ITC->phi0_final.get_fval();
+    tapprox    = ITC->t_final.get_fval();
+    z0approx   = ITC->z0_final.get_fval();
+
+    phiprojapprox[0] = ITC->phiL_0_final.get_fval();
+    phiprojapprox[1] = ITC->phiL_1_final.get_fval();
+    phiprojapprox[2] = ITC->phiL_2_final.get_fval();
+
+    zprojapprox[0]   = ITC->zL_0_final.get_fval();
+    zprojapprox[1]   = ITC->zL_1_final.get_fval();
+    zprojapprox[2]   = ITC->zL_2_final.get_fval();
+
+    for(int i=0; i<3; ++i){
+      phiderapprox[i] = ITC->der_phiL_final.get_fval();
+      zderapprox[i]   = ITC->der_zL_final.get_fval();
+    }
+
+    phiprojdiskapprox[0] = ITC->phiD_0_final.get_fval();
+    phiprojdiskapprox[1] = ITC->phiD_1_final.get_fval();
+    phiprojdiskapprox[2] = ITC->phiD_2_final.get_fval();
+
+    rprojdiskapprox[0] = ITC->rD_0_final.get_fval();
+    rprojdiskapprox[1] = ITC->rD_1_final.get_fval();
+    rprojdiskapprox[2] = ITC->rD_2_final.get_fval();
+
+    for(int i=0; i<3; ++i){
+      phiderdiskapprox[i] = ITC->der_phiD_final.get_fval();
+      rderdiskapprox[i]   = ITC->der_rD_final.get_fval();
+    }
+
+    //now binary
     
     int irinv,iphi0,it,iz0;
     bool validproj[3];
@@ -3572,36 +1847,160 @@ public:
     
     bool validprojdisk[3];
     int iphiprojdisk[3],irprojdisk[3],iphiderdisk[3],irderdisk[3];
-    bool minusNeighbordisk[3],plusNeighbordisk[3];
-    
-    //bool success=binarytrackletdisk(innerFPGAStub,outerFPGAStub,
-    bool success=ed_binarytrackletdisk(innerFPGAStub,outerFPGAStub,
-				       outerStub->sigmaz(),
-				       irinv,iphi0,it,iz0,
-				       validproj,
-				       iphiproj,izproj,
-				       iphider,izder,
-				       minusNeighbor,plusNeighbor,
-				       validprojdisk,
-				       iphiprojdisk,irprojdisk,
-				       iphiderdisk,irderdisk,
-				       minusNeighbordisk,
-				       plusNeighbordisk);
+    bool minusNeighborDisk[3],plusNeighborDisk[3];
 
+    int ir1=innerFPGAStub->ir();
+    int iphi1=innerFPGAStub->iphi();
+    int iz1=innerFPGAStub->iz();
     
-    if (debug1) {
-      cout << "FPGATrackletCalculator success = "<<success<<endl;
+    int ir2=outerFPGAStub->ir();
+    int iphi2=outerFPGAStub->iphi();
+    int iz2=outerFPGAStub->iz();
+    
+    //To get same precission as for layers.
+    iphi1<<=(nbitsphistubL456-nbitsphistubL123);
+    iphi2<<=(nbitsphistubL456-nbitsphistubL123);
+    
+    ITC->r1.set_ival(ir1);
+    ITC->r2.set_ival(ir2);
+    ITC->z1.set_ival(iz1);
+    ITC->z2.set_ival(iz2);
+    ITC->phi1.set_ival(iphi1);
+    ITC->phi2.set_ival(iphi2);
+
+    ITC->rinv_final.calculate();
+    ITC->phi0_final.calculate();
+    ITC->t_final.calculate();
+    ITC->z0_final.calculate();
+
+    ITC->phiL_0_final.calculate();
+    ITC->phiL_1_final.calculate();
+    ITC->phiL_2_final.calculate();
+
+    ITC->zL_0_final.calculate();
+    ITC->zL_1_final.calculate();
+    ITC->zL_2_final.calculate();
+
+    ITC->phiD_0_final.calculate();
+    ITC->phiD_1_final.calculate();
+    ITC->phiD_2_final.calculate();
+
+    ITC->rD_0_final.calculate();
+    ITC->rD_1_final.calculate();
+    ITC->rD_2_final.calculate();
+
+    ITC->der_phiL_final.calculate();
+    ITC->der_zL_final.calculate();
+    ITC->der_phiD_final.calculate();
+    ITC->der_rD_final.calculate();
+
+    //store the binary results
+    irinv = ITC->rinv_final.get_ival();
+    iphi0 = ITC->phi0_final.get_ival();
+    it    = ITC->t_final.get_ival();
+    iz0   = ITC->z0_final.get_ival();
+
+    iphiproj[0] = ITC->phiL_0_final.get_ival();
+    iphiproj[1] = ITC->phiL_1_final.get_ival();
+    iphiproj[2] = ITC->phiL_2_final.get_ival();
+    
+    izproj[0]   = ITC->zL_0_final.get_ival();
+    izproj[1]   = ITC->zL_1_final.get_ival();
+    izproj[2]   = ITC->zL_2_final.get_ival();
+
+    for(int i=0; i<3; ++i){
+      iphider[i] = ITC->der_phiL_final.get_ival();
+      izder[i]   = ITC->der_zL_final.get_ival();
+
+      validproj[i] = true;
+      if (izproj[i]<-(1<<(nbitszprojL123-1))) validproj[i]=false;
+      if (izproj[i]>=(1<<(nbitszprojL123-1))) validproj[i]=false;
+      
+      minusNeighbor[i]=false;
+      plusNeighbor[i]=false;
+      if (iphiproj[i]<(1<<nbitsphistubL456)/8) {
+	minusNeighbor[i]=true;
+	iphiproj[i]+=3*(1<<nbitsphistubL456)/4;
+      }
+      if (iphiproj[i]>=7*(1<<nbitsphistubL456)/8) {
+	plusNeighbor[i]=true;
+	iphiproj[i]-=3*(1<<nbitsphistubL456)/4;
+      }
+
+      //this is left from the original....
+      if (iphiproj[i]>=(1<<nbitsphistubL456)) iphiproj[i]=(1<<nbitsphistubL456)-2; //-2 not to hit atExtreme
+      if (iphiproj[i]==0) iphiproj[i]=1;
+
+      if (rproj_[i]<60.0)
+	iphiproj[i]>>=(nbitsphistubL456-nbitsphistubL123);
+      else
+	izproj[i]>>=(nbitszprojL123-nbitszprojL456);
+      
     }
-    
+
+    iphiprojdisk[0] = ITC->phiD_0_final.get_ival();
+    iphiprojdisk[1] = ITC->phiD_1_final.get_ival();
+    iphiprojdisk[2] = ITC->phiD_2_final.get_ival();
+
+    irprojdisk[0]   = ITC->rD_0_final.get_ival();
+    irprojdisk[1]   = ITC->rD_1_final.get_ival();
+    irprojdisk[2]   = ITC->rD_2_final.get_ival();
+
+    for(int i=0; i<3; ++i){
+      iphiderdisk[i] = ITC->der_phiD_final.get_ival();
+      irderdisk[i]   = ITC->der_rD_final.get_ival();
+      //"protection" from the original
+      if(iphiderdisk[i]>=(1<<6)) iphiderdisk[i] = (1<<6)-1;
+      if(iphiderdisk[i]<-(1<<6)) iphiderdisk[i] = -(1<<6);
+      if(irderdisk[i]>=(1<<7)) irderdisk[i] = (1<<7)-1;
+      if(irderdisk[i]<-(1<<7)) irderdisk[i] = -(1<<7);
+
+      
+      minusNeighborDisk[i]=false;
+      plusNeighborDisk[i]=false;
+      if (iphiprojdisk[i]<(1<<nbitsphistubL123)/8) {
+	minusNeighborDisk[i]=true;
+	iphiprojdisk[i]+=3*(1<<nbitsphistubL123)/4;
+      }
+      if (iphiprojdisk[i]>=7*(1<<nbitsphistubL123)/8) {
+	plusNeighborDisk[i]=true;
+	iphiprojdisk[i]-=3*(1<<nbitsphistubL123)/4;
+      }
+      
+      //"protection" from the original
+      if (iphiprojdisk[i]<0) iphiprojdisk[i]=0;
+      if (iphiprojdisk[i]>=(1<<nbitsphistubL123)) iphiprojdisk[i]=(1<<nbitsphistubL123)-1;
+      
+      validprojdisk[i]=true;
+      if(irprojdisk[i]<=0 || irprojdisk[i] > 120. / ITC->rD_0_final.get_K() ){
+	validprojdisk[i]=false;
+	irprojdisk[i] = 0;
+	iphiprojdisk[i] = 0;
+	iphiderdisk[i]  = 0;
+	irderdisk[i]    = 0;
+      }
+    }
+
+    bool success = true;
+    if(fabs(ITC->rinv_final.get_ival()*ITC->rinv_final.get_K())>rinvcut){
+      if (debug1) 
+	cout << "FPGATrackletCalculator::DiskSeeding irinv too large: "<<ITC->rinv_final.get_fval()<<endl;
+      success = false;
+    }
+    if (fabs(ITC->z0_final.get_ival()*ITC->z0_final.get_K())>z0cut) {
+      if (debug1) cout << "Failed tracklet z0 cut "<<ITC->z0_final.get_fval()<<" in layer 1"<<endl;
+      success = false;
+    }
+   
     if (!success) return false;
     
     for(unsigned int j=0;j<3;j++){
-      if (minusNeighbordisk[j]) {
-	phiprojapproxdisk[j]+=dphisector;
+      if (minusNeighborDisk[j]) {
+	phiprojdiskapprox[j]+=dphisector;
 	phiprojdisk[j]+=dphisector;
       }
-      if (plusNeighbordisk[j]) {
-	phiprojapproxdisk[j]-=dphisector;
+      if (plusNeighborDisk[j]) {
+	phiprojdiskapprox[j]-=dphisector;
 	phiprojdisk[j]-=dphisector;
       }	    
     }
@@ -3621,29 +2020,13 @@ public:
     if (writeTrackletParsDisk) {
       static ofstream out("trackletparsdisk.txt");
       out <<"Trackpars         "<<disk_
-	  <<"   "<<rinv<<" "<<rinvapprox<<" "<<irinv*krinvparsdisk
-	  <<"   "<<phi0<<" "<<phi0approx<<" "<<iphi0*kphi0parsdisk
-	  <<"   "<<t<<" "<<tapprox<<" "<<it*ktparsdisk
-	  <<"   "<<z0<<" "<<z0approx<<" "<<iz0*kzdisk
+	  <<"   "<<rinv<<" "<<rinvapprox<<" "<<ITC->rinv_final.get_fval()
+	  <<"   "<<phi0<<" "<<phi0approx<<" "<<ITC->phi0_final.get_fval()
+	  <<"   "<<t<<" "<<tapprox<<" "<<ITC->t_final.get_fval()
+	  <<"   "<<z0<<" "<<z0approx<<" "<<ITC->z0_final.get_fval()
 	  <<endl;
     }
     
-    if (writeTrackProj) {
-      static ofstream out1("trackproj.txt");
-      for (int i=0;i<3;i++) {
-	double kphiproj=kphiproj123;
-	out1 <<"Trackproj Disk "<<disk_<<" "<<sign*zproj_[i]
-	     <<"   "<<phiprojdisk[i]<<" "<<phiprojapproxdisk[i]
-	     <<" "<<iphiprojdisk[i]*kphiproj
-	     <<"   "<<rprojdisk[i]<<" "<<rprojapproxdisk[i]
-	     <<" "<<irprojdisk[i]*krprojshiftdisk
-	     <<"   "<<phiderdisk[i]<<" "<<phiderapproxdisk[i]
-	     <<" "<<iphiderdisk[i]*kphider
-	     <<"   "<<rderdisk[i]<<" "<<rderapproxdisk[i]
-	     <<" "<<irderdisk[i]*krprojderdiskshift
-	     <<endl;
-      }	      
-    }
 	    
     FPGATracklet* tracklet=new FPGATracklet(innerStub,outerStub,
 					    innerFPGAStub,outerFPGAStub,
@@ -3662,14 +2045,14 @@ public:
 					    validprojdisk,
 					    iphiprojdisk,irprojdisk,
 					    iphiderdisk,irderdisk,
-					    minusNeighbordisk,
-					    plusNeighbordisk,
+					    minusNeighborDisk,
+					    plusNeighborDisk,
 					    phiprojdisk,rprojdisk,
 					    phiderdisk,rderdisk,
-					    phiprojapproxdisk,
-					    rprojapproxdisk,
-					    phiderapproxdisk,
-					    rderapproxdisk,
+					    phiprojdiskapprox,
+					    rprojdiskapprox,
+					    phiderdiskapprox,
+					    rderdiskapprox,
 					    true);
     
     if (debug1) {
@@ -3714,16 +2097,8 @@ public:
       cout << "trying to make overlap tracklet disk_ = "<<disk_<<" "<<getName()<<endl;
     }
     
-    int sign=1;
-    if (disk_<0) sign=-1;
-    
-    FPGAWord iphi1=innerFPGAStub->phi();
-    FPGAWord iz1=innerFPGAStub->z();
-    FPGAWord ir1=innerFPGAStub->r();
-	    
-    FPGAWord iphi2=outerFPGAStub->phi();
-    FPGAWord iz2=outerFPGAStub->z();
-    FPGAWord ir2=outerFPGAStub->r();
+    //int sign=1;
+    //if (disk_<0) sign=-1;
     
     double r1=innerStub->r();
     double z1=innerStub->z();
@@ -3765,20 +2140,108 @@ public:
       z2=outerFPGAStub->zapprox();
       r2=outerFPGAStub->rapprox();
     }
-    
 
     double rinvapprox,phi0approx,tapprox,z0approx;
     double phiprojapprox[3],zprojapprox[3],phiderapprox[3],zderapprox[3];
-    double phiprojapproxdisk[4],rprojapproxdisk[4],
-      phiderapproxdisk[4],rderapproxdisk[4];
+    double phiprojdiskapprox[4],rprojdiskapprox[4],
+      phiderdiskapprox[4],rderdiskapprox[4];
     
-    approxtrackletoverlap(r1,z1,phi1,r2,z2,phi2,outerStub->sigmaz(),
-			  rinvapprox,phi0approx,tapprox,z0approx,
-			  phiprojapprox,zprojapprox,
-			  phiderapprox,zderapprox,
-			  phiprojapproxdisk,rprojapproxdisk,
-			  phiderapproxdisk,rderapproxdisk);
-	    
+
+    IMATH_TrackletCalculatorOverlap *ITC;
+    int ll = outerFPGAStub->layer().value()+1;
+    if     (ll==1 && disk_==1)  ITC = &ITC_L1F1;
+    else if(ll==2 && disk_==1)  ITC = &ITC_L2F1;
+    else if(ll==1 && disk_==-1) ITC = &ITC_L1B1;
+    else if(ll==2 && disk_==-1) ITC = &ITC_L2B1;
+    else assert(0);
+    
+    ITC->r1.set_fval(r2-rmean[ll-1]);
+    ITC->r2.set_fval(r1);
+    int signt = t>0? 1 : -1;
+    ITC->z1.set_fval(z2);
+    ITC->z2.set_fval(z1-signt*zmean[abs(disk_)-1]);
+    double sphi1 = phi1 - phioffset_;
+    if(sphi1<0) sphi1 += 8*atan(1.);
+    if(sphi1>8*atan(1.)) sphi1 -= 8*atan(1.);
+    double sphi2 = phi2 - phioffset_;
+    if(sphi2<0) sphi2 += 8*atan(1.);
+    if(sphi2>8*atan(1.)) sphi2 -= 8*atan(1.);
+    ITC->phi1.set_fval(sphi2);
+    ITC->phi2.set_fval(sphi1);
+
+    ITC->rproj0.set_fval(rmean[0]);
+    ITC->rproj1.set_fval(rmean[1]);
+    ITC->rproj2.set_fval(rmean[2]);
+    
+    ITC->zproj0.set_fval(t>0? zprojoverlap_[0] : -zprojoverlap_[0]);
+    ITC->zproj1.set_fval(t>0? zprojoverlap_[1] : -zprojoverlap_[1]);
+    ITC->zproj2.set_fval(t>0? zprojoverlap_[2] : -zprojoverlap_[2]);
+    ITC->zproj3.set_fval(t>0? zprojoverlap_[3] : -zprojoverlap_[3]);
+    
+    ITC->rinv_final.calculate();
+    ITC->phi0_final.calculate();
+    ITC->t_final.calculate();
+    ITC->z0_final.calculate();
+
+    ITC->phiL_0_final.calculate();
+    ITC->phiL_1_final.calculate();
+    ITC->phiL_2_final.calculate();
+
+    ITC->zL_0_final.calculate();
+    ITC->zL_1_final.calculate();
+    ITC->zL_2_final.calculate();
+
+    ITC->phiD_0_final.calculate();
+    ITC->phiD_1_final.calculate();
+    ITC->phiD_2_final.calculate();
+    ITC->phiD_3_final.calculate();
+
+    ITC->rD_0_final.calculate();
+    ITC->rD_1_final.calculate();
+    ITC->rD_2_final.calculate();
+    ITC->rD_3_final.calculate();
+
+    ITC->der_phiL_final.calculate();
+    ITC->der_zL_final.calculate();
+    ITC->der_phiD_final.calculate();
+    ITC->der_rD_final.calculate();
+
+    //store the approximate results
+    rinvapprox = ITC->rinv_final.get_fval();
+    phi0approx = ITC->phi0_final.get_fval();
+    tapprox    = ITC->t_final.get_fval();
+    z0approx   = ITC->z0_final.get_fval();
+
+    phiprojapprox[0] = ITC->phiL_0_final.get_fval();
+    phiprojapprox[1] = ITC->phiL_1_final.get_fval();
+    phiprojapprox[2] = ITC->phiL_2_final.get_fval();
+
+    zprojapprox[0]   = ITC->zL_0_final.get_fval();
+    zprojapprox[1]   = ITC->zL_1_final.get_fval();
+    zprojapprox[2]   = ITC->zL_2_final.get_fval();
+
+    for(int i=0; i<3; ++i){
+      phiderapprox[i] = ITC->der_phiL_final.get_fval();
+      zderapprox[i]   = ITC->der_zL_final.get_fval();
+    }
+
+    phiprojdiskapprox[0] = ITC->phiD_0_final.get_fval();
+    phiprojdiskapprox[1] = ITC->phiD_1_final.get_fval();
+    phiprojdiskapprox[2] = ITC->phiD_2_final.get_fval();
+    phiprojdiskapprox[3] = ITC->phiD_3_final.get_fval();
+
+    rprojdiskapprox[0] = ITC->rD_0_final.get_fval();
+    rprojdiskapprox[1] = ITC->rD_1_final.get_fval();
+    rprojdiskapprox[2] = ITC->rD_2_final.get_fval();
+    rprojdiskapprox[3] = ITC->rD_3_final.get_fval();
+
+    for(int i=0; i<4; ++i){
+      phiderdiskapprox[i] = ITC->der_phiD_final.get_fval();
+      rderdiskapprox[i]   = ITC->der_rD_final.get_fval();
+    }
+
+    //now binary
+
     int irinv,iphi0,it,iz0;
     bool validproj[3];
     int iphiproj[3],izproj[3],iphider[3],izder[3];
@@ -3786,34 +2249,175 @@ public:
     
     bool validprojdisk[4];
     int iphiprojdisk[4],irprojdisk[4],iphiderdisk[4],irderdisk[4];
-    bool minusNeighbordisk[4],plusNeighbordisk[4];
+    bool minusNeighborDisk[4],plusNeighborDisk[4];
     
+    int ir2=innerFPGAStub->ir();
+    int iphi2=innerFPGAStub->iphi();
+    int iz2=innerFPGAStub->iz();
+      
+    int ir1=outerFPGAStub->ir();
+    int iphi1=outerFPGAStub->iphi();
+    int iz1=outerFPGAStub->iz();
+      
+    //To get global precission
+    ir1<<=(nbitsrL456-nbitsrL123);
+    iphi1<<=(nbitsphistubL456-nbitsphistubL123);
+    iphi2<<=(nbitsphistubL456-nbitsphistubL123);
+
+    ITC->r1.set_ival(ir1);
+    ITC->r2.set_ival(ir2);
+    ITC->z1.set_ival(iz1);
+    ITC->z2.set_ival(iz2);
+    ITC->phi1.set_ival(iphi1);
+    ITC->phi2.set_ival(iphi2);
+      
+    ITC->rinv_final.calculate();
+    ITC->phi0_final.calculate();
+    ITC->t_final.calculate();
+    ITC->z0_final.calculate();
+
+    ITC->phiL_0_final.calculate();
+    ITC->phiL_1_final.calculate();
+    ITC->phiL_2_final.calculate();
+
+    ITC->zL_0_final.calculate();
+    ITC->zL_1_final.calculate();
+    ITC->zL_2_final.calculate();
+
+    ITC->phiD_0_final.calculate();
+    ITC->phiD_1_final.calculate();
+    ITC->phiD_2_final.calculate();
+    ITC->phiD_3_final.calculate();
+
+    ITC->rD_0_final.calculate();
+    ITC->rD_1_final.calculate();
+    ITC->rD_2_final.calculate();
+    ITC->rD_3_final.calculate();
+
+    ITC->der_phiL_final.calculate();
+    ITC->der_zL_final.calculate();
+    ITC->der_phiD_final.calculate();
+    ITC->der_rD_final.calculate();
+
+    //store the binary results
+    irinv = ITC->rinv_final.get_ival();
+    iphi0 = ITC->phi0_final.get_ival();
+    it    = ITC->t_final.get_ival();
+    iz0   = ITC->z0_final.get_ival();
+
+    //"protection" from the original, reinterpreted
+    if (iz0>= 1<<(ITC->z0_final.get_nbits()-1)) iz0=(1<<(ITC->z0_final.get_nbits()-1))-1;
+    if (iz0<=-1<<(ITC->z0_final.get_nbits()-1)) iz0=1-(1<<(ITC->z0_final.get_nbits()-1))-1; 
+    if (irinv>= (1<<(ITC->rinv_final.get_nbits()-1))) irinv=(1<<(ITC->rinv_final.get_nbits()-1))-1;
+    if (irinv<=-(1<<(ITC->rinv_final.get_nbits()-1))) irinv=1-(1<<(ITC->rinv_final.get_nbits()-1))-1; 
+
+    iphiproj[0] = ITC->phiL_0_final.get_ival();
+    iphiproj[1] = ITC->phiL_1_final.get_ival();
+    iphiproj[2] = ITC->phiL_2_final.get_ival();
     
-    bool success=binarytrackletOverlap(innerFPGAStub,outerFPGAStub,
-				       outerStub->sigmaz(),
-				       irinv,iphi0,it,iz0,
-				       validproj,
-				       iphiproj,izproj,
-				       iphider,izder,
-				       minusNeighbor,plusNeighbor,
-				       validprojdisk,
-				       iphiprojdisk,irprojdisk,
-				       iphiderdisk,irderdisk,
-				       minusNeighbordisk,
-				       plusNeighbordisk);
-    
+    izproj[0]   = ITC->zL_0_final.get_ival();
+    izproj[1]   = ITC->zL_1_final.get_ival();
+    izproj[2]   = ITC->zL_2_final.get_ival();
+
+    for(int i=0; i<3; ++i){
+      iphider[i] = ITC->der_phiL_final.get_ival();
+      izder[i]   = ITC->der_zL_final.get_ival();
+
+      validproj[i] = true;
+      if (izproj[i]<-(1<<(nbitszprojL123-1))) validproj[i]=false;
+      if (izproj[i]>=(1<<(nbitszprojL123-1))) validproj[i]=false;
+      
+      minusNeighbor[i]=false;
+      plusNeighbor[i]=false;
+      if (iphiproj[i]<(1<<nbitsphistubL456)/8) {
+	minusNeighbor[i]=true;
+	iphiproj[i]+=3*(1<<nbitsphistubL456)/4;
+      }
+      if (iphiproj[i]>=7*(1<<nbitsphistubL456)/8) {
+	plusNeighbor[i]=true;
+	iphiproj[i]-=3*(1<<nbitsphistubL456)/4;
+      }
+
+      //this is left from the original....
+      if (iphiproj[i]>=(1<<nbitsphistubL456)) iphiproj[i]=(1<<nbitsphistubL456)-2; //-2 not to hit atExtreme
+      if (iphiproj[i]==0) iphiproj[i]=1;
+
+      if (rproj_[i]<60.0)
+	iphiproj[i]>>=(nbitsphistubL456-nbitsphistubL123);
+      else
+	izproj[i]>>=(nbitszprojL123-nbitszprojL456);
+      
+    }
+
+    iphiprojdisk[0] = ITC->phiD_0_final.get_ival();
+    iphiprojdisk[1] = ITC->phiD_1_final.get_ival();
+    iphiprojdisk[2] = ITC->phiD_2_final.get_ival();
+    iphiprojdisk[3] = ITC->phiD_3_final.get_ival();
+
+    irprojdisk[0]   = ITC->rD_0_final.get_ival();
+    irprojdisk[1]   = ITC->rD_1_final.get_ival();
+    irprojdisk[2]   = ITC->rD_2_final.get_ival();
+    irprojdisk[3]   = ITC->rD_3_final.get_ival();
+
+    for(int i=0; i<4; ++i){
+      iphiderdisk[i] = ITC->der_phiD_final.get_ival();
+      irderdisk[i]   = ITC->der_rD_final.get_ival();
+      //"protection" from the original
+      if(iphiderdisk[i]>=(1<<6)) iphiderdisk[i] = (1<<6)-1;
+      if(iphiderdisk[i]<-(1<<6)) iphiderdisk[i] = -(1<<6);
+      if(irderdisk[i]>=(1<<7)) irderdisk[i] = (1<<7)-1;
+      if(irderdisk[i]<-(1<<7)) irderdisk[i] = -(1<<7);
+
+      
+      minusNeighborDisk[i]=false;
+      plusNeighborDisk[i]=false;
+      if (iphiprojdisk[i]<(1<<nbitsphistubL123)/8) {
+	minusNeighborDisk[i]=true;
+	iphiprojdisk[i]+=3*(1<<nbitsphistubL123)/4;
+      }
+      if (iphiprojdisk[i]>=7*(1<<nbitsphistubL123)/8) {
+	plusNeighborDisk[i]=true;
+	iphiprojdisk[i]-=3*(1<<nbitsphistubL123)/4;
+      }
+      
+      //"protection" from the original
+      if (iphiprojdisk[i]<0) iphiprojdisk[i]=0;
+      if (iphiprojdisk[i]>=(1<<nbitsphistubL123)) iphiprojdisk[i]=(1<<nbitsphistubL123)-1;
+      
+      validprojdisk[i]=true;
+      if(irprojdisk[i]<=0 || irprojdisk[i] > 120. / ITC->rD_0_final.get_K() ){
+	validprojdisk[i]=false;
+	irprojdisk[i] = 0;
+	iphiprojdisk[i] = 0;
+	iphiderdisk[i]  = 0;
+	irderdisk[i]    = 0;
+      }
+    }
+
+    bool success = true;
+    if(fabs(ITC->t_final.get_ival()*ITC->t_final.get_K())>10)
+      success = false;
+    if(fabs(ITC->rinv_final.get_ival()*ITC->rinv_final.get_K())>rinvcut){
+      if (debug1) 
+	cout << "FPGATrackletCalculator::OverlapSeeding irinv too large: "<<ITC->rinv_final.get_fval()<<endl;
+      success = false;
+    }
+    if (fabs(ITC->z0_final.get_ival()*ITC->z0_final.get_K())>z0cut) {
+      if (debug1) cout << "Failed tracklet z0 cut "<<ITC->z0_final.get_fval()<<" in layer 1"<<endl;
+      success = false;
+    }
+
     if (!success) {
       return false;
     }
-    
-    
+
     for(unsigned int j=0;j<3;j++){
-      if (minusNeighbordisk[j]) {
-	phiprojapproxdisk[j]+=dphisector;
+      if (minusNeighborDisk[j]) {
+	phiprojdiskapprox[j]+=dphisector;
 	phiprojdisk[j]+=dphisector;
       }
-      if (plusNeighbordisk[j]) {
-	phiprojapproxdisk[j]-=dphisector;
+      if (plusNeighborDisk[j]) {
+	phiprojdiskapprox[j]-=dphisector;
 	phiprojdisk[j]-=dphisector;
       }	    
     }
@@ -3833,29 +2437,11 @@ public:
     if (writeTrackletParsOverlap) {
       static ofstream out("trackletparsoverlap.txt");
       out <<"Trackpars "<<disk_
-	  <<"   "<<rinv<<" "<<rinvapprox<<" "<<irinv*krinvparsdisk
-	  <<"   "<<phi0<<" "<<phi0approx<<" "<<iphi0*kphi0parsdisk
-	  <<"   "<<t<<" "<<tapprox<<" "<<it*ktparsdisk
-	  <<"   "<<z0<<" "<<z0approx<<" "<<iz0*kzdisk
+	  <<"   "<<rinv<<" "<<irinv<<" "<<ITC->rinv_final.get_fval()
+	  <<"   "<<phi0<<" "<<iphi0<<" "<<ITC->phi0_final.get_fval()
+	  <<"   "<<t<<" "<<it<<" "<<ITC->t_final.get_fval()
+	  <<"   "<<z0<<" "<<iz0<<" "<<ITC->z0_final.get_fval()
 	  <<endl;
-    }
-    
-    if (writeTrackProj) {
-      static ofstream out1("trackproj.txt");
-      for (int i=0;i<3;i++) {
-	double kphiproj=kphiproj123;
-	out1 <<"Trackproj Overlap "<<disk_<<" "<<sign*zproj_[i]
-	     <<"   "<<phiprojdisk[i]<<" "<<phiprojapproxdisk[i]
-	     <<" "<<iphiprojdisk[i]*kphiproj
-	     <<"   "<<rprojdisk[i]<<" "<<rprojapproxdisk[i]
-	     <<" "<<irprojdisk[i]*krprojshiftdisk
-	     <<"   "<<phiderdisk[i]<<" "<<phiderapproxdisk[i]
-	     <<" "<<iphiderdisk[i]*kphider
-	     <<"   "<<rderdisk[i]<<" "<<rderapproxdisk[i]
-	     <<" "<<irderdisk[i]*krprojderdiskshift
-	     <<endl;
-      }
-      
     }
 
 	      
@@ -3871,20 +2457,21 @@ public:
 					    iphiproj,izproj,iphider,izder,
 					    minusNeighbor,plusNeighbor,
 					    
+					    
 					    phiproj,zproj,phider,zder,
 					    phiprojapprox,zprojapprox,
 					    phiderapprox,zderapprox,
 					    validprojdisk,
 					    iphiprojdisk,irprojdisk,
 					    iphiderdisk,irderdisk,
-					    minusNeighbordisk,
-					    plusNeighbordisk,
+					    minusNeighborDisk,
+					    plusNeighborDisk,
 					    phiprojdisk,rprojdisk,
 					    phiderdisk,rderdisk,
-					    phiprojapproxdisk,
-					    rprojapproxdisk,
-					    phiderapproxdisk,
-					    rderapproxdisk,
+					    phiprojdiskapprox,
+					    rprojdiskapprox,
+					    phiderdiskapprox,
+					    rderdiskapprox,
 					    false,true);
     
     if (debug1) {
@@ -3943,10 +2530,6 @@ private:
   FPGAAllStubs* innerallstubs_;
   FPGAAllStubs* outerallstubs_;
   vector<FPGAStubPairs*> stubpairs_;
-
-  FPGAInverseTable invRTable_;
-  FPGAInverseTable invTTable_;
-  FPGAInverseTable invTTableNeg_;
 
   FPGATrackletParameters* trackletpars_;
 
@@ -4033,7 +2616,35 @@ private:
   FPGATrackletProjections* trackletproj_D5Plus_; 
   FPGATrackletProjections* trackletproj_D5Minus_;
 
+public:
+  static IMATH_TrackletCalculator ITC_L1L2;
+  static IMATH_TrackletCalculator ITC_L3L4;
+  static IMATH_TrackletCalculator ITC_L5L6;
   
+  static IMATH_TrackletCalculatorDisk ITC_F1F2;
+  static IMATH_TrackletCalculatorDisk ITC_F3F4;
+  static IMATH_TrackletCalculatorDisk ITC_B1B2;
+  static IMATH_TrackletCalculatorDisk ITC_B3B4;
+
+  static IMATH_TrackletCalculatorOverlap ITC_L1F1;
+  static IMATH_TrackletCalculatorOverlap ITC_L2F1;
+  static IMATH_TrackletCalculatorOverlap ITC_L1B1;
+  static IMATH_TrackletCalculatorOverlap ITC_L2B1;
+    
 };
+
+IMATH_TrackletCalculator FPGATrackletCalculator::ITC_L1L2{1,2};
+IMATH_TrackletCalculator FPGATrackletCalculator::ITC_L3L4{3,4};
+IMATH_TrackletCalculator FPGATrackletCalculator::ITC_L5L6{5,6};
+
+IMATH_TrackletCalculatorDisk FPGATrackletCalculator::ITC_F1F2{1,2};
+IMATH_TrackletCalculatorDisk FPGATrackletCalculator::ITC_F3F4{3,4};
+IMATH_TrackletCalculatorDisk FPGATrackletCalculator::ITC_B1B2{-1,-2};
+IMATH_TrackletCalculatorDisk FPGATrackletCalculator::ITC_B3B4{-3,-4};
+
+IMATH_TrackletCalculatorOverlap FPGATrackletCalculator::ITC_L1F1{1,1};
+IMATH_TrackletCalculatorOverlap FPGATrackletCalculator::ITC_L2F1{2,1};
+IMATH_TrackletCalculatorOverlap FPGATrackletCalculator::ITC_L1B1{1,-1};
+IMATH_TrackletCalculatorOverlap FPGATrackletCalculator::ITC_L2B1{2,-1};
 
 #endif

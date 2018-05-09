@@ -1847,8 +1847,8 @@ TPROJ_L3L4C_L1PHI1 input=> TC_L3L4C.projoutL1PHI1 output=> PR_L3L4_L1PHI1.proj3i
 TPROJ_L3L4D_L1PHI1 input=> TC_L3L4D.projoutL1PHI1 output=> PR_L3L4_L1PHI1.proj4in
 TPROJ_L3L4F_L1PHI1 input=> TC_L3L4F.projoutL1PHI1 output=> PR_L3L4_L1PHI1.proj5in
 TPROJ_D1L2A_L1PHI1 input=> TC_D1L2A.projoutL1PHI1 output=> PR_L3L4_L1PHI1.proj6in
-TPROJ_L3L4_L1PHI1FromMinus input=> PT_L1_Minus.projoutPHI1 output=> PR_L3L4_L1PHI1.proj7in
-TPROJ_L3L4_L1PHI1FromPlus input=> PT_L1_Plus.projoutPHI1 output=> PR_L3L4_L1PHI1.proj8in
+TPROJ_L3L4_L1PHI1FromPlus input=> PT_L1_Plus.projoutPHI1 output=> PR_L3L4_L1PHI1.proj7in
+TPROJ_L3L4_L1PHI1FromMinus input=> PT_L1_Minus.projoutPHI1 output=> PR_L3L4_L1PHI1.proj8in
 TPROJ_L3L4A_L1PHI2 input=> TC_L3L4A.projoutL1PHI2 output=> PR_L3L4_L1PHI2.proj1in
 TPROJ_L3L4B_L1PHI2 input=> TC_L3L4B.projoutL1PHI2 output=> PR_L3L4_L1PHI2.proj2in
 TPROJ_L3L4C_L1PHI2 input=> TC_L3L4C.projoutL1PHI2 output=> PR_L3L4_L1PHI2.proj3in

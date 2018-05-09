@@ -5,28 +5,28 @@
 //#define USEROOT
 
 //Gemetry extensions
-//static string geomext="D3";  //Use only detector region 3
-//static string geomext="D4";  //Use only detector region 4
-//static string geomext="D3D4";  //Use only detector region 3+4
-//static string geomext="D5D6";  //Use forward disks
-//static string geomext="full";  //Use full
-static string geomext="new";  //Use full
+//static std::string geomext="D3";  //Use only detector region 3
+//static std::string geomext="D4";  //Use only detector region 4
+//static std::string geomext="D3D4";  //Use only detector region 3+4
+//static std::string geomext="D5D6";  //Use forward disks
+//static std::string geomext="full";  //Use full
+static std::string geomext="new";  //Use full
 
 static int TMUX = 6;
 
-static string fitpatternfile="fitpattern.txt";
+static std::string fitpatternfile="fitpattern.txt";
 
 //If this string is non-empty we will write ascii file with
 //processed events
-static string skimfile="";
-//static string skimfile="evlist_skim.txt";
+static std::string skimfile="";
+//static std::string skimfile="evlist_skim.txt";
 
 //Debug options (should be false for 'normal' operation)
 static bool dumppars=false;
 static bool dumpproj=false;
 static bool dumpmatch=false;
 
-
+static bool writeVerilog=false;  //Write out Verilog mudules for TCs
 static bool writeInvTable=false; //Write out tables of drinv in tracklet calculator
 
 static bool writeFitDerTable=false; //Write out track derivative tables
@@ -285,11 +285,6 @@ static int nbitsphiprojderL456=8;
 static int nbitszprojderL123=8+1;
 static int nbitszprojderL456=7+2;
 
-
-
-
-
-
 //Bits used to store track parameter in tracklet
 static int nbitsrinv=14;
 static int nbitsphi0=18;
@@ -304,144 +299,72 @@ static double maxz0=28.0;
 
 static double rmin[6]={rminL1,rminL2,rminL3,rminL4,rminL5,rminL6};
 
-//These are constants for track paramter calculation. Some will be 
-//used in the actual calculation. Others are just needed to compare 
-//the results to the floating point calculations
-
-static int idrinvbits=19;
-static int it1shift=23;
-static int it2shift=15;
-static int it3shift=13;
-static int it4bits=9;
-static int it5bits=9;
-static int irinvshift=10;
-static int it7shift=10;
-static int it7tmpbits=39;
-static int it7tmpshift=20;
-static int it7shift2=5;
-static int it9bits=12;
-static int itshift=5;
-static int it12shift=8;
-
-static int it1shiftdisk=23;
-static int it2shiftdisk=15;
-static int it3shiftdisk=13;
-static int it4bitsdisk=9;
-static int it5bitsdisk=9;
-static int irinvshiftdisk=10;
-static int it7shiftdisk=10;
-static int it7tmpbitsdisk=39;
-static int it7tmpshiftdisk=20;
-static int it7shift2disk=5;
-static int it9bitsdisk=12;
-static int itshiftdisk=5;
-static int it12shiftdisk=8;
-
+//These are constants defining global coordinate system
 
 static double kphi=two_pi/((0.75*NSector)*(1<<nbitsphistubL123));
 static double kphi1=two_pi/((0.75*NSector)*(1<<nbitsphistubL456));
 static double kz=2*zlength/(1<<nbitszL123);
-static double kr=2*drmax/(1<<nbitsrL456);			
-static double kdrinv=1.0/(kr*(1<<idrinvbits));
-static double kdelta=(1<<(it1shift+it3shift-2*(idrinvbits-it2shift)))*kphi1*kphi1;	
-static double kt5=1.0/(1<<it5bits);	
-static double krinv=kphi1/(kr*(1<<idrinvbits));
-static double kt=kz*kdrinv;
-static double kt7=kphi1*(1<<(irinvshift+it7shift-idrinvbits));
-static int it7tmpfactor=(1<<(it7tmpbits-idrinvbits+irinvshift))*kphi1/sqrt(6.0);
+static double kr=2*drmax/(1<<nbitsrL456);
 
-//static double kt9=1.0/(1<<(2*it7tmpbits-2*it7tmpshift-2*it7shift));
-static double kt9=1.0/(1<<it9bits);
-static double kt12=kz/(1<<(idrinvbits-itshift-it12shift));
+//track and tracklet parameters
+const int rinv_shift = -6;  // Krinv = 2^shift * Kphi/Kr
+const int phi0_shift = 1;   // Kphi0 = 2^shift * Kphi
+const int t_shift    = -10; // Kt    = 2^shift * Kz/Kr
+const int z0_shift   = 0;   // Kz0   = 2^shift * kz
 
+//projections are coarsened from global to stub precision  
 
-static double kzdisk=2.0*dzmax/(1<<nzbitsdisk);
-static double krdisk=drdisk/(1<<nrbitsdisk);
-static double kdeltadisk=(1<<(it1shiftdisk+it3shiftdisk-2*(idrinvbits-it2shiftdisk)))*kphi1*kphi1;	
-static double kdrinvdisk=1.0/(krdisk*(1<<idrinvbits));
-static double ktdisk=kzdisk*kdrinvdisk;
-static double kt12disk=kz/(1<<(idrinvbits-itshiftdisk-it12shiftdisk));
-static double krinvdisk=kphi1/(krdisk*(1<<idrinvbits));
-static double kt7disk=kphi1/(1<<(irinvshiftdisk+it7shiftdisk-idrinvbits));
-static int it7tmpfactordisk=(1<<(it7tmpbitsdisk-idrinvbits+irinvshiftdisk))*kphi1/sqrt(6.0);
-static double kt9disk=1.0/(1<<(2*it7tmpbitsdisk-2*it7tmpshiftdisk-2*it7shiftdisk)); 
+//projection to R parameters
+const int PS_phiL_shift = 0;   // phi projections have global precision in ITC
+const int SS_phiL_shift = 0;   
+const int PS_zL_shift   = 0;   // z projections have global precision in ITC
+const int SS_zL_shift   = 0;
 
+const int PS_phiderL_shift = 0;   // Kderphi = 2^shift * Kphi/Kr
+const int SS_phiderL_shift = 0; 
+const int PS_zderL_shift   = -5;  // Kderz = 2^shift * Kz/Kr
+const int SS_zderL_shift   = -5;  
+  
+//projection to Z parameters
+const int PS_phiD_shift = 3;   
+const int SS_phiD_shift = 3;   
+const int PS_rD_shift   = 1;   // a bug?! coarser by a factor of two then stubs??
+const int SS_rD_shift   = 1;
 
-static int rinvbitshift=13; //(int)(1.0+log((maxrinv/(1<<(nbitsrinv-1)))/krinv)/log(2.0));
-static int phi0bitshift=1; //(int)(1.0+log((maxphi0/(1<<(nbitsphi0-1)))/kphi1)/log(2.0));
-static int tbitshift=9; //(int)(1.0+log((maxt/(1<<(nbitst-1)))/kt)/log(2.0));
-static int z0bitshift=0; //(int)(1.0+log((maxz0/(1<<(nbitsz0-1)))/kz)/log(2.0));
+const int PS_phiderD_shift = 1; //Kderphidisk = 2^shift * Kphi/Kz
+const int SS_phiderD_shift = 1; 
+const int PS_rderD_shift   = -6;  //Kderrdisk = 2^shift * Kr/Kz
+const int SS_rderD_shift   = -6;  
 
+//constants derivative from the above
+static double krinvpars, kphi0pars, ktpars, kz0pars;
+static double kphiproj123, kphiproj456, kzproj, kphider, kzder;
+static double krprojshiftdisk, kphiprojdisk,krprojderdisk;
+static double krdisk,krprojderdiskshift, kzpars;
 
-static int rinvbitshiftdisk=13; //(int)(1.0+log((maxrinv/(1<<(nbitsrinv-1)))/krinvdisk)/log(2.0));
-static int phi0bitshiftdisk=1; //(int)(1.0+log((maxphi0/(1<<(nbitsphi0-1)))/kphi1)/log(2.0));
-
-
-static double krinvpars=krinv*(1<<rinvbitshift);
-static double kphi0pars=kphi1*(1<<phi0bitshift);
-static double kphi0parsdisk=kphi1*(1<<phi0bitshiftdisk);
-static double ktpars=kt*(1<<tbitshift);
-static double kzpars=kz;
-
+//numbers needed for matches & fit, unclear what they are.
+static int idrinvbits=19;
+static int phi0bitshift=1;
+static int rinvbitshift=13;
+static int tbitshift=9;
+static int z0bitshift=0;
+static int phiderbitshift=7;
+static int zderbitshift=6;
 static int t2bits=23;
 static int t3shift=8;
 static int t4shift=8;
 static int t4shift2=8;
 static int t6bits=12;
-
-static double krinvparsdisk=krinvdisk*(1<<rinvbitshiftdisk);
-static double ktparsdisk=ktdisk*(1<<tbitshift);
-static double kt2disk=(1.0/ktparsdisk)/(1<<t2bits);
-static double kt3disk=kt2disk*kzdisk*(1<<t3shift);
-static double kt4disk=kt3disk*krinvparsdisk*(1<<t4shift);
-static double kt5disk=1.0/(1<<it5bitsdisk);	
-static double kt6disk=1.0/(1<<t6bits);
-static double krprojdisk=kt3disk*kt6disk*(1<<t6bits);
-static double krprojderdisk=kt2disk;
-static double kphiprojderdisk=kt2disk*krinvparsdisk;
-
-static double kst5disk=kt4disk*kt4disk*(1<<(2*t4shift2));
-
+static int rinvbitshiftdisk=13; 
+static int phi0bitshiftdisk=1;
 static int rprojdiskbitshift=6;
 static int phiderdiskbitshift=20;
 static int rderdiskbitshift=7;
-static double krprojshiftdisk=krprojdisk*(1<<rprojdiskbitshift);
 
-static double kphiprojdisk=kphi0parsdisk*4.0;
-static double kphiprojderdiskshift=kphiprojderdisk*(1<<phiderdiskbitshift);
-static double krprojderdiskshift=krprojderdisk*(1<<rderdiskbitshift);
-
-
-//Parameters for projections
-
-static int is1shift=9;
-static int is2shift=23;
-static int is3bits=10;
-static int is5shift=9;
-
-static double ks1=kr*krinvpars*(1<<is1shift);
-static double ks2=ks1*ks1*(1<<is2shift);
-static double ks3=1.0/(1<<is3bits);
-static double ks4=ks1*ks3*(1<<(idrinvbits+phi0bitshift-is1shift+is3bits-rinvbitshift));
-static double ks5=kt*kr*(1<<tbitshift)*(1<<is5shift);
-static double ks6=ks5*ks3;
-
-static int phiderbitshift=7;
-//static int zderbitshift=6-3;
-static int zderbitshift=6; //changed to tracklet 1.0 version to run on ttbar PU=200
-
-
-static double kphiproj123=kphi0pars*4;
-static double kphiproj456=kphi0pars/2;
-static double kzproj=kz;
-static double kphider=krinvpars*(1<<phiderbitshift);
-static double kzder=ktpars*(1<<zderbitshift);
 
 static int phiresidbits=12; 
 static int zresidbits=9;
 static int rresidbits=7;
-//static int rresidbits=8; //tracklet 1.0 version
-
 
 //Trackfit
 static int fitrinvbitshift=9;  //6 OK?
@@ -455,7 +378,7 @@ static int chisqzfactbits=14;
 //Duplicate Removal
 static int minIndStubs=3;
 static bool AdjacentRemoval=true;
-static string RemovalType="ichi";
+static std::string RemovalType="ichi";
 //"ichi" (pairwise, keep track with best ichisq), "nstub" (pairwise, keep track with more stubs), "grid" (TMTT-like removal), "" (no removal)
 
 #endif
