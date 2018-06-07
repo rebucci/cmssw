@@ -4,7 +4,8 @@ TTTrackAssociatorFromPixelDigis = cms.EDProducer("TTTrackAssociator_Phase2Tracke
     TTTracks = cms.VInputTag( cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks"),
                               #cms.InputTag("TTTracksFromPixelDigisAM", "AML1Tracks"),
     ),
+    #TTTracks       = cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks"),
     TTClusterTruth = cms.InputTag("TTClusterAssociatorFromPixelDigis", "ClusterAccepted"),
-    TTStubTruth = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"),
+    TTStubTruth    = cms.InputTag("TTStubAssociatorFromPixelDigis", "StubAccepted"),
 )
 
