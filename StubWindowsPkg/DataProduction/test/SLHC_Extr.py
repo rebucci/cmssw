@@ -81,7 +81,7 @@ OUTPUT_NAME="TTBar_PU200_L1TRK"  #output file will be "extracted_'OUTPUT_NAME'.r
 # Extractor
 ############################################################
 
-process.load("StubWindows.RecoExtractor.MIB_extractor_cff")
+process.load("StubWindowsPkg.RecoExtractor.MIB_extractor_cff")
 
 
 ############################################################
@@ -94,9 +94,9 @@ process.MIBextraction.doMatch    = True
 
 process.MIBextraction.doL1TRK	 = True
 process.MIBextraction.doBANK 	 = False
-process.MIBextraction.doL1TT	 = False
+process.MIBextraction.doL1TT	 = True
 process.MIBextraction.getCoords  = False
-process.MIBextraction.fullInfo   = False
+process.MIBextraction.fullInfo   = True
 
 
 ############################################################
@@ -144,7 +144,7 @@ process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStub
 ############################################################
 # L1 Tracks
 from SimTracker.TrackTriggerAssociation.TTTrackAssociation_cfi import *
-#TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag(cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks") )
+TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag(cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks") )
 
 process.TTTracksTruth         = cms.Path(process.TrackTriggerAssociatorTracks) #ONLY tracks with truth
 process.TTTracksCompleteTruth = cms.Path(process.TrackTriggerAssociatorComplete) #stubs, clusters, and tracks with trutha

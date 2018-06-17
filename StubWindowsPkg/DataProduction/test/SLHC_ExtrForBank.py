@@ -25,7 +25,7 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
 # Load the extracto
-process.load("StubWindows.RecoExtractor.MIB_extractor_cff")
+process.load("StubWindowsPkg.RecoExtractor.MIB_extractor_cff")
 
 process.MIBextraction.fillTree         = False
 process.MIBextraction.doBANK           = True

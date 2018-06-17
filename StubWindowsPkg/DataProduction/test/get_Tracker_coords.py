@@ -51,7 +51,7 @@ process.source = cms.Source("EmptySource")
 
 
 # Load the extractor
-process.load("StubWindows.RecoExtractor.MIB_extractor_cff")
+process.load("StubWindowsPkg.RecoExtractor.MIB_extractor_cff")
 
 # Tune some options (see MIB_extractor_cfi.py for details)
 

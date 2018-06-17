@@ -33,7 +33,7 @@ process.source = cms.Source("PoolSource",
 )
 
 # Load the extracto
-process.load("StubWindows.RecoExtractor.MIB_extractor_cff")
+process.load("StubWindowsPkg.RecoExtractor.MIB_extractor_cff")
 
 # Tune some options (see MIB_extractor_cfi.py for details)
 

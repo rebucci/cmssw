@@ -38,7 +38,7 @@ process.load('L1Trigger.TrackTrigger.TrackTrigger_cff')
 process.load('SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
-process.load("StubWindows.RecoExtractor.MIB_extractor_cff")
+process.load("StubWindowsPkg.RecoExtractor.MIB_extractor_cff")
 
 from L1Trigger.TrackTrigger.TTStubAlgorithmRegister_cfi import *
 from L1Trigger.TrackTrigger.TTStub_cfi import *
