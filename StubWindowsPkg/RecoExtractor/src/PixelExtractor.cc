@@ -1,8 +1,12 @@
-
 #include "../interface/PixelExtractor.h"
 
-
-PixelExtractor::PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2TrackerDigi> > pixToken, edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink> > pixslToken, edm::EDGetTokenT< std::vector<PileupSummaryInfo> > puToken, bool doTree, bool doMatch)
+// -----------------------------------------------------------------------------------------------------------
+// Tokens
+PixelExtractor::PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2TrackerDigi> > pixToken, 
+                               edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink> > pixslToken, 
+                               edm::EDGetTokenT< std::vector<PileupSummaryInfo> > puToken, 
+                               bool doTree, 
+                               bool doMatch)
 {
   m_OK = false;
   m_pixToken   = pixToken;
@@ -13,7 +17,6 @@ PixelExtractor::PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2Tracke
   m_matching = doMatch;
 
   // Tree definition
-
   m_pixclus_x        = new std::vector<float>;    
   m_pixclus_y        = new std::vector<float>;  
   m_pixclus_z        = new std::vector<float>;    
@@ -44,7 +47,6 @@ PixelExtractor::PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2Tracke
     m_tree      = new TTree("Pixels","RECO Pixel info") ;
 
     // Branches definition
-
     m_tree->Branch("PIX_n",         &m_pclus,    "PIX_n/I");
     m_tree->Branch("PIX_nPU",       &m_nPU,      "PIX_nPU/I");
 
@@ -70,6 +72,8 @@ PixelExtractor::PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2Tracke
   }
 }
 
+// -----------------------------------------------------------------------------------------------------------
+// Retrieval
 PixelExtractor::PixelExtractor(TFile *a_file)
 {
   std::cout << "PixelExtractor object is retrieved" << std::endl;
@@ -141,6 +145,8 @@ PixelExtractor::PixelExtractor(TFile *a_file)
 PixelExtractor::~PixelExtractor()
 {}
 
+// -----------------------------------------------------------------------------------------------------------
+// Initialize
 void PixelExtractor::init(const edm::EventSetup *setup, bool isFlat)
 {
   setup->get<TrackerDigiGeometryRecord>().get(theTrackerGeometry);
@@ -178,10 +184,8 @@ void PixelExtractor::init(const edm::EventSetup *setup, bool isFlat)
   }
 }
 
-//
+// -----------------------------------------------------------------------------------------------------------
 // Method filling the main particle tree
-//
-
 void PixelExtractor::writeInfo(const edm::Event *event) 
 {
   PixelExtractor::reset();
@@ -206,12 +210,10 @@ void PixelExtractor::writeInfo(const edm::Event *event)
     event->getByToken(m_pixslToken, pDigiLinkColl);
   }
   
-
   bool barrel;
   bool endcap;
 
   int disk;  
-
   int cols;    
   int rows;    
   float pitchX;
@@ -271,27 +273,21 @@ void PixelExtractor::writeInfo(const edm::Event *event)
 
       if (m_matching)
       {
-	if (pDigiLinks.data.size() != 0)
-	{
-	  // Loop over DigisSimLink in this det unit
-
-	  for(auto it = pDigiLinks.data.begin();  it != pDigiLinks.data.end(); it++) 
-	  {         
-	    if (static_cast<int>(it->channel())!=static_cast<int>((*iter).channel()))
-	      continue;
-
-	    //	    std::cout << it->SimTrackId() << " ##### " << it->eventId().event() << std::endl;
-
-	    the_ids.push_back(it->SimTrackId()); 
-	    the_eids.push_back(it->eventId().event()); 
-	    the_bids.push_back(it->eventId().bunchCrossing()); 
-	  }
-	}
+        if (pDigiLinks.data.size() != 0)
+        {
+          // Loop over DigisSimLink in this det unit
+      	  for(auto it = pDigiLinks.data.begin();  it != pDigiLinks.data.end(); it++) 
+      	  {         
+      	    if (static_cast<int>(it->channel())!=static_cast<int>((*iter).channel())) continue;
+      	    //	    std::cout << it->SimTrackId() << " ##### " << it->eventId().event() << std::endl;
+      	    the_ids.push_back(it->SimTrackId()); 
+      	    the_eids.push_back(it->eventId().event()); 
+      	    the_bids.push_back(it->eventId().bunchCrossing()); 
+      	  }
+        }
       }
       
-
       //      std::cout << the_ids.size() << " #///# " << the_eids.size() << std::endl;
-
       m_pixclus_simhit->push_back(the_ids.size());
       m_pixclus_simhitID->push_back(the_ids);
       m_pixclus_evtID->push_back(the_eids);
@@ -299,28 +295,27 @@ void PixelExtractor::writeInfo(const edm::Event *event)
 
       if (barrel)
       {
-	m_pixclus_layer->push_back(static_cast<int>(tTopo->layer(detid))+4); 
-
-	if (tTopo->tobSide(detid)==3)
-	{ 
-	  m_pixclus_ladder->push_back(static_cast<int>(tTopo->tobRod(detid))-1); 
-	  m_pixclus_module->push_back(static_cast<int>(tTopo->module(detid))-1
-				      +limits[static_cast<int>(tTopo->layer(detid))-1][tTopo->tobSide(detid)-1]); 
-	}
-	else
-	{ 
-	  m_pixclus_ladder->push_back(static_cast<int>(tTopo->module(detid))-1); 
-	  m_pixclus_module->push_back(static_cast<int>(tTopo->tobRod(detid))-1
-				      +limits[static_cast<int>(tTopo->layer(detid))-1][tTopo->tobSide(detid)-1]); 
-	}
+        m_pixclus_layer->push_back(static_cast<int>(tTopo->layer(detid))+4); 
+        if (tTopo->tobSide(detid)==3)
+        { 
+      	  m_pixclus_ladder->push_back(static_cast<int>(tTopo->tobRod(detid))-1); 
+      	  m_pixclus_module->push_back(static_cast<int>(tTopo->module(detid))-1
+      				      +limits[static_cast<int>(tTopo->layer(detid))-1][tTopo->tobSide(detid)-1]); 
+      	}
+        else
+        { 
+      	  m_pixclus_ladder->push_back(static_cast<int>(tTopo->module(detid))-1); 
+      	  m_pixclus_module->push_back(static_cast<int>(tTopo->tobRod(detid))-1
+      				      +limits[static_cast<int>(tTopo->layer(detid))-1][tTopo->tobSide(detid)-1]); 
+      	}
       }
 
       if (endcap)
       {
-	disk = 10+static_cast<int>(tTopo->tidWheel(detid))+abs(2-static_cast<int>(tTopo->side(detid)))*7;
-	m_pixclus_layer->push_back(disk); 
-	m_pixclus_ladder->push_back(tTopo->tidRing(detid)-1); 
-	m_pixclus_module->push_back(tTopo->module(detid)-1); 
+      	disk = 10+static_cast<int>(tTopo->tidWheel(detid))+abs(2-static_cast<int>(tTopo->side(detid)))*7;
+      	m_pixclus_layer->push_back(disk); 
+      	m_pixclus_ladder->push_back(tTopo->tidRing(detid)-1); 
+      	m_pixclus_module->push_back(tTopo->module(detid)-1); 
       }
 
       m_pixclus_nrow->push_back(rows);
@@ -336,17 +331,15 @@ void PixelExtractor::writeInfo(const edm::Event *event)
 }
 
 
-//
+// -----------------------------------------------------------------------------------------------------------
 // Method getting the info from an input file
-//
-
 void PixelExtractor::getInfo(int ievt) 
 {
   m_tree->GetEntry(ievt); 
 }
 
+// -----------------------------------------------------------------------------------------------------------
 // Method initializing everything (to do for each event)
-
 void PixelExtractor::reset()
 {
   m_pclus = 0;
@@ -373,17 +366,22 @@ void PixelExtractor::reset()
   m_pixclus_pitchy->clear(); 
 }
 
-
+// -----------------------------------------------------------------------------------------------------------
+// Fill Tree
 void PixelExtractor::fillTree()
 {
   m_tree->Fill(); 
 }
- 
+
+// -----------------------------------------------------------------------------------------------------------
+// Fill Size
 void PixelExtractor::fillSize(int size)
 {
   m_pclus=size;
 }
 
+// -----------------------------------------------------------------------------------------------------------
+// Get Size
 int  PixelExtractor::getSize()
 {
   return m_pclus;

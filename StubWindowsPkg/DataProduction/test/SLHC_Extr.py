@@ -73,7 +73,7 @@ process.source = cms.Source("PoolSource", fileNames = Source_Files, duplicateChe
 )
 
 # name of output file
-OUTPUT_NAME="TTBar_PU200_L1TRK"  #output file will be "extracted_'OUTPUT_NAME'.root"
+OUTPUT_NAME="TTBar200"  #output file will be "extracted_'OUTPUT_NAME'.root"
 
 
 
@@ -94,7 +94,6 @@ process.MIBextraction.doMatch    = True
 
 process.MIBextraction.doL1TRK	 = True
 process.MIBextraction.doBANK 	 = False
-process.MIBextraction.doL1TT	 = True
 process.MIBextraction.getCoords  = False
 process.MIBextraction.fullInfo   = True
 
@@ -143,12 +142,16 @@ process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStub
 
 ############################################################
 # L1 Tracks
-from SimTracker.TrackTriggerAssociation.TTTrackAssociation_cfi import *
-TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag(cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks") )
+# from SimTracker.TrackTriggerAssociation.TTTrackAssociation_cfi import *
+# TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag(cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks") )
 
-process.TTTracksTruth         = cms.Path(process.TrackTriggerAssociatorTracks) #ONLY tracks with truth
-process.TTTracksCompleteTruth = cms.Path(process.TrackTriggerAssociatorComplete) #stubs, clusters, and tracks with trutha
+# process.TTTracksTruth         = cms.Path(process.TrackTriggerAssociatorTracks) #ONLY tracks with truth
+# process.TTTracksCompleteTruth = cms.Path(process.TrackTriggerAssociatorComplete) #stubs, clusters, and tracks with trutha
 
+from L1Trigger.TrackFindingTracklet.Tracklet_cfi import *
+process.load("L1Trigger.TrackFindingTracklet.L1TrackletEmulationTracks_cff")
+process.TTTracksEmulation          = cms.Path(process.L1TrackletEmulationTracks)
+process.TTTracksEmulationWithTruth = cms.Path(process.L1TrackletEmulationTracksWithAssociators)
 
 
 ############################################################
@@ -159,10 +162,11 @@ process.dump = cms.EDAnalyzer("EventContentAnalyzer")
 process.p    = cms.Path(process.MIBextraction)
 process.d    = cms.Path(process.dump)
 
-## Optional Processes
 # process.TTClusterStubTruth     -  clusters and stubs
 # process.TTTracksTruth          -  l1 tracks
 # process.TTTracksCompleteTruth  -  l1 tracks, clusters, stubs
+# process.TTTracksEmulationWithTruth - l1 tracks from emulator
 
-process.schedule = cms.Schedule(process.TTTracksCompleteTruth,process.p) 
+process.schedule = cms.Schedule(process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
+#process.schedule = cms.Schedule(process.TTTracksCompleteTruth,process.p) 
 #process.schedule = cms.Schedule(process.TTClusterStubTruth,process.p) 

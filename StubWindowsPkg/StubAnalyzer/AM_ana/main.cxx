@@ -85,12 +85,12 @@ int main(int argc, char** argv) {
     
     // Option 5: stub windows calculation
     //
-  
     if (params.option()=="stub_win")
     {
-      windows* my_effs = new windows(params.inputfile(),params.outfile(),
-                                     params.sptminmu(),params.sptmaxmu(),params.sptminele(),params.sptmaxele(),
-                                     params.qmax(),params.maxlosses());
+    	windows* my_effs = new windows(params.inputfile(),params.outfile(),
+															 params.sptminmu(),params.sptmaxmu(),
+															 params.sptminele(),params.sptmaxele(),
+															 params.qmax(),params.maxlosses());
       delete my_effs;
     }
     
@@ -103,6 +103,8 @@ int main(int argc, char** argv) {
 //
 //    delete my_test;
  // }
+    
+    
     // Option 6: generate a serie of events into a root file
     
     if (params.option()=="losses_TRG_CONC") // TRG block for CIC

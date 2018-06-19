@@ -76,7 +76,15 @@ class StubExtractor
  public:
 
 
-  StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ctoken,edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stoken, edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > cttoken, edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > sttoken, edm::EDGetTokenT< std::vector< TrackingParticle > > tptoken, edm::EDGetTokenT< std::vector< TrackingVertex > > tvtoken, edm::EDGetTokenT< edm::SimTrackContainer > simttoken, edm::EDGetTokenT< edm::SimVertexContainer > simvtoken, bool doTree);
+  StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ctoken,
+                edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stoken, 
+                edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > cttoken, 
+                edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > sttoken, 
+                edm::EDGetTokenT< std::vector< TrackingParticle > > tptoken, 
+                edm::EDGetTokenT< std::vector< TrackingVertex > > tvtoken, 
+                edm::EDGetTokenT< edm::SimTrackContainer > simttoken, 
+                edm::EDGetTokenT< edm::SimVertexContainer > simvtoken, 
+                bool doTree);
 
   StubExtractor(TFile *a_file);
   ~StubExtractor();
@@ -96,7 +104,6 @@ class StubExtractor
   bool isOK() {return m_OK;}
 
   //Getters
-
   int getClust1Idx(float x, float y, float z);
   int getClust2Idx(int idx1, float dist);
   int get_id(int lay,int lad,int mod,float x,float y,float z,float sw);
@@ -173,7 +180,6 @@ class StubExtractor
   int limits[6][3];
 
   /// Geometry handles etc
- 
   edm::Handle< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > PixelDigiL1TkClusterHandle;
   edm::Handle< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > PixelDigiL1TkStubHandle;
 
@@ -209,7 +215,6 @@ class StubExtractor
   std::vector<int>    *m_clus_pid;    // process id inducing cluster i (see MCExtractor.h)   
   std::vector<int>    *m_clus_tp;  
   std::vector<std::vector<int> >    *m_clus_pix;   // Pixel digis linked to the cluster 
-
 
   int m_stub;
 

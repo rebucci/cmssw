@@ -165,7 +165,7 @@ void track_eff::do_test(int nevt)
 
   cout << "Starting a test loop over " << ndat << " events..." << endl;
   if (has_patt) cout << "... using " << m_nsec << " trigger sectors..." << endl;
-
+	
   int is_sec_there[m_nsec];
   int ladder,module,layer;
   int n_per_lay[20];
@@ -198,6 +198,7 @@ void track_eff::do_test(int nevt)
     
   for (int i=0;i<ndat;++i)
   {
+  	cout << "top of event loop" << endl;
     for (int j=0;j<48;++j) patt_psec[j]=0;
     for (int j=0;j<48;++j) patt_psec_full[j]=0;
 
@@ -205,17 +206,21 @@ void track_eff::do_test(int nevt)
 
     dtc_list.clear();
     dtc_list_FE.clear();
-	
+		
     for (int j=0;j<2000;++j) dtc_list.push_back(0);	
     for (int j=0;j<2000;++j) dtc_list_FE.push_back(0);	
+    cout << "pushed back some dtc_list variables" << endl;
 
     nb_patterns =0;
     nb_tcs =0;
     nb_tracks =0;
     
     m_L1TT->GetEntry(i);
+    cout << "get entry for m_L1TT" << endl;
     m_PIX->GetEntry(i);
+    cout << "get entry for m_PIX" << endl;
     if (has_patt) m_PATT->GetEntry(i);
+    cout << "get entry for m_PATT" << endl;
 
     if (i%1000==0)
       cout << "Processed " << i << "/" << ndat << endl;

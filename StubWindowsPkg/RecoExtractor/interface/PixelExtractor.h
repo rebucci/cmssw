@@ -49,7 +49,11 @@ class PixelExtractor
 
  public:
 
-  PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2TrackerDigi> > pixToken,edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink> > pixslToken,edm::EDGetTokenT< std::vector<PileupSummaryInfo> > puToken,bool doTree,bool doMatch);
+  PixelExtractor(edm::EDGetTokenT< edm::DetSetVector< Phase2TrackerDigi> > pixToken,
+  							 edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink> > pixslToken,
+  							 edm::EDGetTokenT< std::vector<PileupSummaryInfo> > puToken,
+  							 bool doTree,
+  							 bool doMatch);
   PixelExtractor(TFile *a_file);
   ~PixelExtractor();
 
@@ -67,8 +71,6 @@ class PixelExtractor
   bool isOK() {return m_OK;}
 
   //Getters
-
-
   int getNDigis() {return m_pclus;}
 
   int isSimHit(int i) {return m_pixclus_simhit->at(i);}
@@ -165,7 +167,6 @@ class PixelExtractor
   int    		m_pclus; // Number of digis
 
   // All the following vectors have a size m_pclus
-
   std::vector<float>               *m_pixclus_x;        // Digi x-global coordinates (in cm)
   std::vector<float>               *m_pixclus_y;        // Digi y-global coordinates (in cm)
   std::vector<float>               *m_pixclus_z;        // Digi z-global coordinates (in cm)
@@ -185,7 +186,6 @@ class PixelExtractor
   std::vector<int>                 *m_pixclus_type;      // 
   std::vector<float>               *m_pixclus_pitchx;   // Strip pitch
   std::vector<float>               *m_pixclus_pitchy;   // Column pitch
-
 
   std::vector<int>      the_ids;
   std::vector<int>      the_eids;

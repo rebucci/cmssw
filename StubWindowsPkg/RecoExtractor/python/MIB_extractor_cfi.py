@@ -34,11 +34,12 @@ MIBextraction = cms.EDAnalyzer("RecoExtractor",
 
     ## L1 Tracks
     doL1TRK          = cms.untracked.bool(False),          # Extract the official L1track information
-    L1pattern_tag    = cms.InputTag( "MergePROutput", "AML1Patterns"),
-    L1tc_tag         = cms.InputTag( "MergeTCOutput", "AML1TCs"),
+   #L1pattern_tag    = cms.InputTag( "MergePROutput", "AML1Patterns"),
+   #L1tc_tag         = cms.InputTag( "MergeTCOutput", "AML1TCs"),
    #L1track_tag      = cms.InputTag( "MergeTCOutput", "AML1TCs"), 
    #L1track_tag      = cms.InputTag( "MergeFITOutput","AML1Tracks"), 
-   L1track_tag	     = cms.InputTag( "TTTracksFromPhase2TrackerDigis", "Level1TTTracks"), 
+   #L1track_tag	     = cms.InputTag( "TTTracksFromPhase2TrackerDigis", "Level1TTTracks"),
+   L1track_tag	     = cms.InputTag( "TTTracksFromTrackletEmulation", "Level1TTTracks"), 
                                  
     ## Pixel information                              
     doPixel          = cms.untracked.bool(False),          # Extract the Tracker information (Pixel tree)

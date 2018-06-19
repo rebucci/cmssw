@@ -1,9 +1,17 @@
 #include "../interface/StubExtractor.h"
 
-
-StubExtractor::StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ctoken,edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stoken, edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > cttoken, edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > sttoken, edm::EDGetTokenT< std::vector< TrackingParticle > > tptoken, edm::EDGetTokenT< std::vector< TrackingVertex > > tvtoken, edm::EDGetTokenT< edm::SimTrackContainer > simttoken, edm::EDGetTokenT< edm::SimVertexContainer > simvtoken, bool doTree)
+// -----------------------------------------------------------------------------------------------------------
+// Tokens
+StubExtractor::StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ctoken,
+                             edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stoken, 
+                             edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > cttoken, 
+                             edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > sttoken, 
+                             edm::EDGetTokenT< std::vector< TrackingParticle > > tptoken, 
+                             edm::EDGetTokenT< std::vector< TrackingVertex > > tvtoken, 
+                             edm::EDGetTokenT< edm::SimTrackContainer > simttoken, 
+                             edm::EDGetTokenT< edm::SimVertexContainer > simvtoken, 
+                             bool doTree)
 {
-
   m_ctoken = ctoken;
   m_cttoken= cttoken;
   m_stoken = stoken;
@@ -13,12 +21,10 @@ StubExtractor::StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< 
   m_simttoken=simttoken;
   m_simvtoken=simvtoken;
 
-
   m_OK = false;
   n_tot_evt=0;
 
   // Tree definition
- 
   m_clus_x       = new  std::vector<float>;
   m_clus_y       = new  std::vector<float>;
   m_clus_z       = new  std::vector<float>; 
@@ -84,7 +90,6 @@ StubExtractor::StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< 
     m_tree      = new TTree("TkStubs","Official stub info") ;
 
     // Branches definition
-
     m_tree->Branch("L1Tkevt", &n_tot_evt); // Simple evt number or event ID
 
     // If we don't request only matched stubs, we keep all the info
@@ -147,6 +152,8 @@ StubExtractor::StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< 
   }
 }
 
+// -----------------------------------------------------------------------------------------------------------
+// Retrieval
 StubExtractor::StubExtractor(TFile *a_file)
 {
   std::cout << "StubExtractor object is retrieved" << std::endl;
@@ -211,7 +218,6 @@ StubExtractor::StubExtractor(TFile *a_file)
   // Tree definition
   m_OK = false;
 
-
   StubExtractor::reset();
 
   m_tree = dynamic_cast<TTree*>(a_file->Get("TkStubs"));
@@ -231,7 +237,7 @@ StubExtractor::StubExtractor(TFile *a_file)
   
   // If we don't request only matched stubs, we keep all the info
   // otherwise we skim the data file (useful for BANK generation)
-  
+
   m_tree->SetBranchAddress("L1TkCLUS_n",         &m_clus);
   m_tree->SetBranchAddress("L1TkCLUS_x",         &m_clus_x);
   m_tree->SetBranchAddress("L1TkCLUS_y",         &m_clus_y);
@@ -291,19 +297,17 @@ StubExtractor::StubExtractor(TFile *a_file)
 }
 
 
-
 StubExtractor::~StubExtractor()
 {}
 
-
+// -----------------------------------------------------------------------------------------------------------
+// Initialize
 void StubExtractor::init(const edm::EventSetup *setup, bool isFlat)
 {
   setup->get<TrackerTopologyRcd>().get(tTopoHandle);
   setup->get<TrackerDigiGeometryRecord>().get(tGeomHandle);
 
   m_tilted=(!isFlat);
-
-
 
   int n_tilted_rings[6];
   int n_flat_rings[6];
@@ -342,20 +346,18 @@ void StubExtractor::init(const edm::EventSetup *setup, bool isFlat)
   mMagneticFieldStrength = 3.8;
 }
 
-//
+// -----------------------------------------------------------------------------------------------------------
 // Method filling the main particle tree
-//
-
 void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCinfo) 
 {
   StubExtractor::reset();
   ++n_tot_evt;    
 
-
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
 
   if (MCinfo) mc->clearTP(0.001,10000000.0);
+  
   /// Sim Tracks and Vtx
   event->getByToken(m_simttoken,SimTrackHandle);  
   event->getByToken(m_simvtoken,SimVtxHandle);  
@@ -368,12 +370,9 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
   event->getByToken( m_cttoken, MCTruthTTClusterHandle );
   event->getByToken( m_sttoken, MCTruthTTStubHandle );
 
-
   /// TrackingParticles
-
   event->getByToken(m_tptoken,TrackingParticleHandle);  
   event->getByToken(m_tvtoken,TrackingVertexHandle);  
-
 
   int layer  = 0;
   int ladder = 0;
@@ -383,7 +382,6 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
   int rows   = 0;
 
   std::vector<int> clus_coords;
-
   std::vector<int> clus_rows;
   std::vector<int> clus_cols;
 
@@ -513,7 +511,6 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
   } /// End of if ( PixelDigiL1TkClusterHandle->size() > 0 )
 
   // Clusters are built, now look at the stubs
-    
   int clust1     = -1;
   int clust2     = -1;
  
@@ -646,17 +643,15 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
 }
 
 
-//
+// -----------------------------------------------------------------------------------------------------------
 // Method getting the info from an input file
-//
-
 void StubExtractor::getInfo(int ievt) 
 {
   m_tree->GetEntry(ievt); 
 }
 
+// -----------------------------------------------------------------------------------------------------------
 // Method initializing everything (to do for each event)
-
 void StubExtractor::reset()
 {
   m_clus = 0;
@@ -721,17 +716,22 @@ void StubExtractor::reset()
 
 }
 
-
+// -----------------------------------------------------------------------------------------------------------
+// Fill Tree
 void StubExtractor::fillTree()
 {
   m_tree->Fill(); 
 }
- 
+
+// -----------------------------------------------------------------------------------------------------------
+// Fill Size
 void StubExtractor::fillSize(int size)
 {
   m_clus=size;
 }
 
+// -----------------------------------------------------------------------------------------------------------
+// Get Size
 int  StubExtractor::getSize()
 {
   return m_clus;
@@ -794,7 +794,7 @@ int  StubExtractor::get_id(int lay,int lad,int mod,float x,float y,float z,float
 
   if (idx!=-1) return idx;
 
-  std::cout << "StubExtractor::get_id: you are not supposed to get here!" << std::endl;
+  //std::cout << "StubExtractor::get_id: you are not supposed to get here!" << std::endl;
 
   return idx;
 }

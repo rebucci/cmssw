@@ -25,7 +25,6 @@
 #include "../interface/StubExtractor.h"
 #include "../interface/L1TrackExtractor.h"
 #include "../interface/MCExtractor.h"
-//#include "../interface/L1TrackTrigger_analysis.h"
 #include "../interface/StubTranslator.h"
 #include "../interface/AnalysisSettings.h"
 
@@ -72,7 +71,6 @@ class RecoExtractor : public edm::EDAnalyzer{
   bool do_L1TRK_;
   bool do_BANK_;
   bool do_MATCH_;
-  bool do_L1tt_;
 
   bool use_flat_;
   bool fullinfo_;
@@ -89,8 +87,6 @@ class RecoExtractor : public edm::EDAnalyzer{
   edm::EDGetTokenT< edm::DetSetVector< Phase2TrackerDigi> > pixToken_;
   edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink> > pixslToken_;
   edm::EDGetTokenT< std::vector<PileupSummaryInfo> > puToken_;
-  edm::EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > pattToken_;
-  edm::EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > tcToken_;
   edm::EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > trkToken_;
 
   edm::EDGetTokenT< std::vector< TrackingParticle > > tpToken2_;
@@ -99,10 +95,7 @@ class RecoExtractor : public edm::EDAnalyzer{
   edm::EDGetTokenT< edm::SimVertexContainer > simvToken_;
 
 
-  //
   // Definition of root-tuple :
-  //
-
   std::string outFilename_;
   std::string inFilename_;
 
@@ -120,7 +113,6 @@ class RecoExtractor : public edm::EDAnalyzer{
   L1TrackExtractor*         m_L1TRK;
   StubTranslator*           m_BK;
   AnalysisSettings*         m_ana_settings;
-//  L1TrackTrigger_analysis*  m_L1TT_analysis;
 
 };
 

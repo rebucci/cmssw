@@ -11,14 +11,12 @@
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 
-
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "DataFormats/Common/interface/DetSetVectorNew.h"
 
 // Geometry info, needed for hit recovery
-
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/CommonTopologies/interface/PixelTopology.h"
 #include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetUnit.h"
@@ -54,7 +52,6 @@
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
 #include "DataFormats/SiPixelDetId/interface/PXFDetId.h"
-
 //#include "CommonTools/RecoAlgos/interface/TrackingParticleSelector.h"
 
 //std C++
@@ -69,11 +66,14 @@
 class MCExtractor
 {
  public:
+  
   /// Constructor
-
-  MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken, edm::EDGetTokenT< TrackingParticleCollection > tToken,bool doTree);
+  MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken, 
+  						edm::EDGetTokenT< TrackingParticleCollection > tToken,
+  						bool doTree);
   MCExtractor(TFile *a_file);
   MCExtractor(){}
+  
   /// Destructor
   virtual ~MCExtractor(){}
 
@@ -88,7 +88,6 @@ class MCExtractor
   void getInfo(int ievt); 
 
   // Setters/Getters
-
   bool isOK() {return m_OK;}
 
   int getNGen() {return m_gen_n;}
@@ -104,7 +103,6 @@ class MCExtractor
   float getTP_py(int i)    {return m_part_py->at(i);}
   float getTP_pz(int i)    {return m_part_pz->at(i);}
   float getTP_pt(int i)    {return sqrt(m_part_px->at(i)*m_part_px->at(i)+m_part_py->at(i)*m_part_py->at(i));}
-
 
   void printhits(float x, float y, float z);
 
@@ -132,7 +130,6 @@ class MCExtractor
 
   edm::EDGetTokenT< reco::GenParticleCollection > m_gtoken;
   edm::EDGetTokenT< TrackingParticleCollection > m_ttoken;
-
 
   edm::Handle<reco::GenParticleCollection> genParticles;
   edm::Handle<TrackingParticleCollection>  TPCollection ;
@@ -167,7 +164,6 @@ class MCExtractor
     m_tree_new->Branch("subpart_y",            &m_part_y);
     m_tree_new->Branch("subpart_z",            &m_part_z);
     
-    
   */
   
   int    		m_gen_n;       // Number of particles generated
@@ -176,10 +172,10 @@ class MCExtractor
   std::vector<float>    *m_gen_x;     // x-origin of particle i (in cm)
   std::vector<float>    *m_gen_y;     // y-origin of particle i (in cm)
   std::vector<float>    *m_gen_z;     // z-origin of particle i (in cm)
-  std::vector<float> 	*m_gen_px;    // px-origin of particle i (in cm)
-  std::vector<float> 	*m_gen_py;    // py-origin of particle i (in cm)
+  std::vector<float> 	  *m_gen_px;    // px-origin of particle i (in cm)
+  std::vector<float> 	  *m_gen_py;    // py-origin of particle i (in cm)
   std::vector<float>    *m_gen_pz;    // pz-origin of particle i (in cm)
-  std::vector<int> 	*m_gen_proc;  // UNUSED 
+  std::vector<int> 	    *m_gen_proc;  // UNUSED 
   std::vector<int>      *m_gen_pdg;   // PDG code of particle
 
 
@@ -189,11 +185,11 @@ class MCExtractor
   std::vector<int>      *m_part_pdgId;// PDG code of TP i
   std::vector<int>      *m_part_evtId;// 
   std::vector< std::vector<int> >      *m_part_stId;// 
-  std::vector<float> 	*m_part_px;   // px-origin of TP i (in cm)
-  std::vector<float> 	*m_part_py;   // py-origin of TP i (in cm)
-  std::vector<float>	*m_part_pz;   // pz-origin of TP i (in cm)
+  std::vector<float> 	  *m_part_px;   // px-origin of TP i (in cm)
+  std::vector<float> 	  *m_part_py;   // py-origin of TP i (in cm)
+  std::vector<float>	  *m_part_pz;   // pz-origin of TP i (in cm)
   std::vector<float>    *m_part_eta;  // eta-origin of TP i (in cm)
-  std::vector<float> 	*m_part_phi;  // phi-origin of TP i (in cm)
+  std::vector<float> 	  *m_part_phi;  // phi-origin of TP i (in cm)
   std::vector<float>    *m_part_x;    // x-origin of TP i (in cm)
   std::vector<float>    *m_part_y;    // y-origin of TP i (in cm)
   std::vector<float>    *m_part_z;    // z-origin of TP i (in cm)
@@ -201,10 +197,7 @@ class MCExtractor
   std::vector<int>      *m_hits;      // Number of SimHits of TP i 
 
 
-
-
   // Finally the geometry information
-
   edm::ESHandle<DTGeometry> dtGeometry;
   edm::ESHandle<CSCGeometry> cscGeometry;
   edm::ESHandle<RPCGeometry> rpcGeometry;
@@ -216,7 +209,6 @@ class MCExtractor
   const CaloSubdetectorGeometry* HBgeom;
   const CaloSubdetectorGeometry* EEgeom;
   const CaloSubdetectorGeometry* EBgeom;
-
 
   int n_hit_part;
   int n_st_part;
@@ -248,7 +240,6 @@ class MCExtractor
   double dz;
   double dr;
   double dphi;
-
 
   std::vector<int>      the_ids;
   float x,y,z;

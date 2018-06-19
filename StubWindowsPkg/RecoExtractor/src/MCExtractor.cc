@@ -1,7 +1,10 @@
 #include "../interface/MCExtractor.h"
 
-
-MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,edm::EDGetTokenT< TrackingParticleCollection > ttoken, bool doTree)
+// -----------------------------------------------------------------------------------------------------------
+// Tokens
+MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
+												 edm::EDGetTokenT< TrackingParticleCollection > ttoken, 
+                         bool doTree)
 {
   // Set everything to 0
   m_OK = false;
@@ -33,11 +36,7 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
 
   MCExtractor::reset();
 
-
-  //
   // Tree definition
-  //
-
   if (doTree)
   {
     m_OK = true;
@@ -45,7 +44,8 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
   }
 }
 
-
+// -----------------------------------------------------------------------------------------------------------
+// Retrieval
 MCExtractor::MCExtractor(TFile *a_file)
 {
   std::cout << "MCExtractor object is retrieved" << std::endl;
@@ -53,6 +53,7 @@ MCExtractor::MCExtractor(TFile *a_file)
   // Tree definition
   m_OK = false;
 
+  // Variables
   m_gen_x       = new std::vector<float>;
   m_gen_y       = new std::vector<float>;
   m_gen_z       = new std::vector<float>; 
@@ -77,6 +78,7 @@ MCExtractor::MCExtractor(TFile *a_file)
 
   MCExtractor::reset();
 
+  // Tree
   m_tree_retrieved = dynamic_cast<TTree*>(a_file->Get("MC"));
 
   if (!m_tree_retrieved)
@@ -88,7 +90,7 @@ MCExtractor::MCExtractor(TFile *a_file)
 
   m_OK = true;
 
-  
+  // Branch Addresses
   m_tree_retrieved->SetBranchAddress("gen_n",   &m_gen_n);
   m_tree_retrieved->SetBranchAddress("gen_proc",&m_gen_proc);
   m_tree_retrieved->SetBranchAddress("gen_pdg", &m_gen_pdg);
@@ -116,12 +118,11 @@ MCExtractor::MCExtractor(TFile *a_file)
 }
 
 
-
+// -----------------------------------------------------------------------------------------------------------
+// Initialize
 void MCExtractor::init(const edm::EventSetup *setup)
 {
-  //
   // Initializations 
-  //
 
   // Here we build the whole detector
   // We need that to retrieve all the hits
@@ -130,10 +131,8 @@ void MCExtractor::init(const edm::EventSetup *setup)
 
 }
 
-//
+// -----------------------------------------------------------------------------------------------------------
 // Method filling the main event
-//
-
 void MCExtractor::writeInfo(const edm::Event *event) 
 {
   using namespace reco;
@@ -146,17 +145,13 @@ void MCExtractor::writeInfo(const edm::Event *event)
   MCExtractor::getGenInfo(event); 
 
 
-  //
+  // -----------------------------------------------------------------------------------------------------------
   // Then loop on tracking particles (TPs): 
-  //
 
   // Get the different Calo hits
-
   int n_part        = 0; // The total number of stored TPs
   
-
   event->getByToken(m_ttoken,TPCollection);       
- 
   //  event->getByLabel("mix","MergedTrackTruth",TrackingParticleHandle);
 
   const TrackingParticleCollection tpColl = *(TPCollection.product());
@@ -175,7 +170,6 @@ void MCExtractor::writeInfo(const edm::Event *event)
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
     
     // Fill tracking particle variables
-
     m_part_pdgId->push_back(tp->pdgId());                       // Particle type
     m_part_px->push_back(tp->momentum().x());                   // 
     m_part_py->push_back(tp->momentum().y());                   // Momentum
@@ -201,19 +195,13 @@ void MCExtractor::writeInfo(const edm::Event *event)
   
   m_part_n    = n_part;
 
-  //___________________________
-  //
-  // Fill the tree :
-  //___________________________
-
+  // Fill the tree
   MCExtractor::fillTree();
 }
 
 
-
+// -----------------------------------------------------------------------------------------------------------
 // Method retrieving the generated info of the event
-
-
 void MCExtractor::getGenInfo(const edm::Event *event) 
 {
   event->getByToken(m_gtoken, genParticles);
@@ -239,24 +227,20 @@ void MCExtractor::getGenInfo(const edm::Event *event)
 }
 
 
-//
+// -----------------------------------------------------------------------------------------------------------
 // Method getting the info from an input file
-//
-
 void MCExtractor::getInfo(int ievt) 
 {
   reset();
   m_tree_retrieved->GetEntry(ievt); 
 }
 
+// -----------------------------------------------------------------------------------------------------------
 // Method initializing everything (to do before each event)
-
 void MCExtractor::reset()
 {
-
   m_gen_n         = 0;
   m_part_n        = 0;
-
 
   m_gen_x->clear();
   m_gen_y->clear();
@@ -279,27 +263,31 @@ void MCExtractor::reset()
   m_part_y->clear();       
   m_part_z->clear();       
   m_part_used->clear();    
-
 }    
 
-  
+// -----------------------------------------------------------------------------------------------------------
+// Fill Tree
 void MCExtractor::fillTree()
 {
   m_tree_new->Fill(); 
 }
- 
+
+// -----------------------------------------------------------------------------------------------------------
+// Fill Size
 void MCExtractor::fillSize(int size)
 {
   m_gen_n=size;
 }
 
+// -----------------------------------------------------------------------------------------------------------
+// Get Size
 int  MCExtractor::getSize()
 {
   return m_gen_n;
 }
 
-  
-  
+// -----------------------------------------------------------------------------------------------------------
+// Create Tree
 void MCExtractor::createTree()
 {  
   m_tree_new = new TTree("MC","MC info");  
@@ -330,6 +318,8 @@ void MCExtractor::createTree()
   m_tree_new->Branch("subpart_z",            &m_part_z);
 } 
 
+// -----------------------------------------------------------------------------------------------------------
+// Tracking Particles
 void MCExtractor::clearTP(float ptmin,float rmax)
 {
  int n_TP= getNTP();
@@ -347,6 +337,8 @@ void MCExtractor::clearTP(float ptmin,float rmax)
  }
 }
 
+// -----------------------------------------------------------------------------------------------------------
+// Matched TPs
 int MCExtractor::getMatchingTP(float x,float y, float z,
 			       float px,float py, float pz)
 {
@@ -369,8 +361,8 @@ int MCExtractor::getMatchingTP(float x,float y, float z,
   return idx;
 }
 
-
-
+// -----------------------------------------------------------------------------------------------------------
+// Find matched TPs
 void MCExtractor::findMatchingTP(const int &stID,const int &evtID,
 				 int &itp, bool verb)
 {
