@@ -53,7 +53,7 @@ process.options = cms.untracked.PSet(
 
 # Number of events
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1)
+    input = cms.untracked.int32(-1)
 )
 
 # input files
@@ -65,7 +65,8 @@ Source_Files = cms.untracked.vstring(
 		#'file:QCD_example.root', 
 
 		##### RELVALS #####
-		'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/52A9842F-C9CF-E711-84DE-0242AC130002.root',  #TTBar PU200
+		#'file:/hadoop/store/user/rbucci/mc_gen/SingleElectronFlatPt5To100_20180624/SingleElectronFlatPt5To100.root',
+		#'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/52A9842F-C9CF-E711-84DE-0242AC130002.root',  #TTBar PU200
 		#'/store/relval/CMSSW_10_0_0_pre1/RelValSingleMuPt10/GEN-SIM-DIGI-RAW/94X_upgrade2023_realistic_v2_2023D17noPU-v2/10000/4A774661-DECE-E711-9826-0CC47A4C8F18.root',  #SingleMu PU0
 )
 
@@ -73,7 +74,7 @@ process.source = cms.Source("PoolSource", fileNames = Source_Files, duplicateChe
 )
 
 # name of output file
-OUTPUT_NAME="TTBar200"  #output file will be "extracted_'OUTPUT_NAME'.root"
+OUTPUT_NAME="extracted.root"
 
 
 
@@ -112,11 +113,11 @@ else:
 
 ############################################################
 # OUTPUT
-process.MIBextraction.extractedRootFile=cms.string('extracted_'+OUTPUT_NAME+'.root')
+process.MIBextraction.extractedRootFile=cms.string(OUTPUT_NAME)
 
-# Note: preferred method uses TFileService. It's unclear if the current method is compatible with lobster.
-#process.TFileService = cms.Service("TFileService", fileName = cms.string('output.root'), closeFileFast = cms.untracked.bool(True))
-# This will require changes to MIBextractor (remove the output options) as well as all the extractors (add the TFileService output to each) and possibly more. Pending review.
+# # Note: preferred method uses TFileService. It's unclear if the current method is compatible with lobster.
+# #process.TFileService = cms.Service("TFileService", fileName = cms.string('output.root'), closeFileFast = cms.untracked.bool(True))
+# # This will require changes to MIBextractor (remove the output options) as well as all the extractors (add the TFileService output to each) and possibly more. Pending review.
 
 
 

@@ -32,7 +32,7 @@
 // in step 6 of the tutorial
 //
 // filename    : the name and directory of the input ROOT file containing the data to analyze
-// secfilename : the name and directory of the input csv file  containing the sectors definition
+// secfilename    : the name and directory of the input csv file  containing the sectors definition
 // outfile     : the name of the output ROOT file containing the efficiency results 
 // ptmin       : the minimal pt of the tracks to be tested
 // d0max       : the maximal |d0| of the tracks to be tested
@@ -116,12 +116,12 @@ class track_eff
   std::vector<int>   m_stub_module;
   std::vector<int>   m_stub_segment;
   std::vector<int>   m_stub_did;
+  std::vector<int>   m_stub_chip;
   std::vector<float> m_stub_strip;
   std::vector<float> m_stub_sw;
   std::vector<float> m_stub_sw_c;
   std::vector<int>   m_stub_tp;
   std::vector<int>   m_stub_pdg;
-  std::vector<int>   m_stub_chip;
   std::vector<float> m_stub_pxGEN;
   std::vector<float> m_stub_pyGEN;
   std::vector<float> m_stub_etaGEN;

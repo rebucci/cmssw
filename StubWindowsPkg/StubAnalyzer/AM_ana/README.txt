@@ -75,7 +75,7 @@ where SECTORFILE denotes the name of the csv file obtained from the TkLayout too
 
 The code is proceeding as follows:
 
-1. It first retrieves the cabling definitions, and creates a module2DTC and DTC2module tables (the csv file contains the opposite). If given the trigger tower definitions the code can also do the eqquivalent tables.
+1. It first retrieves the cabling definitions, and creates a module2DTC and DTC2module tables (the csv file contains the opposite). If given the trigger tower definitions the code can also do the equivalent tables.
  
 2. Then a loop over the n events is made, and for each events, all the tracking particles satisfying the D0MAX and PTMIN requirements are selected. The denominator is made from all the tracking particles with at least 4 stubs (wherever they are). The other are forgotten forever
 

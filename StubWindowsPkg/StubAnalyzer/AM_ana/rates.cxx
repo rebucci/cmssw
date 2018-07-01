@@ -32,7 +32,6 @@ void rates::get_rates(bool fe)
   double fact   = 1./static_cast<float>(n_entries); // Normalization factor
   
   // Then loop over events
-  
   for (int j=0;j<n_entries;++j)
   {
     L1TT->GetEntry(j);
@@ -41,7 +40,8 @@ void rates::get_rates(bool fe)
     
     if (m_clus == 0) continue; // No clusters, don't go further
     
-    for (int i=0;i<m_clus;++i) // Loop over clusters
+    // Loop over clusters
+    for (int i=0;i<m_clus;++i)
     {
       disk  = 0;
       layer = m_clus_layer[i];
@@ -62,19 +62,20 @@ void rates::get_rates(bool fe)
       
       if (disk==0) // Barrel
       {
-	m_b_crate[B_id]      += fact;
-	m_b_bylc_rate[Bl_id] += fact;
+      	m_b_crate[B_id]      += fact;
+      	m_b_bylc_rate[Bl_id] += fact;
       }
       else // Disks
       {
-	m_e_crate[E_id]      += fact;
-	m_e_bylc_rate[El_id] += fact;
+      	m_e_crate[E_id]      += fact;
+      	m_e_bylc_rate[El_id] += fact;
       }
     } // End of loop over clusters
         
     if (m_stub == 0) continue; // No stubs, don't go further
    
-    for (int i=0;i<m_stub;++i) // Loop over stubs
+    // Loop over stubs
+    for (int i=0;i<m_stub;++i)
     {     
       cor   = m_stub_cor[i];
  
@@ -98,9 +99,7 @@ void rates::get_rates(bool fe)
       Bl_id = (layer-5)*100 + module;
       El_id = (disk-1)*100 + ladder;
       
-      
       // Then we look if the stub is fake/secondary/primary
-      
       is_prim=false;
       is_prim2=false;
       is_fake=false;
@@ -114,29 +113,29 @@ void rates::get_rates(bool fe)
       
       if (disk==0) // Barrel
       {
-	m_b_rate[chip][B_id] += fact;
-	m_b_byls_rate[Bl_id] += fact;
-	
-	if (is_fake)              m_b_rate_f[B_id]  += fact;
-	if (!is_fake && !is_prim) m_b_rate_s[B_id]  += fact;
-	if (is_prim)              m_b_rate_p[B_id]  += fact;
-	if (is_prim2)             m_b_rate_pp[B_id] += fact;
+      	m_b_rate[chip][B_id] += fact;
+      	m_b_byls_rate[Bl_id] += fact;
+      	
+      	if (is_fake)              m_b_rate_f[B_id]  += fact;
+      	if (!is_fake && !is_prim) m_b_rate_s[B_id]  += fact;
+      	if (is_prim)              m_b_rate_p[B_id]  += fact;
+      	if (is_prim2)             m_b_rate_pp[B_id] += fact;
       }
       else // Disk
       {
-	m_e_rate[chip][E_id] += fact;
-	m_e_byls_rate[El_id] += fact;
-	
-	if (is_fake)              m_e_rate_f[E_id]  += fact;
-	if (!is_fake && !is_prim) m_e_rate_s[E_id]  += fact;
-	if (is_prim)              m_e_rate_p[E_id]  += fact;
-	if (is_prim2)             m_e_rate_pp[E_id] += fact;
+      	m_e_rate[chip][E_id] += fact;
+      	m_e_byls_rate[El_id] += fact;
+      	
+      	if (is_fake)              m_e_rate_f[E_id]  += fact;
+      	if (!is_fake && !is_prim) m_e_rate_s[E_id]  += fact;
+      	if (is_prim)              m_e_rate_p[E_id]  += fact;
+      	if (is_prim2)             m_e_rate_pp[E_id] += fact;
       }
     } // End of loop over stubs
   } // End of loop over events
       
   // The main tree is filled up at this point
-  // In the following we just fill up some infos
+  // In the following we just fill up some additional info
 
   // Here we fill some debug information
   
@@ -175,7 +174,6 @@ void rates::get_rates(bool fe)
   }
 
   // End of dbg loop, fill up root trees
-
   m_ratetree->Fill();  
   m_outfile->Write();
   delete L1TT;
@@ -232,10 +230,13 @@ void rates::initVars()
 
 void rates::initTuple(std::string in,std::string out)
 {
+  //
+  // Input File (filename)
+  //
+
   L1TT   = new TChain("TkStubs"); 
 
   // Input data file
-
   std::size_t found = in.find(".root");
 
   // Case 1, it's a root file
@@ -264,33 +265,31 @@ void rates::initTuple(std::string in,std::string out)
     in2.close();
   }
 
-
-  pm_clus_layer=&m_clus_layer;
+  pm_clus_layer =&m_clus_layer;
   pm_clus_ladder=&m_clus_ladder;
   pm_clus_module=&m_clus_module;
-  pm_clus_type=&m_clus_type;
-  pm_clus_nrows=&m_clus_nrows;
-  pm_clus_nseg=&m_clus_nseg;
-  pm_clus_z=&m_clus_z;
+  pm_clus_type  =&m_clus_type;
+  pm_clus_nrows =&m_clus_nrows;
+  pm_clus_nseg  =&m_clus_nseg;
+  pm_clus_z     =&m_clus_z;
     
-  pm_stub_layer=&m_stub_layer;
+  pm_stub_layer =&m_stub_layer;
   pm_stub_ladder=&m_stub_ladder;
   pm_stub_module=&m_stub_module;
-  pm_stub_type=&m_stub_type;
-  pm_stub_tp=&m_stub_tp;
-  pm_stub_pt=&m_stub_pt;
-  pm_stub_pxGEN=&m_stub_pxGEN;
-  pm_stub_pyGEN=&m_stub_pyGEN;
+  pm_stub_type  =&m_stub_type;
+  pm_stub_tp    =&m_stub_tp;
+  pm_stub_pt    =&m_stub_pt;
+  pm_stub_pxGEN =&m_stub_pxGEN;
+  pm_stub_pyGEN =&m_stub_pyGEN;
   pm_stub_etaGEN=&m_stub_etaGEN;
-  pm_stub_X0=&m_stub_X0;
-  pm_stub_Y0=&m_stub_Y0;
-  pm_stub_z=&m_stub_z;
-  pm_stub_seg=&m_stub_seg;
-  pm_stub_chip=&m_stub_chip;
-  pm_stub_pdgID=&m_stub_pdgID;
+  pm_stub_X0    =&m_stub_X0;
+  pm_stub_Y0    =&m_stub_Y0;
+  pm_stub_z     =&m_stub_z;
+  pm_stub_seg   =&m_stub_seg;
+  pm_stub_chip  =&m_stub_chip;
+  pm_stub_pdgID =&m_stub_pdgID;
   pm_stub_clust1=&m_stub_clust1;
-  pm_stub_cor=&m_stub_cor;
-
+  pm_stub_cor   =&m_stub_cor;
 
   L1TT->SetBranchAddress("L1TkSTUB_n",         &m_stub);
   L1TT->SetBranchAddress("L1TkSTUB_layer",     &pm_stub_layer);
@@ -321,10 +320,13 @@ void rates::initTuple(std::string in,std::string out)
   L1TT->SetBranchAddress("L1TkCLUS_nrows",     &pm_clus_nrows);
   L1TT->SetBranchAddress("L1TkCLUS_PS",        &pm_clus_nseg);
 
+
+  //
+  // Output file name (outfile)
+  //
   m_outfile  = new TFile(out.c_str(),"recreate");
   m_ratetree = new TTree("L1Rates","L1Rates info");
   m_dbgtree  = new TTree("Details","Debug");
-
 
   m_ratetree->Branch("STUB_b_rates",         &m_b_rate,      "STUB_b_rates[16][58000]/F");
   m_ratetree->Branch("STUB_b_rates_prim2",   &m_b_rate_pp,   "STUB_b_rates_prim2[58000]/F"); 
