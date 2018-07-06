@@ -5,18 +5,16 @@
 
 // Main constructor
 
-rates::rates(std::string filename, std::string outfile, bool fe)
-{
-    rates::initTuple(filename,outfile);
-    rates::initVars();
-    rates::get_rates(fe);
+rates::rates(std::string filename, std::string outfile, bool fe) {
+  rates::initTuple(filename,outfile);
+  rates::initVars();
+  rates::get_rates(fe);
 }
 
 
 void rates::get_rates(bool fe)
 {
   // Initialize some params
- 
   int B_id,E_id;   // The detector module IDs (defined in the header)
   int Bl_id,El_id; // This ID is for the averages per ladder/rings (for 1D plots)
   
@@ -32,8 +30,7 @@ void rates::get_rates(bool fe)
   double fact   = 1./static_cast<float>(n_entries); // Normalization factor
   
   // Then loop over events
-  for (int j=0;j<n_entries;++j)
-  {
+  for (int j=0;j<n_entries;++j) {
     L1TT->GetEntry(j);
     
     if (j%100==0) cout << j << endl;
@@ -41,8 +38,7 @@ void rates::get_rates(bool fe)
     if (m_clus == 0) continue; // No clusters, don't go further
     
     // Loop over clusters
-    for (int i=0;i<m_clus;++i)
-    {
+    for (int i=0;i<m_clus;++i) {
       disk  = 0;
       layer = m_clus_layer[i];
       ladder= m_clus_ladder[i];
@@ -60,13 +56,13 @@ void rates::get_rates(bool fe)
       
       // Then increment the rates
       
-      if (disk==0) // Barrel
-      {
+      // Barrel
+      if (disk==0) {
       	m_b_crate[B_id]      += fact;
       	m_b_bylc_rate[Bl_id] += fact;
       }
-      else // Disks
-      {
+      // Disks
+      else {
       	m_e_crate[E_id]      += fact;
       	m_e_bylc_rate[El_id] += fact;
       }
@@ -75,8 +71,7 @@ void rates::get_rates(bool fe)
     if (m_stub == 0) continue; // No stubs, don't go further
    
     // Loop over stubs
-    for (int i=0;i<m_stub;++i)
-    {     
+    for (int i=0;i<m_stub;++i) {     
       cor   = m_stub_cor[i];
  
       if (fe && (cor>100 && cor<300)) continue;
@@ -111,8 +106,8 @@ void rates::get_rates(bool fe)
       if (m_stub_tp[i]<0)                          is_fake=true;
       if (m_stub_tp[i]>=0 && fabs(IP)<1. && PT>2)  is_prim2=true; // OK, perfectible
       
-      if (disk==0) // Barrel
-      {
+      // Barrel
+      if (disk==0) {
       	m_b_rate[chip][B_id] += fact;
       	m_b_byls_rate[Bl_id] += fact;
       	
@@ -121,8 +116,9 @@ void rates::get_rates(bool fe)
       	if (is_prim)              m_b_rate_p[B_id]  += fact;
       	if (is_prim2)             m_b_rate_pp[B_id] += fact;
       }
-      else // Disk
-      {
+      
+      // Disk
+      else {
       	m_e_rate[chip][E_id] += fact;
       	m_e_byls_rate[El_id] += fact;
       	
@@ -139,12 +135,11 @@ void rates::get_rates(bool fe)
 
   // Here we fill some debug information
   
-  for (int i=0;i<58000;++i) // Barrel
-  {
+  // Barrel
+  for (int i=0;i<58000;++i) {
     if (m_b_rate_f[i]+m_b_rate_s[i]+m_b_rate_p[i]==0.) continue;
     
-    for (int j=0;j<16;++j)
-    {
+    for (int j=0;j<16;++j) {
       m_disk= 0;
       m_lay = static_cast<int>(i/10000);
       m_lad = static_cast<int>((i-10000*m_lay)/100);
@@ -156,12 +151,11 @@ void rates::get_rates(bool fe)
     }
   }
   
-  for (int i=0;i<140000;++i) // Endcap
-  {
+  // Endcap
+  for (int i=0;i<140000;++i) {
     if (m_e_rate_f[i]+m_e_rate_s[i]+m_e_rate_p[i]==0.) continue;
 
-    for (int j=0;j<16;++j) 
-    {
+    for (int j=0;j<16;++j) {
       m_disk= 1;
       m_lay = static_cast<int>(i/10000);
       m_lad = static_cast<int>((i-10000*m_lay)/100);
@@ -175,7 +169,7 @@ void rates::get_rates(bool fe)
 
   // End of dbg loop, fill up root trees
   m_ratetree->Fill();  
-  m_outfile->Write();
+  m_outfile ->Write();
   delete L1TT;
   delete m_outfile;
 }
@@ -190,8 +184,7 @@ void rates::get_rates(bool fe)
 
 void rates::initVars()
 {
-  for (int i=0;i<58000;++i)
-  {
+  for (int i=0;i<58000;++i) {
     for (int j=0;j<16;++j) m_b_rate[j][i]   = 0.;
     m_b_rate_p[i]  = 0.;
     m_b_rate_pp[i] = 0.;
@@ -200,20 +193,17 @@ void rates::initVars()
     m_b_crate[i]   = 0.;
   }
 
-  for (int i=0;i<600;++i)
-  {
+  for (int i=0;i<600;++i) {
     m_b_bylc_rate[i] = 0.;
     m_b_byls_rate[i] = 0.;
   }
 
-  for (int i=0;i<1500;++i)
-  {
+  for (int i=0;i<1500;++i) {
     m_e_bylc_rate[i] = 0.;
     m_e_byls_rate[i] = 0.;
   }
 
-  for (int i=0;i<142000;++i)
-  {
+  for (int i=0;i<142000;++i) {
     for (int j=0;j<16;++j) m_e_rate[j][i]   = 0.;
     m_e_rate_p[i]  = 0.;
     m_e_rate_pp[i] = 0.;
@@ -240,22 +230,20 @@ void rates::initTuple(std::string in,std::string out)
   std::size_t found = in.find(".root");
 
   // Case 1, it's a root file
-  if (found!=std::string::npos)
-  {
+  if (found!=std::string::npos) {
     L1TT->Add(in.c_str());
   }
-  else // This is a list provided into a text file
-  {
+
+  // This is a list provided into a text file
+  else {
     std::string STRING;
     std::ifstream in2(in.c_str());
-    if (!in2)
-    {
+    if (!in2) {
       std::cout << "Please provide a valid data filename list" << std::endl;
       return;
     }
   
-    while (!in2.eof())
-    {
+    while (!in2.eof()) {
       getline(in2,STRING);
 
       found = STRING.find(".root");

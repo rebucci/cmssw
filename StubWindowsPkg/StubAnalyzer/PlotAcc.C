@@ -30,8 +30,15 @@
 
 void SetPlotStyle();
 
-void PlotAcc(TString sourcefile, TString outputname)
+void PlotAcc(TString sourcefile, TString outputname, int pdid=11, int nhits=0, int nevt=99999, float ptmin=2.0, float ptmax=100.0, float etamax=2.4)
 {
+  // pdid     PDG ID of particle
+  //            13  = single muon+/muon-
+  //            11  = single electron/positron
+  //            211 = single pion+/pion-
+  // nhits    how many layers/disks are hit by the particle?
+  // nevt     change if you want to look at a # of events less than the total
+
   
   // -----------------------------------------------------------------------------------------------------------
   // Preliminaries
@@ -40,8 +47,9 @@ void PlotAcc(TString sourcefile, TString outputname)
   gROOT->SetBatch();
   gErrorIgnoreLevel = kError;
   SetPlotStyle();
- 
-  TString srcDIR  = "RootFiles/"; 
+
+  TString srcDIR  = "RootFiles/";
+  TString subDIR  = "RootFiles/PlotFiles/";
   TString plotDIR = "Plots/"; 
   TString plotPRE = "detAcc_";
 
@@ -50,24 +58,8 @@ void PlotAcc(TString sourcefile, TString outputname)
   FullI->Add(srcDIR+sourcefile+".root"); 
 
   // Output file
-  TFile* fout = new TFile(plotDIR+"plots_"+plotPRE+outputname+".root","recreate");
-
-  // pT and eta Options
-  float ptmin  = 2.0;
-  float ptmax  = 100.0;
-  float rhomax = 100.0;
-  float domax  = 5.0;
-  float etamax = 2.4;
+  TFile* fout = new TFile(subDIR+"plots_"+plotPRE+outputname+".root","recreate");
   
-  int nevt  = 99999; // change if you want to look at a # of events less than the total
-  int nhits = 0;
-
-  int pdid = 1;   // PDG ID
-                  // single electron/positron = 11
-                  // single pion+/pion- = 211
-                  // single muon+/muon- = 13
-                  // all TPs = 1
-
 
   // -----------------------------------------------------------------------------------------------------------
   // Definitions
@@ -111,6 +103,9 @@ void PlotAcc(TString sourcefile, TString outputname)
   float max_z0  = 15.;
   float min_d0  = -5.;
   float max_d0  = 5.;
+  
+  float rhomax  = 100.0;
+  float domax   = 5.0;
 
   float min_pt  = ptmin;
   float min_eta = -etamax;
@@ -316,8 +311,6 @@ void PlotAcc(TString sourcefile, TString outputname)
     // -----------------------------------------------------------------------------------------------------------
     // Canvases
     char buffer_det[80];
-    gStyle->SetOptStat(0);
-    gStyle->SetOptTitle(0);
     
     float low_det,up_det;
   
@@ -334,9 +327,8 @@ void PlotAcc(TString sourcefile, TString outputname)
         c_pteff->cd(i+1)->SetBorderSize(2);
         c_pteff->cd(i+1)->SetGridx();
         c_pteff->cd(i+1)->SetGridy();
-        c_pteff->cd(i+1)->SetLeftMargin(0.07692308);
-        c_pteff->cd(i+1)->SetTopMargin(0.07124352);
-        c_pteff->cd(i+1)->SetFrameBorderMode(0);
+        c_pteff->cd(i+1)->SetLeftMargin(0.13); //0.07692308
+        c_pteff->cd(i+1)->SetTopMargin(0.065); //0.07124352
         c_pteff->cd(i+1)->SetFrameBorderMode(0);
         h_eff_pt_det->GetXaxis()->SetTitle("Tracking particle p_{T} (in GeV/c)");
         h_eff_pt_det->GetYaxis()->SetTitle("Efficiency");
@@ -420,9 +412,8 @@ void PlotAcc(TString sourcefile, TString outputname)
         c_etaeff->cd(i+1)->SetBorderSize(2);
         c_etaeff->cd(i+1)->SetGridx();
         c_etaeff->cd(i+1)->SetGridy();
-        c_etaeff->cd(i+1)->SetLeftMargin(0.07692308);
-        c_etaeff->cd(i+1)->SetTopMargin(0.07124352);
-        c_etaeff->cd(i+1)->SetFrameBorderMode(0);
+        c_etaeff->cd(i+1)->SetLeftMargin(0.13); //0.07692308
+        c_etaeff->cd(i+1)->SetTopMargin(0.065); //0.07124352
         c_etaeff->cd(i+1)->SetFrameBorderMode(0);
         h_eff_eta_det->GetXaxis()->SetTitle("Tracking particle #eta");
         h_eff_eta_det->GetYaxis()->SetTitle("Efficiency");
@@ -506,9 +497,8 @@ void PlotAcc(TString sourcefile, TString outputname)
         c_zeff->cd(i+1)->SetBorderSize(2);
         c_zeff->cd(i+1)->SetGridx();
         c_zeff->cd(i+1)->SetGridy();
-        c_zeff->cd(i+1)->SetLeftMargin(0.07692308);
-        c_zeff->cd(i+1)->SetTopMargin(0.07124352);
-        c_zeff->cd(i+1)->SetFrameBorderMode(0);
+        c_zeff->cd(i+1)->SetLeftMargin(0.13); //0.07692308
+        c_zeff->cd(i+1)->SetTopMargin(0.065); //0.07124352
         c_zeff->cd(i+1)->SetFrameBorderMode(0);
         h_eff_z_det->GetXaxis()->SetTitle("Tracking particle #z");
         h_eff_z_det->GetYaxis()->SetTitle("Efficiency");
@@ -550,9 +540,8 @@ void PlotAcc(TString sourcefile, TString outputname)
         c_d0eff->cd(i+1)->SetBorderSize(2);
         c_d0eff->cd(i+1)->SetGridx();
         c_d0eff->cd(i+1)->SetGridy();
-        c_d0eff->cd(i+1)->SetLeftMargin(0.07692308);
-        c_d0eff->cd(i+1)->SetTopMargin(0.07124352);
-        c_d0eff->cd(i+1)->SetFrameBorderMode(0);
+        c_d0eff->cd(i+1)->SetLeftMargin(0.13); //0.07692308
+        c_d0eff->cd(i+1)->SetTopMargin(0.065); //0.07124352
         c_d0eff->cd(i+1)->SetFrameBorderMode(0);
         h_eff_d_det->GetXaxis()->SetTitle("Tracking particle d_{0}(in cm)");
         h_eff_d_det->GetYaxis()->SetTitle("Efficiency");
@@ -787,10 +776,6 @@ void PlotAcc(TString sourcefile, TString outputname)
     // -----------------------------------------------------------------------------------------------------------
     // Canvases
     char buffer_std[80];
-    gStyle->SetOptStat(0);
-    gStyle->SetOptTitle(0);
-    gStyle->SetNumberContours(90);
-    gStyle->SetPalette(kBlueYellow);
     float low_std,up_std;
     
     // -----------------------------------------------------------------------------------------------------------
@@ -941,66 +926,30 @@ void PlotAcc(TString sourcefile, TString outputname)
 } // end void DetectorAcceptance()
 
 
-  // ---------------------------------------------------------------------------------------------------------
-  // Plot Style
-  void SetPlotStyle() {
-    // use plain black on white colors
-    gStyle->SetFrameBorderMode(0);
-    gStyle->SetFrameFillColor(0);
-    gStyle->SetCanvasBorderMode(0);
-    gStyle->SetCanvasBorderSize(2);
-    gStyle->SetCanvasColor(0);
-    gStyle->SetPadBorderMode(0);
-    gStyle->SetPadColor(0);
-    gStyle->SetStatColor(0);
-    gStyle->SetHistLineColor(1);
+// ---------------------------------------------------------------------------------------------------------
+// Plot Style
+void SetPlotStyle() 
+{
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
 
-    //gStyle->SetPalette(1);
+  gStyle->SetNumberContours(90);
+  gStyle->SetPalette(kBlueYellow);
 
-    // set the paper & margin sizes
-    gStyle->SetPaperSize(20,26);
-    gStyle->SetPadTopMargin(0.08);
-    gStyle->SetPadRightMargin(0.05);
-    gStyle->SetPadBottomMargin(0.16);
-    gStyle->SetPadLeftMargin(0.16);
+  // gStyle->SetCanvasColor(0);
+  // gStyle->SetCanvasBorderMode(0);
+  // gStyle->SetCanvasBorderSize(2);
 
-    // set title offsets (for axis label)
-    gStyle->SetTitleXOffset(1.4);
-    gStyle->SetTitleYOffset(1.4);
+  // gStyle->SetFrameBorderMode(0);
 
-    // use large fonts
-    gStyle->SetTextFont(42);
-    gStyle->SetTextSize(0.05);
-    gStyle->SetLabelFont(42,"xyz");
-    gStyle->SetTitleFont(42,"xyz");
-    gStyle->SetLabelSize(0.02,"xy");
-    gStyle->SetLabelSize(0.035,"z");
-    gStyle->SetTitleSize(0.035,"xz");
-    gStyle->SetTitleSize(0.03,"y");
-    
-    // use bold lines and markers
-    gStyle->SetMarkerStyle(20);
-    gStyle->SetMarkerSize(1.2);
-    gStyle->SetHistLineWidth(2.);
-    gStyle->SetLineStyleString(2,"[12 12]");
+  // gStyle->SetLabelFont(42,"xyz");
+  // gStyle->SetTitleFont(42,"xyz");
 
-    // get rid of error bar caps
-    gStyle->SetEndErrorSize(0.);
+  // gStyle->SetLabelSize(0.035,"xyz");
+  // gStyle->SetTitleSize(0.035,"xyz");
 
-    // do not display any of the standard histogram decorations
-    gStyle->SetOptTitle(0);   //turns off title
-    gStyle->SetOptStat(0);
-    gStyle->SetOptFit(0);
+  // gStyle->SetLabelOffset(0.004,"y");
 
-    // put tick marks on top and RHS of plots
-    gStyle->SetPadTickX(1);
-    gStyle->SetPadTickY(1);
-
-    // Limit axes values to 4 digits (gets messy otherwise)
-    // TGaxis::SetMaxDigits(4);
-
-    // Legend Options
-    gStyle->SetLegendBorderSize(0);
-    gStyle->SetLegendFont(42);
-    gStyle->SetLegendTextSize(0.04);
-  }
+  // gStyle->SetPadLeftMargin(0.07692308);
+  // gStyle->SetPadTopMargin(0.07124352);
+}

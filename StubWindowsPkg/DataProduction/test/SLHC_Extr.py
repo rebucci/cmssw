@@ -25,6 +25,13 @@ process = cms.Process("MIBextractor")
 # Select geometry
 flat=False
 
+# Select stub windows
+STUBWINDOWS = "9"
+    # 9    stub  windows in CMSSW_9_4_0 and 10_0_0
+    # 10T  tight windows in CMSSW_10_2_X
+    # 10L  loose windows in CMSSW_10_2_X
+    # SANITY everything is zero!
+
 
 
 ############################################################
@@ -93,8 +100,8 @@ process.MIBextraction.doSTUB     = True
 process.MIBextraction.doPixel    = True
 process.MIBextraction.doMatch    = True
 
-process.MIBextraction.doL1TRK	 = True
-process.MIBextraction.doBANK 	 = False
+process.MIBextraction.doL1TRK	   = True
+process.MIBextraction.doBANK 	 	 = False
 process.MIBextraction.getCoords  = False
 process.MIBextraction.fullInfo   = True
 
@@ -115,39 +122,93 @@ else:
 # OUTPUT
 process.MIBextraction.extractedRootFile=cms.string(OUTPUT_NAME)
 
-# # Note: preferred method uses TFileService. It's unclear if the current method is compatible with lobster.
-# #process.TFileService = cms.Service("TFileService", fileName = cms.string('output.root'), closeFileFast = cms.untracked.bool(True))
-# # This will require changes to MIBextractor (remove the output options) as well as all the extractors (add the TFileService output to each) and possibly more. Pending review.
-
 
 
 ############################################################
 # Import/Load Processes
 ############################################################
 
-############################################################
-# General
 process.load('L1Trigger.TrackTrigger.TrackTrigger_cff')
-process.load("SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff")
-
-
-############################################################
-# Clusters and Stubs
 from L1Trigger.TrackTrigger.TTStubAlgorithmRegister_cfi import *
 
+# Stub Windows
+if   STUBWINDOWS == "9": 
+    print "using stub windows for CMSSW_9_4_0 and 10_0_0"
+    TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2.0, 2.0, 3.5, 4.5, 5.5, 6.5)
+    TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
+        cms.PSet( TiltedCut = cms.vdouble( 0 ) ),
+        cms.PSet( TiltedCut = cms.vdouble( 0, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2., 2., 1.5, 1.5, 1., 1.) ),
+        cms.PSet( TiltedCut = cms.vdouble( 0, 3., 3., 3., 3., 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2, 2) ),
+        cms.PSet( TiltedCut = cms.vdouble( 0, 4.5, 4.5, 4, 4, 4, 4, 3.5, 3.5, 3.5, 3, 3, 3) ),
+    )
+    TTStubAlgorithm_official_Phase2TrackerDigi_.EndcapCutSet = cms.VPSet(
+        cms.PSet( EndcapCut = cms.vdouble( 0 ) ),
+        cms.PSet( EndcapCut = cms.vdouble( 0, 1, 1.5, 1.5, 2, 2, 2.5, 3, 3, 3.5, 4, 2.5, 3, 3.5, 4.5, 5.5) ),
+        cms.PSet( EndcapCut = cms.vdouble( 0, 1, 1.5, 1.5, 2, 2, 2, 2.5, 3, 3, 3, 2, 3, 4, 5, 5.5) ),
+        cms.PSet( EndcapCut = cms.vdouble( 0, 1.5, 1.5, 2, 2, 2.5, 2.5, 2.5, 3.5, 2.5, 5, 5.5, 6) ),
+        cms.PSet( EndcapCut = cms.vdouble( 0, 1.0, 1.5, 1.5, 2, 2, 2, 2, 3, 3, 6, 6, 6.5) ),
+        cms.PSet( EndcapCut = cms.vdouble( 0, 1.0, 1.5, 1.5, 1.5, 2, 2, 2, 3, 3, 6, 6, 6.5) ),
+    )
+elif STUBWINDOWS == "10T": 
+    print "using the tight stub windows for CMSSW_10_2_X"
+    TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2, 2.5, 3.5, 4.5, 5.5, 7)
+    TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
+                cms.PSet( TiltedCut = cms.vdouble( 0 ) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 3, 3, 2.5, 3, 3, 2.5, 2.5, 2, 1.5, 1.5, 1, 1) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 3.5, 3, 3, 3, 3, 2.5, 2.5, 3, 3, 2.5, 2.5, 2.5) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 4, 4, 4, 3.5, 3.5, 3.5, 3.5, 3, 3, 3, 3, 3) ),
+    )
+    TTStubAlgorithm_official_Phase2TrackerDigi_.EndcapCutSet = cms.VPSet(
+                cms.PSet( EndcapCut = cms.vdouble( 0 ) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 1, 2.5, 2.5, 3, 2.5, 3, 3.5, 4, 4, 4.5, 3.5, 4, 4.5, 5, 5.5) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0.5, 2.5, 2.5, 3, 2.5, 3, 3, 3.5, 3.5, 4, 3.5, 3.5, 4, 4.5, 5) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 1, 3, 3, 2.5, 3.5, 3.5, 3.5, 4, 3.5, 3.5, 4, 4.5) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 1, 2.5, 3, 2.5, 3.5, 3, 3, 3.5, 3.5, 3.5, 4, 4) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0.5, 1.5, 3, 2.5, 3.5, 3, 3, 3.5, 4, 3.5, 4, 3.5) ),
+    )
+elif STUBWINDOWS == "10L": 
+    print "using the loose stub windows for CMSSW_10_2_X"
+    TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2.0, 3, 4.5, 6, 6.5, 7.0)
+    TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
+                cms.PSet( TiltedCut = cms.vdouble( 0 ) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 3, 3., 2.5, 3., 3., 2.5, 2.5, 2., 1.5, 1.5, 1, 1) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 4., 4, 4, 4, 4., 4., 4.5, 5, 4., 3.5, 3.5, 3) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 5, 5, 5, 5, 5, 5, 5.5, 5, 5, 5.5, 5.5, 5.5) ),
+    )
+    TTStubAlgorithm_official_Phase2TrackerDigi_.EndcapCutSet = cms.VPSet(
+                cms.PSet( EndcapCut = cms.vdouble( 0 ) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 1., 2.5, 2.5, 3.5, 5.5, 5.5, 6, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 7, 7) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0.5, 2.5, 2.5, 3, 5, 6, 6, 6.5, 6.5, 6.5, 6.5, 6.5, 6.5, 7, 7) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 1, 3., 4.5, 6., 6.5, 6.5, 6.5, 7, 7, 7, 7, 7) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 1., 2.5, 3.5, 6., 6.5, 6.5, 6.5, 6.5, 7, 7, 7, 7) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0.5, 1.5, 3., 4.5, 6.5, 6.5, 7, 7, 7, 7, 7, 7) ),
+    )
+elif STUBWINDOWS == "SANITY": 
+    print "If there's nothing wrong with me...maybe there's something wrong with the universe."
+    TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0)
+    TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
+                cms.PSet( TiltedCut = cms.vdouble( 0 ) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+                cms.PSet( TiltedCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+    )
+    TTStubAlgorithm_official_Phase2TrackerDigi_.EndcapCutSet = cms.VPSet(
+                cms.PSet( EndcapCut = cms.vdouble( 0 ) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+                cms.PSet( EndcapCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) ),
+    )
+
+
+process.load("SimTracker.TrackTriggerAssociation.TrackTriggerAssociator_cff")
 from SimTracker.TrackTriggerAssociation.TTClusterAssociation_cfi import *
 TTClusterAssociatorFromPixelDigis.digiSimLinks = cms.InputTag("simSiPixelDigis","Tracker")
 
-process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStubs) #clusters and stubs
+process.TTClusterStub      = cms.Path(process.TrackTriggerClustersStubs)
+process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStubs)
 
-
-############################################################
-# L1 Tracks
-# from SimTracker.TrackTriggerAssociation.TTTrackAssociation_cfi import *
-# TTTrackAssociatorFromPixelDigis.TTTracks = cms.VInputTag(cms.InputTag("TTTracksFromPhase2TrackerDigis", "Level1TTTracks") )
-
-# process.TTTracksTruth         = cms.Path(process.TrackTriggerAssociatorTracks) #ONLY tracks with truth
-# process.TTTracksCompleteTruth = cms.Path(process.TrackTriggerAssociatorComplete) #stubs, clusters, and tracks with trutha
 
 from L1Trigger.TrackFindingTracklet.Tracklet_cfi import *
 process.load("L1Trigger.TrackFindingTracklet.L1TrackletEmulationTracks_cff")
@@ -163,11 +224,9 @@ process.dump = cms.EDAnalyzer("EventContentAnalyzer")
 process.p    = cms.Path(process.MIBextraction)
 process.d    = cms.Path(process.dump)
 
-# process.TTClusterStubTruth     -  clusters and stubs
-# process.TTTracksTruth          -  l1 tracks
-# process.TTTracksCompleteTruth  -  l1 tracks, clusters, stubs
-# process.TTTracksEmulationWithTruth - l1 tracks from emulator
-
+# Don't re-run stub making (will use to the stub windows original to the release area)
 process.schedule = cms.Schedule(process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
-#process.schedule = cms.Schedule(process.TTTracksCompleteTruth,process.p) 
-#process.schedule = cms.Schedule(process.TTClusterStubTruth,process.p) 
+
+# Re-run stub making
+process.schedule = cms.Schedule(process.TTClusterStub,process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
+

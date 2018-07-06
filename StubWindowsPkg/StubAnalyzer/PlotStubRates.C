@@ -74,6 +74,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   SetColorTable();
  
   TString srcDIR  = "RootFiles/"; 
+  TString subDIR  = "RootFiles/PlotFiles/";
   TString plotDIR = "Plots/"; 
   TString plotPRE = "stubRates_";
 
@@ -98,7 +99,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   newtree->Add(srcDIR+sourcefile+".root"); 
 
   // Output file
-  TFile* fout = new TFile(plotDIR+"plots_"+plotPRE+outputname+".root","recreate");
+  TFile* fout = new TFile(subDIR+"plots_"+plotPRE+outputname+".root","recreate");
 
   
   // -----------------------------------------------------------------------------------------------------------
@@ -334,111 +335,131 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     // ----- Layer Map - ALL Stubs ----- //
     TCanvas *c_layer_stubs_all = new TCanvas("c_layer_stubs_all","Layer map - All Stubs",201,77,1470,858);
-    c_layer_stubs_all->Range(-5.887851,-1.930603,70.65421,17.37543);
-    c_layer_stubs_all->Divide(2,2);
-    c_layer_stubs_all->SetGridx();
-    c_layer_stubs_all->SetGridy();
-      
-    // Primaries
-    c_layer_stubs_all->cd(1);
-      h_layer_stub_primary->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
-      h_layer_stub_primary->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
-      h_layer->Draw("");
-      h_layer_stub_primary->Draw("colzsame");
+      c_layer_stubs_all->Range(-5.887851,-1.930603,70.65421,17.37543);
+      c_layer_stubs_all->Divide(2,2);
+      c_layer_stubs_all->SetGridx();
+      c_layer_stubs_all->SetGridy();
         
-      TPaveText *PT_lay_sp = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
-        
-      char txt_lay_sp[50];
-      sprintf (txt_lay_sp, "Barrel Layer %d primary stub rate (in Stub/Module/BX)",layer);
+      // Primaries
+      c_layer_stubs_all->cd(1);
+        h_layer_stub_primary->GetXaxis()->SetLabelSize(0.02);
+        h_layer_stub_primary->GetYaxis()->SetLabelSize(0.02);
+        h_layer_stub_primary->GetYaxis()->SetTitleSize(0.03);
+        h_layer_stub_primary->GetXaxis()->SetTickLength(1);
+        h_layer_stub_primary->GetYaxis()->SetTickLength(0.99);
+        h_layer_stub_primary->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
+        h_layer_stub_primary->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
+        h_layer->Draw("");
+        h_layer_stub_primary->Draw("colzsame");
           
-      TLatex TL_lay_sp;
-      TL_lay_sp.SetTextSize(0.03);
-      TL_lay_sp.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
-
-      PT_lay_sp->SetFillColor(0);
-      PT_lay_sp->SetTextSize(0.03);
-      PT_lay_sp->AddText(txt_lay_sp);
-      PT_lay_sp->Draw();
-      
-
-    // Secondaries
-    c_layer_stubs_all->cd(2);
-      h_layer_stub_secondary->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
-      h_layer_stub_secondary->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
-      h_layer->Draw("");
-      h_layer_stub_secondary->Draw("colzsame");
-        
-      TPaveText *PT_lay_ss = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
-
-      char txt_lay_ss[50];
-      sprintf (txt_lay_ss, "Barrel Layer %d secondary stub rate (in Stub/Module/BX)",layer);
+        TPaveText *PT_lay_sp = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
           
-      TLatex TL_lay_ss;
-      TL_lay_ss.SetTextSize(0.03);
-      TL_lay_ss.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
+        char txt_lay_sp[50];
+        sprintf (txt_lay_sp, "Barrel Layer %d primary stub rate (in Stub/Module/BX)",layer);
+            
+        TLatex TL_lay_sp;
+        TL_lay_sp.SetTextSize(0.03);
+        TL_lay_sp.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
 
-      PT_lay_ss->SetFillColor(0);
-      PT_lay_ss->SetTextSize(0.03);
-      PT_lay_ss->AddText(txt_lay_ss);
-      PT_lay_ss->Draw();
-       
-
-    // Fakes     
-    c_layer_stubs_all->cd(3);
-      h_layer_stub_fake->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
-      h_layer_stub_fake->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
-      h_layer->Draw("");
-      h_layer_stub_fake->Draw("colzsame");
+        PT_lay_sp->SetFillColor(0);
+        PT_lay_sp->SetTextSize(0.03);
+        PT_lay_sp->AddText(txt_lay_sp);
+        PT_lay_sp->Draw();
         
-      TPaveText *PT_lay_sf = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
 
-      char txt_lay_sf[50];        
-      sprintf (txt_lay_sf, "Barrel Layer %d fake stub rate (in Stub/Module/BX)",layer);
+      // Secondaries
+      c_layer_stubs_all->cd(2);
+        h_layer_stub_secondary->GetXaxis()->SetLabelSize(0.02);
+        h_layer_stub_secondary->GetYaxis()->SetLabelSize(0.02);
+        h_layer_stub_secondary->GetYaxis()->SetTitleSize(0.03);
+        h_layer_stub_secondary->GetXaxis()->SetTickLength(1);
+        h_layer_stub_secondary->GetYaxis()->SetTickLength(0.99);
+        h_layer_stub_secondary->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
+        h_layer_stub_secondary->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
+        h_layer->Draw("");
+        h_layer_stub_secondary->Draw("colzsame");
           
-      TLatex TL_lay_sf;
-      TL_lay_sf.SetTextSize(0.03);
-      TL_lay_sf.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
+        TPaveText *PT_lay_ss = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
 
-      PT_lay_sf->SetFillColor(0);
-      PT_lay_sf->SetTextSize(0.03);
-      PT_lay_sf->AddText(txt_lay_sf);
-      PT_lay_sf->Draw();
+        char txt_lay_ss[50];
+        sprintf (txt_lay_ss, "Barrel Layer %d secondary stub rate (in Stub/Module/BX)",layer);
+            
+        TLatex TL_lay_ss;
+        TL_lay_ss.SetTextSize(0.03);
+        TL_lay_ss.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
+
+        PT_lay_ss->SetFillColor(0);
+        PT_lay_ss->SetTextSize(0.03);
+        PT_lay_ss->AddText(txt_lay_ss);
+        PT_lay_ss->Draw();
+         
+
+      // Fakes     
+      c_layer_stubs_all->cd(3);
+        h_layer_stub_fake->GetXaxis()->SetLabelSize(0.02);
+        h_layer_stub_fake->GetYaxis()->SetLabelSize(0.02);
+        h_layer_stub_fake->GetYaxis()->SetTitleSize(0.03);
+        h_layer_stub_fake->GetXaxis()->SetTickLength(1);
+        h_layer_stub_fake->GetYaxis()->SetTickLength(0.99);
+        h_layer_stub_fake->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
+        h_layer_stub_fake->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
+        h_layer->Draw("");
+        h_layer_stub_fake->Draw("colzsame");
           
+        TPaveText *PT_lay_sf = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
 
-    // Total
-    c_layer_stubs_all->cd(4);
-      h_layer_stub_total->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
-      h_layer_stub_total->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
-      h_layer->Draw("");
-      h_layer_stub_total->Draw("colzsame");
+        char txt_lay_sf[50];        
+        sprintf (txt_lay_sf, "Barrel Layer %d fake stub rate (in Stub/Module/BX)",layer);
+            
+        TLatex TL_lay_sf;
+        TL_lay_sf.SetTextSize(0.03);
+        TL_lay_sf.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
+
+        PT_lay_sf->SetFillColor(0);
+        PT_lay_sf->SetTextSize(0.03);
+        PT_lay_sf->AddText(txt_lay_sf);
+        PT_lay_sf->Draw();
+            
+
+      // Total
+      c_layer_stubs_all->cd(4);
+        h_layer_stub_total->GetXaxis()->SetLabelSize(0.02);
+        h_layer_stub_total->GetYaxis()->SetLabelSize(0.02);
+        h_layer_stub_total->GetYaxis()->SetTitleSize(0.03);
+        h_layer_stub_total->GetXaxis()->SetTickLength(1);
+        h_layer_stub_total->GetYaxis()->SetTickLength(0.99);
+        h_layer_stub_total->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
+        h_layer_stub_total->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
+        h_layer->Draw("");
+        h_layer_stub_total->Draw("colzsame");
+          
+        TPaveText *PT_lay_st = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
+
+        char txt_lay_st[50];      
+        sprintf (txt_lay_st, "Barrel Layer %d total stub rate (in Stub/Module/BX)",layer);
+          
+        TLatex TL_lay_st;
+        TL_lay_st.SetTextSize(0.03);
+        TL_lay_st.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
+          
+        PT_lay_st->SetFillColor(0);
+        PT_lay_st->SetTextSize(0.03);
+        PT_lay_st->AddText(txt_lay_st);
+        PT_lay_st->Draw();
         
-      TPaveText *PT_lay_st = new TPaveText(0.,n_lad_barrel[layer-5],28./55.*n_mod_barrel[layer-5],17./16.*n_lad_barrel[layer-5],"br");
 
-      char txt_lay_st[50];      
-      sprintf (txt_lay_st, "Barrel Layer %d total stub rate (in Stub/Module/BX)",layer);
-        
-      TLatex TL_lay_st;
-      TL_lay_st.SetTextSize(0.03);
-      TL_lay_st.DrawLatex(40./55.*n_mod_barrel[layer-5], 16.5/16.*n_lad_barrel[layer-5], "CMS Preliminary Simulation");
-        
-      PT_lay_st->SetFillColor(0);
-      PT_lay_st->SetTextSize(0.03);
-      PT_lay_st->AddText(txt_lay_st);
-      PT_lay_st->Draw();
-      
+      // Save all four stub plots  
+      c_layer_stubs_all->Modified();
+      c_layer_stubs_all->Update();
+      c_layer_stubs_all->Write();
 
-    // Save all four stub plots  
-    c_layer_stubs_all->Modified();
-    c_layer_stubs_all->Update();
-    c_layer_stubs_all->Write();
+      if (PrintEachLayer){
+        char name_lay_sALL[50];
+        sprintf (name_lay_sALL, "_layer_%d_layermap_stubsALL.png", layer);
+        c_layer_stubs_all->SaveAs(plotDIR+plotPRE+outputname+name_lay_sALL);
+      }
 
-    if (PrintEachLayer){
-      char name_lay_sALL[50];
-      sprintf (name_lay_sALL, "_layer_%d_layermap_stubsALL.png", layer);
-      c_layer_stubs_all->SaveAs(plotDIR+plotPRE+outputname+name_lay_sALL);
-    }
-
-    c_layer_stubs_all->Update();
+      c_layer_stubs_all->Update();
 
 
     // ----- Layer Map Stubs ----- //
@@ -447,6 +468,11 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_layer_stubs->SetGridx();
       c_layer_stubs->SetGridy();
 
+      h_layer->GetXaxis()->SetLabelSize(0.02);
+      h_layer->GetYaxis()->SetLabelSize(0.02);
+      h_layer->GetYaxis()->SetTitleSize(0.03);
+      h_layer->GetXaxis()->SetTickLength(1);
+      h_layer->GetYaxis()->SetTickLength(0.99);
       h_layer->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
       h_layer->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
       h_layer->Draw();
@@ -473,7 +499,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       if (PrintEachLayer){
         char name_lay_s[50];
         sprintf (name_lay_s, "_layer_%d_layermap_stubs.png", layer);
-        c_layer_stubs->SaveAs(plotDIR+outputname+name_lay_s);
+        c_layer_stubs->SaveAs(plotDIR+plotPRE+outputname+name_lay_s);
       }
 
       c_layer_stubs->Update();
@@ -486,6 +512,11 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_layer_clusters->SetGridx();
       c_layer_clusters->SetGridy();
 
+      h_layer->GetXaxis()->SetLabelSize(0.02);
+      h_layer->GetYaxis()->SetLabelSize(0.02);
+      h_layer->GetYaxis()->SetTitleSize(0.03);
+      h_layer->GetXaxis()->SetTickLength(1);
+      h_layer->GetYaxis()->SetTickLength(0.99);
       h_layer->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
       h_layer->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
       h_layer->Draw();
@@ -510,7 +541,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       if (PrintEachLayer){
         char name_lay_c[50];
         sprintf (name_lay_c, "_layer_%d_layermap_clusters.png", layer);
-        c_layer_clusters->SaveAs(plotDIR+outputname+name_lay_c);
+        c_layer_clusters->SaveAs(plotDIR+plotPRE+outputname+name_lay_c);
       }
 
       c_layer_clusters->Update();
@@ -523,6 +554,11 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_layer_ratios->SetGridx();
       c_layer_ratios->SetGridy();
       
+      h_layer->GetXaxis()->SetLabelSize(0.02);
+      h_layer->GetYaxis()->SetLabelSize(0.02);
+      h_layer->GetYaxis()->SetTitleSize(0.03);
+      h_layer->GetXaxis()->SetTickLength(1);
+      h_layer->GetYaxis()->SetTickLength(0.99);
       h_layer->GetXaxis()->SetNdivisions(n_mod_barrel[layer-5]);
       h_layer->GetYaxis()->SetNdivisions(n_lad_barrel[layer-5]);
       h_layer->Draw();
@@ -654,14 +690,8 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     c_1D_layer_stubs->Range(-1.,-1.,1.,1.);
     c_1D_layer_stubs->SetGridx();
     c_1D_layer_stubs->SetGridy();
-    c_1D_layer_stubs->SetLeftMargin(0.07692308);
-    c_1D_layer_stubs->SetTopMargin(0.07124352);
 
     if (RateInHz)  h_1D_layer_stub->GetYaxis()->SetTitle("Stub rate (in MHz/cm^{2})"); 
-    h_1D_layer_stub->GetXaxis()->SetLabelSize(0.035);
-    h_1D_layer_stub->GetYaxis()->SetLabelOffset(0.004);
-    h_1D_layer_stub->GetYaxis()->SetLabelSize(0.035);
-    h_1D_layer_stub->GetYaxis()->SetTitleSize(0.035);
     h_1D_layer_stub->GetYaxis()->SetTitleOffset(0.83);
     h_1D_layer_stub->Draw();
 
@@ -672,7 +702,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       h_lay1D_stub_plots[i]->Draw("same");
     }
 
-    TLegend *leg_lay1D_s = new TLegend(0.63,0.75,0.81,0.98);
+    TLegend *leg_lay1D_s = new TLegend(0.71,0.69,0.89,0.92);
     leg_lay1D_s->SetTextSize(0.03);
     leg_lay1D_s->SetFillColor(0);
     leg_lay1D_s->AddEntry(h_lay1D_stub_plots[0],"TBPS layer 1","p");
@@ -685,12 +715,12 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     TLatex CMS_lay1D_s;
     CMS_lay1D_s.SetTextSize(0.04);
-    CMS_lay1D_s.DrawLatex(-101, 1.11*bl_maxval_s, "CMS Phase-2 Simulation");
+    CMS_lay1D_s.DrawLatex(-80, 1.11*bl_maxval_s, "CMS Phase-2 Simulation");
 
     TLatex TL_lay1D_s;
     TL_lay1D_s.SetTextSize(0.03);
     TL_lay1D_s.SetTextFont(52);
-    TL_lay1D_s.DrawLatex(-15, 1.11*bl_maxval_s, txt_pu);
+    TL_lay1D_s.DrawLatex(60, 1.11*bl_maxval_s, txt_pu);
 
     c_1D_layer_stubs->Modified();
     c_1D_layer_stubs->Update();
@@ -714,14 +744,8 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     c_1D_layer_clusters->Range(-1.,-1.,1.,1.);
     c_1D_layer_clusters->SetGridx();
     c_1D_layer_clusters->SetGridy();
-    c_1D_layer_clusters->SetLeftMargin(0.07692308);
-    c_1D_layer_clusters->SetTopMargin(0.07124352);
 
     if (RateInHz)  h_1D_layer_cluster->GetYaxis()->SetTitle("Cluster rate (in MHz/cm^{2})"); 
-    h_1D_layer_cluster->GetXaxis()->SetLabelSize(0.035);
-    h_1D_layer_cluster->GetYaxis()->SetLabelOffset(0.004);
-    h_1D_layer_cluster->GetYaxis()->SetLabelSize(0.035);
-    h_1D_layer_cluster->GetYaxis()->SetTitleSize(0.035);
     h_1D_layer_cluster->GetYaxis()->SetTitleOffset(0.83);
     h_1D_layer_cluster->Draw();
 
@@ -732,7 +756,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       h_lay1D_clus_plots[i]->Draw("same");
     }
 
-    TLegend *leg_lay1D_c = new TLegend(0.63,0.75,0.81,0.98);
+    TLegend *leg_lay1D_c = new TLegend(0.71,0.69,0.89,0.92);
     leg_lay1D_c->SetTextSize(0.03);
     leg_lay1D_c->SetFillColor(0);
     leg_lay1D_c->AddEntry(h_lay1D_clus_plots[0],"TBPS layer 1","p");
@@ -745,12 +769,12 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     TLatex CMS_lay1D_c;
     CMS_lay1D_c.SetTextSize(0.04);
-    CMS_lay1D_c.DrawLatex(-101, 1.11*bl_maxval_c, "CMS Phase-2 Simulation");
+    CMS_lay1D_c.DrawLatex(-80, 1.11*bl_maxval_c, "CMS Phase-2 Simulation");
 
     TLatex TL_lay1D_c;
     TL_lay1D_c.SetTextSize(0.03);
     TL_lay1D_c.SetTextFont(52);
-    TL_lay1D_c.DrawLatex(-15, 1.11*bl_maxval_c, txt_pu);
+    TL_lay1D_c.DrawLatex(60, 1.11*bl_maxval_c, txt_pu);
 
     c_1D_layer_clusters->Modified();
     c_1D_layer_clusters->Update();
@@ -774,13 +798,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     c_1D_layer_ratios->Range(-1.,-1.,1.,1.);
     c_1D_layer_ratios->SetGridx();
     c_1D_layer_ratios->SetGridy();
-    c_1D_layer_ratios->SetLeftMargin(0.07692308);
-    c_1D_layer_ratios->SetTopMargin(0.07124352);
 
-    h_1D_layer_ratio->GetXaxis()->SetLabelSize(0.035);
-    h_1D_layer_ratio->GetYaxis()->SetLabelOffset(0.004);
-    h_1D_layer_ratio->GetYaxis()->SetLabelSize(0.035);
-    h_1D_layer_ratio->GetYaxis()->SetTitleSize(0.035);
     h_1D_layer_ratio->GetYaxis()->SetTitleOffset(0.83);
     h_1D_layer_ratio->Draw();
 
@@ -791,7 +809,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       h_lay1D_rat_plots[i]->Draw("same");
     }
 
-    TLegend *leg_lay1D_r = new TLegend(0.63,0.75,0.81,0.98);
+    TLegend *leg_lay1D_r = new TLegend(0.71,0.69,0.89,0.92);
     leg_lay1D_r->SetTextSize(0.03);
     leg_lay1D_r->SetFillColor(0);
     leg_lay1D_r->AddEntry(h_lay1D_rat_plots[0],"TBPS layer 1","p");
@@ -804,12 +822,12 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     TLatex CMS_lay1D_r;
     CMS_lay1D_r.SetTextSize(0.04);
-    CMS_lay1D_r.DrawLatex(-101, 1.11*bl_maxval_r, "CMS Phase-2 Simulation");
+    CMS_lay1D_r.DrawLatex(-80, 1.11*bl_maxval_r, "CMS Phase-2 Simulation");
 
     TLatex TL_lay1D_r;
     TL_lay1D_r.SetTextSize(0.03);
     TL_lay1D_r.SetTextFont(52);
-    TL_lay1D_r.DrawLatex(-15, 1.11*bl_maxval_r, txt_pu);
+    TL_lay1D_r.DrawLatex(60, 1.11*bl_maxval_r, txt_pu);
 
     c_1D_layer_ratios->Modified();
     c_1D_layer_ratios->Update();
@@ -1253,14 +1271,8 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     c_1D_disk_stubs->Range(-1.,-1.,1.,1.);
     c_1D_disk_stubs->SetGridx();
     c_1D_disk_stubs->SetGridy();
-    c_1D_disk_stubs->SetLeftMargin(0.07692308);
-    c_1D_disk_stubs->SetTopMargin(0.07124352);
 
     if (RateInHz)  h_1D_disk_stub->GetYaxis()->SetTitle("Stub rate (in MHz/cm^{2})"); 
-    h_1D_disk_stub->GetXaxis()->SetLabelSize(0.035);
-    h_1D_disk_stub->GetYaxis()->SetLabelOffset(0.004);
-    h_1D_disk_stub->GetYaxis()->SetLabelSize(0.035);
-    h_1D_disk_stub->GetYaxis()->SetTitleSize(0.035);
     h_1D_disk_stub->GetYaxis()->SetTitleOffset(0.83);
     h_1D_disk_stub->Draw();
 
@@ -1272,7 +1284,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       h_disk1D_stub_plots[i]->Write();
     }
     
-    TLegend *leg_disk1D_s = new TLegend(0.45,0.6,0.75,0.86);
+    TLegend *leg_disk1D_s = new TLegend(0.58,0.63,0.88,0.89);
     leg_disk1D_s->SetTextSize(0.035);
     leg_disk1D_s->SetFillColor(0);
     leg_disk1D_s->AddEntry(h_disk1D_stub_plots[0],"TEDD double-disc 1","p");
@@ -1287,7 +1299,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     TLatex CMS_disk1D_s;
     CMS_disk1D_s.SetTextSize(0.04);
-    CMS_disk1D_s.DrawLatex(20, 1.11*el_maxval_s, "CMS Phase-2 Simulation");
+    CMS_disk1D_s.DrawLatex(30, 1.11*el_maxval_s, "CMS Phase-2 Simulation");
 
     TLatex TL_disk1D_s;
     TL_disk1D_s.SetTextSize(0.03);
@@ -1315,14 +1327,8 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     c_1D_disk_clusters->Range(-1.,-1.,1.,1.);
     c_1D_disk_clusters->SetGridx();
     c_1D_disk_clusters->SetGridy();
-    c_1D_disk_clusters->SetLeftMargin(0.07692308);
-    c_1D_disk_clusters->SetTopMargin(0.07124352);
 
     if (RateInHz)  h_1D_disk_cluster->GetYaxis()->SetTitle("Cluster rate (in MHz/cm^{2})"); 
-    h_1D_disk_cluster->GetXaxis()->SetLabelSize(0.035);
-    h_1D_disk_cluster->GetYaxis()->SetLabelOffset(0.004);
-    h_1D_disk_cluster->GetYaxis()->SetLabelSize(0.035);
-    h_1D_disk_cluster->GetYaxis()->SetTitleSize(0.035);
     h_1D_disk_cluster->GetYaxis()->SetTitleOffset(0.83);
     h_1D_disk_cluster->Draw();
     
@@ -1334,7 +1340,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       h_disk1D_clus_plots[i]->Write();
     }
     
-    TLegend *leg_disk1D_c = new TLegend(0.45,0.6,0.75,0.86);
+    TLegend *leg_disk1D_c = new TLegend(0.58,0.63,0.88,0.89);
     leg_disk1D_c->SetTextSize(0.035);
     leg_disk1D_c->SetFillColor(0);
     leg_disk1D_c->AddEntry(h_disk1D_clus_plots[0],"TEDD double-disc 1","p");
@@ -1348,7 +1354,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     TLatex CMS_disk1D_c;
     CMS_disk1D_c.SetTextSize(0.04);
-    CMS_disk1D_c.DrawLatex(20, 1.11*el_maxval_c, "CMS Phase-2 Simulation");
+    CMS_disk1D_c.DrawLatex(30, 1.11*el_maxval_c, "CMS Phase-2 Simulation");
 
     TLatex TL_disk1D_c;
     TL_disk1D_c.SetTextSize(0.03);
@@ -1377,13 +1383,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     c_1D_disk_ratios->Range(-1.,-1.,1.,1.);
     c_1D_disk_ratios->SetGridx();
     c_1D_disk_ratios->SetGridy();
-    c_1D_disk_ratios->SetLeftMargin(0.07692308);
-    c_1D_disk_ratios->SetTopMargin(0.07124352);
 
-    h_1D_disk_ratio->GetXaxis()->SetLabelSize(0.035);
-    h_1D_disk_ratio->GetYaxis()->SetLabelOffset(0.004);
-    h_1D_disk_ratio->GetYaxis()->SetLabelSize(0.035);
-    h_1D_disk_ratio->GetYaxis()->SetTitleSize(0.035);
     h_1D_disk_ratio->GetYaxis()->SetTitleOffset(0.83);
     h_1D_disk_ratio->Draw();
     
@@ -1396,7 +1396,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       h_disk1D_rat_plots[i]->Write();
     }
     
-    TLegend *leg_disk1D_r = new TLegend(0.45,0.6,0.75,0.86);
+    TLegend *leg_disk1D_r = new TLegend(0.58,0.63,0.88,0.89);
     leg_disk1D_r->SetTextSize(0.035);
     leg_disk1D_r->SetFillColor(0);
     leg_disk1D_r->AddEntry(h_disk1D_rat_plots[0],"TEDD double-disc 1","p");
@@ -1410,7 +1410,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
     TLatex CMS_disk1D_r;
     CMS_disk1D_r.SetTextSize(0.04);
-    CMS_disk1D_r.DrawLatex(20, 1.11*el_maxval_r, "CMS Phase-2 Simulation");
+    CMS_disk1D_r.DrawLatex(30, 1.11*el_maxval_r, "CMS Phase-2 Simulation");
 
     TLatex TL_disk1D_r;
     TL_disk1D_r.SetTextSize(0.03);
@@ -1649,65 +1649,28 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   // Plot Style
   void SetPlotStyle() 
   {
-    // use plain black on white colors
-    gStyle->SetFrameBorderMode(0);
-    gStyle->SetFrameFillColor(0);
+    gStyle->SetOptStat(0);
+    gStyle->SetOptTitle(0);
+
+    gStyle->SetCanvasColor(0);
     gStyle->SetCanvasBorderMode(0);
     gStyle->SetCanvasBorderSize(2);
-    gStyle->SetCanvasColor(0);
-    gStyle->SetPadBorderMode(0);
-    gStyle->SetPadColor(0);
-    gStyle->SetStatColor(0);
-    gStyle->SetHistLineColor(1);
 
-    //gStyle->SetPalette(1);
+    gStyle->SetFrameBorderMode(0);
 
-    // set the paper & margin sizes
-    gStyle->SetPaperSize(20,26);
-    gStyle->SetPadTopMargin(0.08);
-    gStyle->SetPadRightMargin(0.05);
-    gStyle->SetPadBottomMargin(0.16);
-    gStyle->SetPadLeftMargin(0.16);
-
-    // set title offsets (for axis label)
-    gStyle->SetTitleXOffset(1.4);
-    gStyle->SetTitleYOffset(1.4);
-
-    // use large fonts
-    gStyle->SetTextFont(42);
-    gStyle->SetTextSize(0.05);
     gStyle->SetLabelFont(42,"xyz");
     gStyle->SetTitleFont(42,"xyz");
-    gStyle->SetLabelSize(0.02,"xy");
-    gStyle->SetLabelSize(0.035,"z");
-    gStyle->SetTitleSize(0.035,"xz");
-    gStyle->SetTitleSize(0.03,"y");
-    
-    // use bold lines and markers
-    gStyle->SetMarkerStyle(20);
-    gStyle->SetMarkerSize(1.2);
-    gStyle->SetHistLineWidth(2.);
-    gStyle->SetLineStyleString(2,"[12 12]");
 
-    // get rid of error bar caps
-    gStyle->SetEndErrorSize(0.);
+    gStyle->SetLabelSize(0.035,"xyz");
+    gStyle->SetTitleSize(0.035,"xyz");
 
-    // do not display any of the standard histogram decorations
-    gStyle->SetOptTitle(0);   //turns off title
-    gStyle->SetOptStat(0);
-    gStyle->SetOptFit(0);
+    gStyle->SetLabelOffset(0.004,"y");
 
-    // put tick marks on top and RHS of plots
-    gStyle->SetPadTickX(1);
-    gStyle->SetPadTickY(1);
+    gStyle->SetPadLeftMargin(0.07692308);
+    gStyle->SetPadTopMargin(0.07124352);
 
-    // Limit axes values to 4 digits (gets messy otherwise)
-    TGaxis::SetMaxDigits(4);
+    TGaxis::SetMaxDigits(3);
 
-    // Legend Options
-    gStyle->SetLegendBorderSize(0);
-    gStyle->SetLegendFont(42);
-    gStyle->SetLegendTextSize(0.04);
   }
 
   // ---------------------------------------------------------------------------------------------------------

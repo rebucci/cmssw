@@ -11,7 +11,7 @@ where
 
 
 Options
-    - ptmin: minimum pT for tracks. Default is 2 GeV/c.
+    - ptmax: maximum pT for x axis on plot. Default is 20 GeV/c.
     - doLayerEff: efficiencies calculated for stubs in layer/disk (true) OR in modules (false)
     - PrintEachLayer: save .png files for every layer.
     - SavePlotSource: save the .C macro files for the pT barrel and endcap summaries
@@ -57,7 +57,7 @@ For info about the efficiency definition, have a look at the following presentat
 
 void SetPlotStyle();
 
-void PlotStubEffs(TString sourcefile, TString outputname, int pu)
+void PlotStubEffs(TString sourcefile, TString outputname, int pu,  float ptmax=20)
 {
 
   // -----------------------------------------------------------------------------------------------------------
@@ -69,16 +69,15 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
   SetPlotStyle();
  
   TString srcDIR  = "RootFiles/"; 
+  TString subDIR  = "RootFiles/PlotFiles/";
   TString plotDIR = "Plots/"; 
   TString plotPRE = "stubEff_";
 
   // Options
-  float ptmin = 2; //pT min in GeV/c
-
-  bool doLayerEff     = true; //module efficiency: 0, layer efficiency: 1 in seb's original
-  
-  bool PrintEachLayer = false;  // saves each layer plot
-  bool SavePlotSource = false; // save the macro.C files for the pT barrel and endcap summaries
+  bool doLayerEff     = true;   // module efficiency: 0, layer efficiency: 1 in seb's original
+  bool PrintEachLayer = true;  // saves each layer plot
+  bool doEtaPlots     = true;  // eta efficiencies
+  bool SavePlotSource = false;  // save the macro.C files for the pT barrel and endcap summaries
 
 
   // Read in File
@@ -86,7 +85,7 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
   newtree->Add(srcDIR+sourcefile+".root"); 
 
   // Output file
-  TFile* fout = new TFile(plotDIR+"plots_"+plotPRE+outputname+".root","recreate");
+  TFile* fout = new TFile(subDIR+"plots_"+plotPRE+outputname+".root","recreate");
 
 
   // -----------------------------------------------------------------------------------------------------------
@@ -114,14 +113,14 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
   newtree->SetBranchAddress("digi_pt",&digi_pt);
   newtree->SetBranchAddress("clus_pt",&clus_pt);
   if (doLayerEff) newtree->SetBranchAddress("stub_pt_lay",&stub_pt);
-  else         newtree->SetBranchAddress("stub_pt",&stub_pt);
+  else            newtree->SetBranchAddress("stub_pt",    &stub_pt);
 
 
   newtree->SetBranchAddress("eta_val",&eta_val);
   newtree->SetBranchAddress("digi_eta",&digi_eta);
   newtree->SetBranchAddress("clus_eta",&clus_eta);
-  if (doLayerEff)newtree->SetBranchAddress("stub_eta_lay",&stub_eta);
-  else        newtree->SetBranchAddress("stub_eta",&stub_eta); 
+  if (doLayerEff) newtree->SetBranchAddress("stub_eta_lay",&stub_eta);
+  else            newtree->SetBranchAddress("stub_eta",    &stub_eta); 
 
   // initialize
   newtree->GetEntry(0);
@@ -161,7 +160,7 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
     if (layer>=18  && layer<25) disk=-int(layer-18)%8;
 
     // Histograms
-    TH2F *h_eff_pt      = new TH2F("eff_pt",";Particle p_{T} (GeV); Efficiency",300,0.,ptmin,200,0.,1.02);
+    TH2F *h_eff_pt      = new TH2F("eff_pt",";Particle p_{T} (GeV); Efficiency",300,0.,ptmax,200,0.,1.02);
     TH2F *h_eff_pt_digi = new TH2F("eff_pt_digi",";Particle p_{T} (GeV); Efficiency",300,0.,20.,200,0.,1.02);
     TH2F *h_eff_pt_coff = new TH2F("eff_pt_coff",";Particle p_{T} (GeV); Efficiency",300,0.,20.,200,0.,1.02);
     TH2F *h_eff_pt_soff = new TH2F("eff_pt_soff",";Particle p_{T} (GeV); Efficiency",300,0.,20.,200,0.,1.02);
@@ -174,11 +173,16 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
       h_eff_pt_soff->Fill(pt_val[i],stub_pt[layer][i]);
     }
 
-    TCanvas *c_eff_pt = new TCanvas("c_eff_pt","pT Efficiency",5,75,670,660);
-      c_eff_pt->Range(-1.2,-0.1,10.5,1.1);
+    TCanvas *c_eff_pt = new TCanvas("c_eff_pt","pT Efficiency",0,0,640,640); //5,75,670,660
+      c_eff_pt->Range(-1.2,-0.1,10.6,1.24); //-1.2,-0.1,10.5,1.1
       c_eff_pt->SetGridx();
       c_eff_pt->SetGridy();
+      c_eff_pt->SetLeftMargin(0.11); //0.04
+      c_eff_pt->SetRightMargin(0.065); //0.05
 
+      h_eff_pt->GetXaxis()->SetLabelSize(0.03);
+      h_eff_pt->GetYaxis()->SetLabelSize(0.03);
+      h_eff_pt->GetYaxis()->SetTitleOffset(1.25);
       h_eff_pt->GetXaxis()->SetNdivisions(518);
       h_eff_pt->GetYaxis()->SetNdivisions(511);
       h_eff_pt->Draw();
@@ -209,7 +213,7 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
         leg_eff_pt->Draw();  
 
       TLtitle04.DrawLatex(0., 1.03, "CMS Phase-2 Simulation");
-      TL_PU.DrawLatex(0.6*ptmin, 1.03, txt_pu);
+      TL_PU.DrawLatex(0.7*ptmax, 1.03, txt_pu);
 
       c_eff_pt->Modified();
       c_eff_pt->Update();
@@ -238,94 +242,102 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
   // -----------------------------------------------------------------------------------------------------------
   // Eta Plots
   // ---------------------------------------------------------------------------------------------------------
+  if (doEtaPlots) {
 
-  // Loop over Layers
-  for (int layer=5;layer<18;++layer) // try 25 also?
-  {
-    int disk =0;
-    if (layer>=11  && layer<18) disk= int(layer-11)%8;
-    if (layer>=18  && layer<25) disk=-int(layer-18)%8;
+    // Loop over Layers
+    for (int layer=5;layer<18;++layer) // try 25 also?
+    {
+      int disk =0;
+      if (layer>=11  && layer<18) disk= int(layer-11)%8;
+      if (layer>=18  && layer<25) disk=-int(layer-18)%8;
 
-    for (int i=0;i<30;++i)
-    { 
-      for (int j=0;j<50;++j)
+      for (int i=0;i<30;++i)
       { 
-        digi_eta[i][j]  = 0;
-        clus_eta[i][j] = 0;
-        stub_eta[i][j] = 0;
-      }
-    }
-
-    TH2F *h_eff_eta      = new TH2F("eff_eta",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
-    TH2F *h_eff_eta_digi = new TH2F("eff_eta_digi",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
-    TH2F *h_eff_eta_ceff = new TH2F("eff_eta_ceff",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
-    TH2F *h_eff_eta_seff = new TH2F("eff_eta_seff",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
-      
-    for (int i=0;i<50;++i)
-    { 
-      h_eff_eta_digi->Fill(eta_val[i],digi_eta[layer-5][i]);
-      h_eff_eta_ceff->Fill(eta_val[i],clus_eta[layer-5][i]);
-      h_eff_eta_seff->Fill(eta_val[i],stub_eta[layer-5][i]);
-    }
-
-    TCanvas *c_eff_eta = new TCanvas("c_eff_eta","eta Efficiency",5,75,670,660);
-      c_eff_eta->Range(-1.833856,-0.1286626,21.1442,1.157964);
-      c_eff_eta->SetGridx();
-      c_eff_eta->SetGridy();
-        
-      h_eff_eta->GetXaxis()->SetNdivisions(522);
-      h_eff_eta->GetYaxis()->SetNdivisions(511);
-      h_eff_eta->Draw();
-        
-      h_eff_eta_digi->SetMarkerStyle(3);
-      h_eff_eta_ceff->SetMarkerStyle(4);
-      h_eff_eta_seff->SetMarkerStyle(20);
-      h_eff_eta_digi->Draw("same");
-      h_eff_eta_ceff->Draw("same");
-      h_eff_eta_seff->Draw("same");        
-
-      char txt_eff_eta[80];
-
-      if (disk==0)
-      {
-        sprintf(txt_eff_eta, "Layer %d",layer);
-      }
-      else
-      {
-        (disk>0)
-          ? sprintf(txt_eff_eta, "Disk %d",disk)
-          : sprintf(txt_eff_eta, "Disk %d",-disk);
-      }
-
-      TLegend *leg_eff_eta = new TLegend(0.7,0.28,0.9,0.45);
-        leg_eff_eta->SetTextSize(0.03);
-        leg_eff_eta->SetHeader(txt_eff_eta); 
-        leg_eff_eta->AddEntry(h_eff_eta_digi,"Digis","p");
-        leg_eff_eta->AddEntry(h_eff_eta_ceff,"Clusters","p");
-        leg_eff_eta->AddEntry(h_eff_eta_seff,"Stubs","p");
-        leg_eff_eta->Draw();
-
-      TLtitle04.DrawLatex(-2.5, 1.03, "CMS Phase-2 Simulation");
-      TL_PU.DrawLatex(0., 1.03, txt_pu);
-
-      c_eff_eta->Modified();
-      c_eff_eta->Update();
-      c_eff_eta->Write();
-
-      if (PrintEachLayer) {
-        char name_eff_eta[100];
-        if (doLayerEff) {
-          if (disk==0) sprintf (name_eff_eta, "_eff_eta_layer_barrel_%d.png", layer);
-          if (disk>0)  sprintf (name_eff_eta, "_eff_eta_layer_endcap_p%d.png", disk); 
-          if (disk<0)  sprintf (name_eff_eta, "_eff_eta_layer_endcap_m%d.png", abs(disk)); 
+        for (int j=0;j<50;++j)
+        { 
+          digi_eta[i][j]  = 0;
+          clus_eta[i][j] = 0;
+          stub_eta[i][j] = 0;
         }
-        else {
-          if (disk==0) sprintf (name_eff_eta, "_eff_eta_module_barrel_%d.png", layer+5);
-          if (disk>0)  sprintf (name_eff_eta, "_eff_eta_module_endcap_p%d.png", disk); 
-          if (disk<0)  sprintf (name_eff_eta, "_eff_eta_module_endcap_m%d.png", abs(disk)); 
-        }
-        c_eff_eta->SaveAs(plotDIR+plotPRE+outputname+name_eff_eta); 
       }
+
+      TH2F *h_eff_eta      = new TH2F("eff_eta",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
+      TH2F *h_eff_eta_digi = new TH2F("eff_eta_digi",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
+      TH2F *h_eff_eta_ceff = new TH2F("eff_eta_ceff",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
+      TH2F *h_eff_eta_seff = new TH2F("eff_eta_seff",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
+        
+      for (int i=0;i<50;++i)
+      { 
+        h_eff_eta_digi->Fill(eta_val[i],digi_eta[layer-5][i]);
+        h_eff_eta_ceff->Fill(eta_val[i],clus_eta[layer-5][i]);
+        h_eff_eta_seff->Fill(eta_val[i],stub_eta[layer-5][i]);
+      }
+
+      TCanvas *c_eff_eta = new TCanvas("c_eff_eta","eta Efficiency",0,0,640,640); //5,75,670,660
+        c_eff_eta->Range(-1.2,-0.1,10.6,1.24);
+        c_eff_eta->SetGridx();
+        c_eff_eta->SetGridy();
+        c_eff_eta->SetLeftMargin(0.11); //0.08
+        c_eff_eta->SetRightMargin(0.065); //0.05
+
+        h_eff_eta->GetXaxis()->SetLabelSize(0.03);
+        h_eff_eta->GetYaxis()->SetLabelSize(0.03);
+        h_eff_eta->GetYaxis()->SetTitleOffset(0.8);
+        h_eff_eta->GetXaxis()->SetNdivisions(522);
+        h_eff_eta->GetYaxis()->SetNdivisions(511);
+        h_eff_eta->Draw();
+          
+        h_eff_eta_digi->SetMarkerStyle(3);
+        h_eff_eta_ceff->SetMarkerStyle(4);
+        h_eff_eta_seff->SetMarkerStyle(20);
+        h_eff_eta_digi->Draw("same");
+        h_eff_eta_ceff->Draw("same");
+        h_eff_eta_seff->Draw("same");        
+
+        char txt_eff_eta[80];
+
+        if (disk==0)
+        {
+          sprintf(txt_eff_eta, "Layer %d",layer);
+        }
+        else
+        {
+          (disk>0)
+            ? sprintf(txt_eff_eta, "Disk %d",disk)
+            : sprintf(txt_eff_eta, "Disk %d",-disk);
+        }
+
+        TLegend *leg_eff_eta = new TLegend(0.7,0.28,0.9,0.45);
+          leg_eff_eta->SetTextSize(0.03);
+          leg_eff_eta->SetHeader(txt_eff_eta); 
+          leg_eff_eta->AddEntry(h_eff_eta_digi,"Digis","p");
+          leg_eff_eta->AddEntry(h_eff_eta_ceff,"Clusters","p");
+          leg_eff_eta->AddEntry(h_eff_eta_seff,"Stubs","p");
+          leg_eff_eta->Draw();
+
+        TLtitle04.DrawLatex(-2.5, 1.03, "CMS Phase-2 Simulation");
+        TL_PU.DrawLatex(0., 1.03, txt_pu);
+
+        c_eff_eta->Modified();
+        c_eff_eta->Update();
+        c_eff_eta->Write();
+
+        if (PrintEachLayer) {
+          char name_eff_eta[100];
+          if (doLayerEff) {
+            if (disk==0) sprintf (name_eff_eta, "_eff_eta_layer_barrel_%d.png", layer);
+            if (disk>0)  sprintf (name_eff_eta, "_eff_eta_layer_endcap_p%d.png", disk); 
+            if (disk<0)  sprintf (name_eff_eta, "_eff_eta_layer_endcap_m%d.png", abs(disk)); 
+          }
+          else {
+            if (disk==0) sprintf (name_eff_eta, "_eff_eta_module_barrel_%d.png", layer+5);
+            if (disk>0)  sprintf (name_eff_eta, "_eff_eta_module_endcap_p%d.png", disk); 
+            if (disk<0)  sprintf (name_eff_eta, "_eff_eta_module_endcap_m%d.png", abs(disk)); 
+          }
+          c_eff_eta->SaveAs(plotDIR+plotPRE+outputname+name_eff_eta); 
+        }
+
+    }
 
   }
 
@@ -356,7 +368,13 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
     c_eff_pt_barrel->Range(-1.2,-0.1,10.6,1.24);
     c_eff_pt_barrel->SetGridx();
     c_eff_pt_barrel->SetGridy();
+    c_eff_pt_barrel->SetRightMargin(0.07);
+    c_eff_pt_barrel->SetTopMargin(0.065);
       
+    h_eff_pt_barrel->GetXaxis()->SetTitleSize(0.045);
+    h_eff_pt_barrel->GetYaxis()->SetTitleSize(0.035);
+    h_eff_pt_barrel->GetYaxis()->SetTitleOffset(0.88);
+    h_eff_pt_barrel->GetXaxis()->SetTitleOffset(0.9);
     h_eff_pt_barrel->GetXaxis()->SetNdivisions(518);
     h_eff_pt_barrel->GetYaxis()->SetNdivisions(511);
     h_eff_pt_barrel->Draw();
@@ -394,7 +412,7 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
       leg_eff_pt_bar->Draw();
        
     TLtitle03.DrawLatex(-0.02, 1.18, "CMS Phase-2 simulation");
-    TL_PU.DrawLatex(5., 1.18, txt_pu);
+    TL_PU.DrawLatex(7., 1.18, txt_pu);
     
     c_eff_pt_barrel->Modified();
     c_eff_pt_barrel->Update();
@@ -447,7 +465,13 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
     c_eff_pt_endcap->Range(-1.2,-0.1,10.6,1.24);
     c_eff_pt_endcap->SetGridx();
     c_eff_pt_endcap->SetGridy();
+    c_eff_pt_endcap->SetRightMargin(0.07);
+    c_eff_pt_endcap->SetTopMargin(0.065);
 
+    h_eff_pt_endcap->GetXaxis()->SetTitleSize(0.045);
+    h_eff_pt_endcap->GetYaxis()->SetTitleSize(0.035);
+    h_eff_pt_endcap->GetYaxis()->SetTitleOffset(0.88);
+    h_eff_pt_endcap->GetXaxis()->SetTitleOffset(0.9);
     h_eff_pt_endcap->GetXaxis()->SetNdivisions(518);
     h_eff_pt_endcap->GetYaxis()->SetNdivisions(511);
     h_eff_pt_endcap->Draw();
@@ -525,71 +549,18 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu)
   // Plot Style
   void SetPlotStyle() 
   {
-    // use plain black on white colors
-    gStyle->SetFrameBorderMode(0);
-    gStyle->SetFrameFillColor(0);
+    gStyle->SetOptStat(0);
+    gStyle->SetOptTitle(0);
+
+    gStyle->SetCanvasColor(0);
     gStyle->SetCanvasBorderMode(0);
     gStyle->SetCanvasBorderSize(2);
-    gStyle->SetCanvasColor(0);
-    gStyle->SetPadBorderMode(0);
-    gStyle->SetPadColor(0);
-    gStyle->SetStatColor(0);
-    gStyle->SetHistLineColor(1);
 
-    //gStyle->SetPalette(1);
+    gStyle->SetFrameBorderMode(0);
 
-    // set the paper & margin sizes
-    gStyle->SetPaperSize(20,26);
-    gStyle->SetPadTopMargin(0.08);
-    gStyle->SetPadRightMargin(0.05);
-    gStyle->SetPadBottomMargin(0.16);
-    gStyle->SetPadLeftMargin(0.16);
+    gStyle->SetLabelFont(42,"xyz");
+    gStyle->SetTitleFont(42,"xyz");
 
-    // set title offsets (for axis label)
-    gStyle->SetTitleXOffset(1.4);
-    gStyle->SetTitleYOffset(1.4);
-
-    // use large fonts
-    // gStyle->SetTextFont(42);
-    // gStyle->SetTextSize(0.05);
-    // gStyle->SetLabelFont(42,"xyz");
-    // gStyle->SetTitleFont(42,"xyz");
-    // gStyle->SetLabelSize(0.03,"xyz");
-    // gStyle->SetTitleSize(0.045,"xz");
-    // gStyle->SetTitleSize(0.035,"y");
-
-    gStyle->SetTextFont(42);
-    gStyle->SetTextSize(0.05);
-    gStyle->SetLabelFont(42,"xyt");
-    gStyle->SetTitleFont(42,"xyt");
-    gStyle->SetLabelSize(0.05,"xy");
-    gStyle->SetTitleSize(0.05,"xy");
-    gStyle->SetLabelSize(0.07,"t");
-    gStyle->SetTitleSize(0.07,"t");
-    
-    // use bold lines and markers
-    gStyle->SetMarkerStyle(20);
-    gStyle->SetMarkerSize(1.2);
-    gStyle->SetHistLineWidth(2.);
-    gStyle->SetLineStyleString(2,"[12 12]");
-
-    // get rid of error bar caps
-    gStyle->SetEndErrorSize(0.);
-
-    // do not display any of the standard histogram decorations
-    gStyle->SetOptTitle(0);   //turns off title
-    gStyle->SetOptStat(0);
-    gStyle->SetOptFit(0);
-
-    // put tick marks on top and RHS of plots
-    gStyle->SetPadTickX(1);
-    gStyle->SetPadTickY(1);
-
-    // Limit axes values to 4 digits (gets messy otherwise)
-    TGaxis::SetMaxDigits(4);
-
-    // Legend Options
-    gStyle->SetLegendBorderSize(0);
-    gStyle->SetLegendFont(42);
-    gStyle->SetLegendTextSize(0.04);
+    gStyle->SetLabelSize(0.035,"xyz");
+    gStyle->SetTitleSize(0.035,"xyz");
   }
