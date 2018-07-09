@@ -31,6 +31,8 @@ void efficiencies::get_efficiencies() {
   double PTGEN=0;
   double D0GEN=0;
 
+  float PTMAX=100.;
+
   int pix_i;
   int clus_i;
   int stub_i;
@@ -191,8 +193,10 @@ void efficiencies::get_efficiencies() {
                  << " / " << i_eta << endl;
         }
 
-        if (PTGEN<20) entries_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-        if (fabs(i_eta)<2.5 && PTGEN>20) entries_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+        // if (PTGEN<20)                   entries_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+        // if (fabs(i_eta)<2.5 && PTGEN>20) entries_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+        if (PTGEN<PTMAX)     entries_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+        if (fabs(i_eta)<2.5) entries_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
         pix_i  = l;  // The index of the induced DIGI
         clus_i = -1; // The index of the induced CLUSTER
@@ -200,8 +204,10 @@ void efficiencies::get_efficiencies() {
 
         i_seg = m_pixclus_column->at(pix_i);
         
-        if (PTGEN<20) digi_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-        if (fabs(i_eta)<2.5 && PTGEN>20) digi_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+        // if (PTGEN<20)                   digi_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+        // if (fabs(i_eta)<2.5 && PTGEN>20) digi_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+        if (PTGEN<PTMAX)     digi_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+        if (fabs(i_eta)<2.5) digi_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
         // We have the digis, now look at the clusters
         // Then the official one
@@ -238,8 +244,10 @@ void efficiencies::get_efficiencies() {
             cout << "   CLUS FOUND !!   " << endl;
           }
         
-          if (PTGEN<20) clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-          if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+          // if (PTGEN<20)                   clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+          // if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+          if (PTGEN<PTMAX)     clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+          if (fabs(i_eta)<2.5) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
           // We have the clusters, now look at the stubs
           for (int i=0;i<m_tkstub;++i) {
@@ -269,8 +277,10 @@ void efficiencies::get_efficiencies() {
 	
 	          pix_st.at(l)=1;
 
-            if (PTGEN<20) stub_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-            if (fabs(i_eta)<2.5 && PTGEN>20) stub_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+            // if (PTGEN<20)                   stub_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+            // if (fabs(i_eta)<2.5 && PTGEN>20) stub_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+            if (PTGEN<PTMAX)     stub_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+            if (fabs(i_eta)<2.5) stub_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
           }
         }
       
@@ -285,103 +295,111 @@ void efficiencies::get_efficiencies() {
 
       for (int i=0;i<30;++i) {
         if (hit_on_lay[i]!=0) {
-          if (PTGEN<20)                    entries_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
-          if (fabs(i_eta)<2.5 && PTGEN>20) entries_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
+          // if (PTGEN<20)                   entries_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          // if (fabs(i_eta)<2.5 && PTGEN>20) entries_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
+          if (PTGEN<PTMAX)       entries_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          if (fabs(i_eta)<2.5) entries_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
 
         if (clus_on_lay[i]!=0) {
-          if (PTGEN<20)                    clus_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
-          if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
+          // if (PTGEN<20)                   clus_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          // if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
+          if (PTGEN<PTMAX)     clus_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          if (fabs(i_eta)<2.5) clus_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
 
         if (stub_on_lay[i]!=0) {
-          if (PTGEN<20)                    stub_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
-          if (fabs(i_eta)<2.5 && PTGEN>20) stub_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
+          // if (PTGEN<20)                   stub_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          // if (fabs(i_eta)<2.5 && PTGEN>20) stub_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
+          if (PTGEN<PTMAX)     stub_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          if (fabs(i_eta)<2.5) stub_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
       }
     
     } // End of loop over TPs
 
     /*
-    cout << endl;
-    cout << "This event contains " << m_pclus << " pixel digis" << endl;
-    // Loop over TPs
-    for (int k=0;k<m_pclus;++k) {
-      // if (m_pixclus_layer->at(k)!=10) continue;
+      cout << endl;
+      cout << "This event contains " << m_pclus << " pixel digis" << endl;
+      // Loop over TPs
+      for (int k=0;k<m_pclus;++k) {
+        // if (m_pixclus_layer->at(k)!=10) continue;
 
-      cout << k 
-           << " / "  << m_pixclus_layer->at(k)
-           << " / "  << m_pixclus_ladder->at(k)
-           << " / "  << m_pixclus_module->at(k)
-           << " / "  << m_pixclus_bottom->at(k)
-           << " / "  << m_pixclus_row->at(k) 
-           << " / "  << m_pixclus_column->at(k)
-           << " --> "  << pix_tp.at(k)
-           << " / "  <<   pix_cl.at(k)
-           << " / "  <<   pix_st.at(k) << endl;
-    }
+        cout << k 
+             << " / "  << m_pixclus_layer->at(k)
+             << " / "  << m_pixclus_ladder->at(k)
+             << " / "  << m_pixclus_module->at(k)
+             << " / "  << m_pixclus_bottom->at(k)
+             << " / "  << m_pixclus_row->at(k) 
+             << " / "  << m_pixclus_column->at(k)
+             << " --> "  << pix_tp.at(k)
+             << " / "  <<   pix_cl.at(k)
+             << " / "  <<   pix_st.at(k) << endl;
+      }
 
-    cout << "Clusters" << endl;
-    for (int k=0;k<m_tkclus;++k) {
-      //	  if (m_tkclus_layer->at(k)!=10) continue;
+      cout << "Clusters" << endl;
+      for (int k=0;k<m_tkclus;++k) {
+        //	  if (m_tkclus_layer->at(k)!=10) continue;
 
-      cout << k 
-           << " / "  << m_tkclus_layer->at(k)
-           << " / "  << m_tkclus_ladder->at(k)
-           << " / "  << m_tkclus_module->at(k)
-           << " / "  << m_tkclus_bottom->at(k)
-           << " / "  << m_tkclus_strip->at(k) 
-           << " / "  << m_tkclus_nstrips->at(k)
-           << " / "  << m_tkclus_seg->at(k)
-           << " --> "  << m_tkclus_tp->at(k) << endl;
-    }	
+        cout << k 
+             << " / "  << m_tkclus_layer->at(k)
+             << " / "  << m_tkclus_ladder->at(k)
+             << " / "  << m_tkclus_module->at(k)
+             << " / "  << m_tkclus_bottom->at(k)
+             << " / "  << m_tkclus_strip->at(k) 
+             << " / "  << m_tkclus_nstrips->at(k)
+             << " / "  << m_tkclus_seg->at(k)
+             << " --> "  << m_tkclus_tp->at(k) << endl;
+      }	
 
 
-    cout << "Unmatched digis" << endl;
-    // Loop over TPs
-    for (int k=0;k<m_pclus;++k) {
-      if (pix_tp.at(k)==-1 || pix_cl.at(k)==1) continue;
+      cout << "Unmatched digis" << endl;
+      // Loop over TPs
+      for (int k=0;k<m_pclus;++k) {
+        if (pix_tp.at(k)==-1 || pix_cl.at(k)==1) continue;
 
-      // if (m_pixclus_layer->at(k)!=10) continue;
+        // if (m_pixclus_layer->at(k)!=10) continue;
 
-      cout << k 
-           << " / "  << m_pixclus_layer->at(k)
-           << " / "  << m_pixclus_ladder->at(k)
-           << " / "  << m_pixclus_module->at(k)
-           << " / "  << m_pixclus_bottom->at(k)
-           << " / "  << m_pixclus_row->at(k) 
-           << " / "  << m_pixclus_column->at(k)
-           << " --> "  << pix_tp.at(k)
-           << " / "  <<   pix_cl.at(k)
-           << " / "  <<   pix_st.at(k) << endl;
-    }
+        cout << k 
+             << " / "  << m_pixclus_layer->at(k)
+             << " / "  << m_pixclus_ladder->at(k)
+             << " / "  << m_pixclus_module->at(k)
+             << " / "  << m_pixclus_bottom->at(k)
+             << " / "  << m_pixclus_row->at(k) 
+             << " / "  << m_pixclus_column->at(k)
+             << " --> "  << pix_tp.at(k)
+             << " / "  <<   pix_cl.at(k)
+             << " / "  <<   pix_st.at(k) << endl;
+      }
 
-    cout << "Unmatched clusters" << endl;
-    for (int k=0;k<m_tkclus;++k) {
-      if (m_tkclus_tp->at(k)!=-1) continue;
+      cout << "Unmatched clusters" << endl;
+      for (int k=0;k<m_tkclus;++k) {
+        if (m_tkclus_tp->at(k)!=-1) continue;
 
-      // if (m_tkclus_layer->at(k)!=10) continue;
+        // if (m_tkclus_layer->at(k)!=10) continue;
 
-      cout << k 
-           << " / "  << m_tkclus_layer->at(k)
-           << " / "  << m_tkclus_ladder->at(k)
-           << " / "  << m_tkclus_module->at(k)
-           << " / "  << m_tkclus_bottom->at(k)
-           << " / "  << m_tkclus_strip->at(k) 
-           << " / "  << m_tkclus_nstrips->at(k)
-           << " / "  << m_tkclus_seg->at(k)
-           << " --> "  << m_tkclus_tp->at(k)
-           << " --> "  << m_tkclus_pdg->at(k) << endl;
-    }
+        cout << k 
+             << " / "  << m_tkclus_layer->at(k)
+             << " / "  << m_tkclus_ladder->at(k)
+             << " / "  << m_tkclus_module->at(k)
+             << " / "  << m_tkclus_bottom->at(k)
+             << " / "  << m_tkclus_strip->at(k) 
+             << " / "  << m_tkclus_nstrips->at(k)
+             << " / "  << m_tkclus_seg->at(k)
+             << " --> "  << m_tkclus_tp->at(k)
+             << " --> "  << m_tkclus_pdg->at(k) << endl;
+      }
     */
 
   } // End of loop over events
+
 
   ///////////////////////////////////////////////////////////////////////
   // Get the efficiencies
   for (int i=0;i<30;++i) {
     for (int j=0;j<100;++j) {
-      if (entries_pt[i][j]>20.) {
+      // if (entries_pt[i][j]>20.) {
+      if (entries_pt[i][j]>PTMAX) {
         digi_pt[i][j] = digi_pt[i][j]/entries_pt[i][j];
         clus_pt[i][j] = clus_pt[i][j]/entries_pt[i][j];
         stub_pt[i][j] = stub_pt[i][j]/entries_pt[i][j];
@@ -394,7 +412,8 @@ void efficiencies::get_efficiencies() {
     }
 
     for (int j=0;j<50;++j) {
-      if (entries_eta[i][j]>20.) {
+      // if (entries_eta[i][j]>20.) {
+      if (entries_eta[i][j]>PTMAX) {
         digi_eta[i][j] = digi_eta[i][j]/entries_eta[i][j];
         clus_eta[i][j] = clus_eta[i][j]/entries_eta[i][j];
         stub_eta[i][j] = stub_eta[i][j]/entries_eta[i][j];

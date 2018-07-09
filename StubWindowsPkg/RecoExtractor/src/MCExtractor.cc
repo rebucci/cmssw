@@ -3,9 +3,8 @@
 // -----------------------------------------------------------------------------------------------------------
 // Tokens
 MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
-												 edm::EDGetTokenT< TrackingParticleCollection > ttoken, 
-                         bool doTree)
-{
+												 edm::EDGetTokenT< TrackingParticleCollection  > ttoken, 
+                         bool doTree) {
   // Set everything to 0
   m_OK = false;
   
@@ -37,8 +36,7 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
   MCExtractor::reset();
 
   // Tree definition
-  if (doTree)
-  {
+  if (doTree) {
     m_OK = true;
     MCExtractor::createTree();
   }
@@ -46,8 +44,7 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
 
 // -----------------------------------------------------------------------------------------------------------
 // Retrieval
-MCExtractor::MCExtractor(TFile *a_file)
-{
+MCExtractor::MCExtractor(TFile *a_file) {
   std::cout << "MCExtractor object is retrieved" << std::endl;
 
   // Tree definition
@@ -81,8 +78,7 @@ MCExtractor::MCExtractor(TFile *a_file)
   // Tree
   m_tree_retrieved = dynamic_cast<TTree*>(a_file->Get("MC"));
 
-  if (!m_tree_retrieved)
-  {
+  if (!m_tree_retrieved) {
     std::cout << "This tree doesn't exist!!!" << std::endl;
     return;
   }
@@ -102,26 +98,24 @@ MCExtractor::MCExtractor(TFile *a_file)
   m_tree_retrieved->SetBranchAddress("gen_z",   &m_gen_z);
   
   // Infos related to the subsequent tracking particles
-  
-  m_tree_retrieved->SetBranchAddress("subpart_n",        &m_part_n);
-  m_tree_retrieved->SetBranchAddress("subpart_pdgId",    &m_part_pdgId);
-  m_tree_retrieved->SetBranchAddress("subpart_evtId",    &m_part_evtId);
-  m_tree_retrieved->SetBranchAddress("subpart_px",       &m_part_px);
-  m_tree_retrieved->SetBranchAddress("subpart_py",       &m_part_py);
-  m_tree_retrieved->SetBranchAddress("subpart_pz",       &m_part_pz);
-  m_tree_retrieved->SetBranchAddress("subpart_eta",      &m_part_eta);
-  m_tree_retrieved->SetBranchAddress("subpart_phi",      &m_part_phi);
-  m_tree_retrieved->SetBranchAddress("subpart_x",        &m_part_x);
-  m_tree_retrieved->SetBranchAddress("subpart_y",        &m_part_y);
-  m_tree_retrieved->SetBranchAddress("subpart_z",        &m_part_z);
-  m_tree_retrieved->SetBranchAddress("subpart_stId",     &m_part_stId);
+  m_tree_retrieved->SetBranchAddress("subpart_n",      &m_part_n);
+  m_tree_retrieved->SetBranchAddress("subpart_pdgId",  &m_part_pdgId);
+  m_tree_retrieved->SetBranchAddress("subpart_evtId",  &m_part_evtId);
+  m_tree_retrieved->SetBranchAddress("subpart_px",     &m_part_px);
+  m_tree_retrieved->SetBranchAddress("subpart_py",     &m_part_py);
+  m_tree_retrieved->SetBranchAddress("subpart_pz",     &m_part_pz);
+  m_tree_retrieved->SetBranchAddress("subpart_eta",    &m_part_eta);
+  m_tree_retrieved->SetBranchAddress("subpart_phi",    &m_part_phi);
+  m_tree_retrieved->SetBranchAddress("subpart_x",      &m_part_x);
+  m_tree_retrieved->SetBranchAddress("subpart_y",      &m_part_y);
+  m_tree_retrieved->SetBranchAddress("subpart_z",      &m_part_z);
+  m_tree_retrieved->SetBranchAddress("subpart_stId",   &m_part_stId);
 }
 
 
 // -----------------------------------------------------------------------------------------------------------
 // Initialize
-void MCExtractor::init(const edm::EventSetup *setup)
-{
+void MCExtractor::init(const edm::EventSetup *setup) {
   // Initializations 
 
   // Here we build the whole detector
@@ -133,8 +127,7 @@ void MCExtractor::init(const edm::EventSetup *setup)
 
 // -----------------------------------------------------------------------------------------------------------
 // Method filling the main event
-void MCExtractor::writeInfo(const edm::Event *event) 
-{
+void MCExtractor::writeInfo(const edm::Event *event)  {
   using namespace reco;
 
   // Reset Tree Variables :
@@ -162,23 +155,22 @@ void MCExtractor::writeInfo(const edm::Event *event)
   LocalPoint hitpos;
 
   // Loop on tracking particles 
-  for (TrackingParticleCollection::size_type tpIt=0; tpIt<tpColl.size(); tpIt++)
-  { 
+  for (TrackingParticleCollection::size_type tpIt=0; tpIt<tpColl.size(); tpIt++) { 
     //if (n_part > m_part_nMAX) continue; // Sanity check
 
     TrackingParticleRef tpr(TPCollection, tpIt);
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
     
     // Fill tracking particle variables
-    m_part_pdgId->push_back(tp->pdgId());                       // Particle type
-    m_part_px->push_back(tp->momentum().x());                   // 
-    m_part_py->push_back(tp->momentum().y());                   // Momentum
-    m_part_pz->push_back(tp->momentum().z());                   //
-    m_part_eta->push_back(tp->momentum().eta());                // Eta
-    m_part_phi->push_back(tp->momentum().phi());                // Phi
-    m_part_x->push_back(tp->parentVertex()->position().x());    //
-    m_part_y->push_back(tp->parentVertex()->position().y());    // Vertex of gen
-    m_part_z->push_back(tp->parentVertex()->position().z());    //
+    m_part_pdgId->push_back(tp->pdgId());                         // Particle type
+    m_part_px   ->push_back(tp->momentum().x());                  // >>>
+    m_part_py   ->push_back(tp->momentum().y());                  // Momentum
+    m_part_pz   ->push_back(tp->momentum().z());                  // <<<
+    m_part_eta  ->push_back(tp->momentum().eta());                // Eta
+    m_part_phi  ->push_back(tp->momentum().phi());                // Phi
+    m_part_x    ->push_back(tp->parentVertex()->position().x());  // >>>
+    m_part_y    ->push_back(tp->parentVertex()->position().y());  // Vertex of gen
+    m_part_z    ->push_back(tp->parentVertex()->position().z());  // <<<
     m_part_evtId->push_back(tp->eventId().rawId());  
 
 
@@ -202,8 +194,7 @@ void MCExtractor::writeInfo(const edm::Event *event)
 
 // -----------------------------------------------------------------------------------------------------------
 // Method retrieving the generated info of the event
-void MCExtractor::getGenInfo(const edm::Event *event) 
-{
+void MCExtractor::getGenInfo(const edm::Event *event) {
   event->getByToken(m_gtoken, genParticles);
 
   m_gen_n=static_cast<int>(genParticles->size());
@@ -212,14 +203,13 @@ void MCExtractor::getGenInfo(const edm::Event *event)
 
   int npartg=0;
 
-  for (reco::GenParticleCollection::const_iterator mcIter=genParticles->begin(); mcIter != genParticles->end(); mcIter++ ) 
-  {
-    m_gen_x->push_back(mcIter->vx()); //
-    m_gen_y->push_back(mcIter->vy()); // Gen of the initial MIB particle
-    m_gen_z->push_back(mcIter->vz()); //
-    m_gen_px->push_back(mcIter->px());                      //
-    m_gen_py->push_back(mcIter->py());                      // Momentum
-    m_gen_pz->push_back(mcIter->pz());                      //
+  for (reco::GenParticleCollection::const_iterator mcIter=genParticles->begin(); mcIter != genParticles->end(); mcIter++ ) {
+    m_gen_x  ->push_back(mcIter->vx()); //
+    m_gen_y  ->push_back(mcIter->vy()); // Gen of the initial MIB particle
+    m_gen_z  ->push_back(mcIter->vz()); //
+    m_gen_px ->push_back(mcIter->px());     //
+    m_gen_py ->push_back(mcIter->py());     // Momentum
+    m_gen_pz ->push_back(mcIter->pz());     //
     m_gen_pdg->push_back(mcIter->pdgId());   
 
     ++npartg;
@@ -229,67 +219,61 @@ void MCExtractor::getGenInfo(const edm::Event *event)
 
 // -----------------------------------------------------------------------------------------------------------
 // Method getting the info from an input file
-void MCExtractor::getInfo(int ievt) 
-{
+void MCExtractor::getInfo(int ievt) {
   reset();
   m_tree_retrieved->GetEntry(ievt); 
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // Method initializing everything (to do before each event)
-void MCExtractor::reset()
-{
+void MCExtractor::reset() {
   m_gen_n         = 0;
   m_part_n        = 0;
 
-  m_gen_x->clear();
-  m_gen_y->clear();
-  m_gen_z->clear();
-  m_gen_px->clear();
-  m_gen_py->clear();  
-  m_gen_pz->clear();  
+  m_gen_x   ->clear();
+  m_gen_y   ->clear();
+  m_gen_z   ->clear();
+  m_gen_px  ->clear();
+  m_gen_py  ->clear();  
+  m_gen_pz  ->clear();  
   m_gen_proc->clear();
-  m_gen_pdg->clear(); 
+  m_gen_pdg ->clear(); 
   
-  m_part_px->clear(); 
-  m_part_py->clear(); 
-  m_part_pz->clear(); 
-  m_part_eta->clear();
-  m_part_phi->clear();
+  m_part_px   ->clear(); 
+  m_part_py   ->clear(); 
+  m_part_pz   ->clear(); 
+  m_part_eta  ->clear();
+  m_part_phi  ->clear();
   m_part_pdgId->clear();  
   m_part_evtId->clear();  
-  m_part_stId->clear();  
-  m_part_x->clear();      
-  m_part_y->clear();       
-  m_part_z->clear();       
-  m_part_used->clear();    
+  m_part_stId ->clear();  
+  m_part_x    ->clear();      
+  m_part_y    ->clear();       
+  m_part_z    ->clear();       
+  m_part_used ->clear();    
 }    
 
 // -----------------------------------------------------------------------------------------------------------
 // Fill Tree
-void MCExtractor::fillTree()
-{
+void MCExtractor::fillTree() {
   m_tree_new->Fill(); 
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // Fill Size
-void MCExtractor::fillSize(int size)
-{
+void MCExtractor::fillSize(int size) {
   m_gen_n=size;
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // Get Size
-int  MCExtractor::getSize()
-{
+int  MCExtractor::getSize() {
   return m_gen_n;
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // Create Tree
-void MCExtractor::createTree()
-{  
+void MCExtractor::createTree() {  
   m_tree_new = new TTree("MC","MC info");  
 
   m_tree_new->Branch("gen_n",   &m_gen_n);
@@ -303,58 +287,49 @@ void MCExtractor::createTree()
   m_tree_new->Branch("gen_z",   &m_gen_z);
 
   // Infos related to the subsequent tracking particles
-  
-  m_tree_new->Branch("subpart_n",            &m_part_n);
-  m_tree_new->Branch("subpart_pdgId",        &m_part_pdgId);
-  m_tree_new->Branch("subpart_evtId",        &m_part_evtId);
-  m_tree_new->Branch("subpart_stId",         &m_part_stId);
-  m_tree_new->Branch("subpart_px",           &m_part_px);
-  m_tree_new->Branch("subpart_py",           &m_part_py);
-  m_tree_new->Branch("subpart_pz",           &m_part_pz);
-  m_tree_new->Branch("subpart_eta",          &m_part_eta);
-  m_tree_new->Branch("subpart_phi",          &m_part_phi);
-  m_tree_new->Branch("subpart_x",            &m_part_x);
-  m_tree_new->Branch("subpart_y",            &m_part_y);
-  m_tree_new->Branch("subpart_z",            &m_part_z);
+  m_tree_new->Branch("subpart_n",     &m_part_n);
+  m_tree_new->Branch("subpart_pdgId", &m_part_pdgId);
+  m_tree_new->Branch("subpart_evtId", &m_part_evtId);
+  m_tree_new->Branch("subpart_stId",  &m_part_stId);
+  m_tree_new->Branch("subpart_px",    &m_part_px);
+  m_tree_new->Branch("subpart_py",    &m_part_py);
+  m_tree_new->Branch("subpart_pz",    &m_part_pz);
+  m_tree_new->Branch("subpart_eta",   &m_part_eta);
+  m_tree_new->Branch("subpart_phi",   &m_part_phi);
+  m_tree_new->Branch("subpart_x",     &m_part_x);
+  m_tree_new->Branch("subpart_y",     &m_part_y);
+  m_tree_new->Branch("subpart_z",     &m_part_z);
 } 
 
 // -----------------------------------------------------------------------------------------------------------
 // Tracking Particles
-void MCExtractor::clearTP(float ptmin,float rmax)
-{
- int n_TP= getNTP();
+void MCExtractor::clearTP(float ptmin,float rmax) {
+  int n_TP= getNTP();
 
- for (int i=0;i<n_TP;++i) // Loop over tracking particles
- {
-   if (getTP_r(i)>rmax || getTP_pt(i)<ptmin || fabs(getTP_eta(i))>5.5) 
-   {        
-     m_part_used->push_back(1);
-   }
-   else
-   {
-     m_part_used->push_back(0);
-   }
- }
+  // Loop over tracking particles
+  for (int i=0;i<n_TP;++i) {
+    if (getTP_r(i)>rmax || getTP_pt(i)<ptmin || fabs(getTP_eta(i))>5.5) {
+      m_part_used->push_back(1);
+    }
+    else m_part_used->push_back(0);
+  }
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // Matched TPs
 int MCExtractor::getMatchingTP(float x,float y, float z,
-			       float px,float py, float pz)
-{
+			       float px,float py, float pz) {
   int idx = -1;
 
-  for (int i=0;i<getNTP();++i) // Loop over TPs
-  { 
+  // Loop over TPs
+  for (int i=0;i<getNTP();++i) { 
     if (idx!=-1) return idx;
-
-    if (fabs(getTP_x(i)-x)>0.001) continue;
-    if (fabs(getTP_y(i)-y)>0.001) continue;
-    if (fabs(getTP_z(i)-z)>0.001) continue;
+    if (fabs(getTP_x(i)-x)>0.001)   continue;
+    if (fabs(getTP_y(i)-y)>0.001)   continue;
+    if (fabs(getTP_z(i)-z)>0.001)   continue;
     if (fabs(getTP_px(i)-px)>0.001) continue;
     if (fabs(getTP_py(i)-py)>0.001) continue;
     if (fabs(getTP_pz(i)-pz)>0.001) continue;
-
     idx=i;
   }
 
@@ -364,8 +339,7 @@ int MCExtractor::getMatchingTP(float x,float y, float z,
 // -----------------------------------------------------------------------------------------------------------
 // Find matched TPs
 void MCExtractor::findMatchingTP(const int &stID,const int &evtID,
-				 int &itp, bool verb)
-{
+				 int &itp, bool verb) {
   if (verb)
     std::cout << " Into new matching " << std::endl;
 
@@ -373,21 +347,17 @@ void MCExtractor::findMatchingTP(const int &stID,const int &evtID,
 
   if (itp!=-1) return;
 
-
-  for (int i=0;i<n_TP;++i) // Loop over tracking particles
-  {
+  // Loop over tracking particles
+  for (int i=0;i<n_TP;++i) {
     if (m_part_evtId->at(i)!=evtID) continue;
 
     if (verb)
       std::cout << " Try to match " << std::endl;
-
-    for (unsigned int j=0;j<m_part_stId->at(i).size();++j) // Loop on simtrack
-    {
+    
+    // Loop on simtrack
+    for (unsigned int j=0;j<m_part_stId->at(i).size();++j) {
       if (m_part_stId->at(i).at(j)!=stID) continue;
-
-      if (itp!=-1 && itp!=i) 
-	std::cout << " More than one tracking particle for one simtrack ID: problem!!!! " << std::endl;
-
+      if (itp!=-1 && itp!=i) std::cout << " More than one tracking particle for one simtrack ID: problem!!!! " << std::endl;
       itp = i;
     }
   }

@@ -26,7 +26,7 @@ process = cms.Process("MIBextractor")
 flat=False
 
 # Select stub windows
-STUBWINDOWS = "9"
+STUBWINDOWS = "0SW"
     # 9    stub  windows in CMSSW_9_4_0 and 10_0_0
     # 10T  tight windows in CMSSW_10_2_X
     # 10L  loose windows in CMSSW_10_2_X

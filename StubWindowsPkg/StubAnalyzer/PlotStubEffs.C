@@ -160,10 +160,10 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu,  float ptmax=2
     if (layer>=18  && layer<25) disk=-int(layer-18)%8;
 
     // Histograms
-    TH2F *h_eff_pt      = new TH2F("eff_pt",";Particle p_{T} (GeV); Efficiency",300,0.,ptmax,200,0.,1.02);
-    TH2F *h_eff_pt_digi = new TH2F("eff_pt_digi",";Particle p_{T} (GeV); Efficiency",300,0.,20.,200,0.,1.02);
-    TH2F *h_eff_pt_coff = new TH2F("eff_pt_coff",";Particle p_{T} (GeV); Efficiency",300,0.,20.,200,0.,1.02);
-    TH2F *h_eff_pt_soff = new TH2F("eff_pt_soff",";Particle p_{T} (GeV); Efficiency",300,0.,20.,200,0.,1.02);
+    TH2F *h_eff_pt      = new TH2F("eff_pt",     ";Particle p_{T} (GeV); Efficiency",300,0.,ptmax,200,0.,1.02);
+    TH2F *h_eff_pt_digi = new TH2F("eff_pt_digi",";Particle p_{T} (GeV); Efficiency",300,0.,ptmax,200,0.,1.02);
+    TH2F *h_eff_pt_coff = new TH2F("eff_pt_coff",";Particle p_{T} (GeV); Efficiency",300,0.,ptmax,200,0.,1.02);
+    TH2F *h_eff_pt_soff = new TH2F("eff_pt_soff",";Particle p_{T} (GeV); Efficiency",300,0.,ptmax,200,0.,1.02);
 
     // Fill Histograms
     for (int i=0;i<100;++i)
@@ -186,13 +186,17 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu,  float ptmax=2
       h_eff_pt->GetXaxis()->SetNdivisions(518);
       h_eff_pt->GetYaxis()->SetNdivisions(511);
       h_eff_pt->Draw();
+      h_eff_pt->Write();
       
       h_eff_pt_digi->SetMarkerStyle(3);
       h_eff_pt_coff->SetMarkerStyle(4);
       h_eff_pt_soff->SetMarkerStyle(20);
       h_eff_pt_digi->Draw("same");
+      h_eff_pt_digi->Write();
       h_eff_pt_coff->Draw("same");
+      h_eff_pt_coff->Write();
       h_eff_pt_soff->Draw("same");
+      h_eff_pt_soff->Write();
 
       char txt_eff_pt[80];
       if (disk==0) {
@@ -261,7 +265,7 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu,  float ptmax=2
         }
       }
 
-      TH2F *h_eff_eta      = new TH2F("eff_eta",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
+      TH2F *h_eff_eta      = new TH2F("eff_eta",     ";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
       TH2F *h_eff_eta_digi = new TH2F("eff_eta_digi",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
       TH2F *h_eff_eta_ceff = new TH2F("eff_eta_ceff",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
       TH2F *h_eff_eta_seff = new TH2F("eff_eta_seff",";Particle #eta; Efficiency",300,-2.5,2.5,200,0.,1.02);
@@ -286,13 +290,17 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu,  float ptmax=2
         h_eff_eta->GetXaxis()->SetNdivisions(522);
         h_eff_eta->GetYaxis()->SetNdivisions(511);
         h_eff_eta->Draw();
+        h_eff_eta->Write();
           
         h_eff_eta_digi->SetMarkerStyle(3);
         h_eff_eta_ceff->SetMarkerStyle(4);
         h_eff_eta_seff->SetMarkerStyle(20);
         h_eff_eta_digi->Draw("same");
+        h_eff_eta_digi->Write();
         h_eff_eta_ceff->Draw("same");
+        h_eff_eta_ceff->Write();
         h_eff_eta_seff->Draw("same");        
+        h_eff_eta_seff->Write();
 
         char txt_eff_eta[80];
 
@@ -346,7 +354,7 @@ void PlotStubEffs(TString sourcefile, TString outputname, int pu,  float ptmax=2
   // pT Barrel Summary
   // ---------------------------------------------------------------------------------------------------------
 
-  TH2F *h_eff_pt_barrel    = new TH2F("eff_pt_barrel",";Particle p_{T} (GeV); Stub efficiency",300,0.,10.,100,0.,1.15);
+  TH2F *h_eff_pt_barrel = new TH2F("eff_pt_barrel",";Particle p_{T} (GeV); Stub efficiency",300,0.,10.,100,0.,1.15);
   TH2F *h_L1_off   = new TH2F("L1_off","L1_off",300,0.,20.,100,0.,1.02);
   TH2F *h_L2_off   = new TH2F("L2_off","L2_off",300,0.,20.,100,0.,1.02);
   TH2F *h_L3_off   = new TH2F("L3_off","L3_off",300,0.,20.,100,0.,1.02);
