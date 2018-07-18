@@ -99,7 +99,7 @@ class efficiencies
   //
 
   int                 m_type;
-  int    	          m_part_n;
+  int    	            m_part_n;
   int                 m_pclus;
   int                 m_tkclus;            
   int                 m_tkstub; 
@@ -123,8 +123,8 @@ class efficiencies
   std::vector<float>  *m_part_eta;
   std::vector<float>  *m_part_x;
   std::vector<float>  *m_part_y;
-  std::vector<int>    *m_part_evtId;//
-  std::vector< std::vector<int> > *m_part_stId;// 
+  std::vector<int>    *m_part_evtId;
+  std::vector< std::vector<int> > *m_part_stId;
 
   std::vector<int>    *m_tkclus_nstrips;
   std::vector<int>    *m_tkclus_layer; 

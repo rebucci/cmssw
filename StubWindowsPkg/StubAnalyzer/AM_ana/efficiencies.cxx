@@ -31,7 +31,10 @@ void efficiencies::get_efficiencies() {
   double PTGEN=0;
   double D0GEN=0;
 
-  float PTMAX=100.;
+  float PTMAX=100.;       // changeable pT maximum
+  
+  float MSV=PTMAX/100;    // momentum scale variable
+  float iMSV=1/MSV;       // inverse of momentum scale variable
 
   int pix_i;
   int clus_i;
@@ -121,7 +124,7 @@ void efficiencies::get_efficiencies() {
       }
 
       if (m_dbg) {
-       cout << endl;
+        cout << endl;
         cout << "Dealing with TP " << k << " of " << m_part_n << endl;
         cout << "TP PDG code is " << m_part_pdg->at(k) << endl;
         cout << "This event contains " << m_pclus << " pixel digis" << endl;
@@ -193,9 +196,7 @@ void efficiencies::get_efficiencies() {
                  << " / " << i_eta << endl;
         }
 
-        // if (PTGEN<20)                   entries_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-        // if (fabs(i_eta)<2.5 && PTGEN>20) entries_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
-        if (PTGEN<PTMAX)     entries_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+        if (PTGEN<PTMAX)     entries_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
         if (fabs(i_eta)<2.5) entries_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
         pix_i  = l;  // The index of the induced DIGI
@@ -204,22 +205,20 @@ void efficiencies::get_efficiencies() {
 
         i_seg = m_pixclus_column->at(pix_i);
         
-        // if (PTGEN<20)                   digi_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-        // if (fabs(i_eta)<2.5 && PTGEN>20) digi_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
-        if (PTGEN<PTMAX)     digi_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+        if (PTGEN<PTMAX)     digi_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
         if (fabs(i_eta)<2.5) digi_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
         // We have the digis, now look at the clusters
         // Then the official one
         for (int i=0;i<m_tkclus;++i) {
           if (clus_i!=-1) break;
-          if (m_tkclus_nstrips->at(i)>4) continue;
-          if (m_tkclus_layer->at(i)!=i_lay) continue;
-          if (m_tkclus_module->at(i)!=i_mod) continue;
-          if (m_tkclus_seg->at(i)!=i_seg) continue;
-          if (m_tkclus_ladder->at(i)!=m_pixclus_ladder->at(l)) continue;
-          if (m_tkclus_bottom->at(i)!=m_pixclus_bottom->at(l)) continue;
-          if (m_tkclus_tp->at(i)!=k) continue;
+          if (m_tkclus_nstrips->at(i)>4)                        continue;
+          if (m_tkclus_layer  ->at(i)!=i_lay)                   continue;
+          if (m_tkclus_module ->at(i)!=i_mod)                   continue;
+          if (m_tkclus_seg    ->at(i)!=i_seg)                   continue;
+          if (m_tkclus_ladder ->at(i)!=m_pixclus_ladder->at(l)) continue;
+          if (m_tkclus_bottom ->at(i)!=m_pixclus_bottom->at(l)) continue;
+          if (m_tkclus_tp     ->at(i)!=k)                       continue;
             
           if (m_dbg) 
             cout << m_tkclus_strip->at(i) << "/" << m_pixclus_row->at(pix_i) << "/" << m_tkclus_nstrips->at(i) << endl;
@@ -244,9 +243,7 @@ void efficiencies::get_efficiencies() {
             cout << "   CLUS FOUND !!   " << endl;
           }
         
-          // if (PTGEN<20)                   clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-          // if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
-          if (PTGEN<PTMAX)     clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+          if (PTGEN<PTMAX)     clus_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
           if (fabs(i_eta)<2.5) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
           // We have the clusters, now look at the stubs
@@ -258,8 +255,7 @@ void efficiencies::get_efficiencies() {
             if (m_tkstub_clust1->at(i)==clus_i) stub_i = i;
             if (m_tkstub_clust2->at(i)==clus_i) stub_i = i;
               
-            // stub_i = i;
-                                  
+            // stub_i = i;     
             // if (m_tkstub_tp->at(i)!=k)
             // cout << k << "/" << m_tkstub_tp->at(i) << " / " << m_tkclus_tp->at(m_tkstub_clust1->at(i)) << " / " << m_tkclus_tp->at(m_tkstub_clust2->at(i)) << " / " << m_tkclus_tp->at(clus_i) << " / " << m_tkstub_clust2->at(i)  <<" / " << m_tkstub_clust1->at(i) << " / " << clus_i  <<endl;
           }
@@ -277,9 +273,7 @@ void efficiencies::get_efficiencies() {
 	
 	          pix_st.at(l)=1;
 
-            // if (PTGEN<20)                   stub_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
-            // if (fabs(i_eta)<2.5 && PTGEN>20) stub_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
-            if (PTGEN<PTMAX)     stub_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+            if (PTGEN<PTMAX)     stub_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
             if (fabs(i_eta)<2.5) stub_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
           }
         }
@@ -295,23 +289,17 @@ void efficiencies::get_efficiencies() {
 
       for (int i=0;i<30;++i) {
         if (hit_on_lay[i]!=0) {
-          // if (PTGEN<20)                   entries_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
-          // if (fabs(i_eta)<2.5 && PTGEN>20) entries_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
-          if (PTGEN<PTMAX)       entries_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          if (PTGEN<PTMAX)     entries_pt_lay[i][static_cast<int>(iMSV*PTGEN)]+=1;
           if (fabs(i_eta)<2.5) entries_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
 
         if (clus_on_lay[i]!=0) {
-          // if (PTGEN<20)                   clus_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
-          // if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
-          if (PTGEN<PTMAX)     clus_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          if (PTGEN<PTMAX)     clus_pt_lay[i][static_cast<int>(iMSV*PTGEN)]+=1;
           if (fabs(i_eta)<2.5) clus_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
 
         if (stub_on_lay[i]!=0) {
-          // if (PTGEN<20)                   stub_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
-          // if (fabs(i_eta)<2.5 && PTGEN>20) stub_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
-          if (PTGEN<PTMAX)     stub_pt_lay[i][static_cast<int>(5*PTGEN)]+=1;
+          if (PTGEN<PTMAX)     stub_pt_lay[i][static_cast<int>(iMSV*PTGEN)]+=1;
           if (fabs(i_eta)<2.5) stub_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
       }
@@ -396,10 +384,13 @@ void efficiencies::get_efficiencies() {
 
   ///////////////////////////////////////////////////////////////////////
   // Get the efficiencies
+
+  // sanity check
   for (int i=0;i<30;++i) {
     for (int j=0;j<100;++j) {
       // if (entries_pt[i][j]>20.) {
-      if (entries_pt[i][j]>PTMAX) {
+      if (entries_pt[i][j]>0) {
+        // print out values for i (before efficiency) then a new line then print out the values for j (before efficiency)
         digi_pt[i][j] = digi_pt[i][j]/entries_pt[i][j];
         clus_pt[i][j] = clus_pt[i][j]/entries_pt[i][j];
         stub_pt[i][j] = stub_pt[i][j]/entries_pt[i][j];
@@ -413,7 +404,7 @@ void efficiencies::get_efficiencies() {
 
     for (int j=0;j<50;++j) {
       // if (entries_eta[i][j]>20.) {
-      if (entries_eta[i][j]>PTMAX) {
+      if (entries_eta[i][j]>0) {
         digi_eta[i][j] = digi_eta[i][j]/entries_eta[i][j];
         clus_eta[i][j] = clus_eta[i][j]/entries_eta[i][j];
         stub_eta[i][j] = stub_eta[i][j]/entries_eta[i][j];
@@ -426,7 +417,7 @@ void efficiencies::get_efficiencies() {
     }
   }
 
-  m_tree->Fill();
+  m_tree   ->Fill();
   m_outfile->Write();
   m_outfile->Close();
 }
@@ -434,7 +425,7 @@ void efficiencies::get_efficiencies() {
 
 void efficiencies::initVars() {
 
-  for (int j=0;j<100;++j) pt_val[j]=0.2*j;
+  for (int j=0;j<100;++j) pt_val[j]=MSV*j;
   for (int j=0;j<50;++j)  eta_val[j]=-2.5+0.1*j;
 
   for (int i=0;i<30;++i)  {
@@ -463,56 +454,56 @@ void efficiencies::initVars() {
 }
 
 void efficiencies::reset() {
-  m_pixclus_row->clear();
+  m_pixclus_row   ->clear();
   m_pixclus_column->clear();
-  m_pixclus_layer->clear();
+  m_pixclus_layer ->clear();
   m_pixclus_module->clear();
   m_pixclus_bottom->clear();
   m_pixclus_ladder->clear();
-  m_pixclus_x->clear();
-  m_pixclus_y->clear();
-  m_pixclus_type->clear();
-  m_pixclus_simhitID->clear();
-  m_pixclus_evtID->clear();
+  m_pixclus_x     ->clear();
+  m_pixclus_y     ->clear();
+  m_pixclus_type  ->clear();
+  m_pixclus_simhitID ->clear();
+  m_pixclus_evtID    ->clear();
 
-  m_part_hits->clear();
-  m_part_pdg->clear();
-  m_part_px->clear();
-  m_part_py->clear();
-  m_part_eta->clear();
-  m_part_x->clear();
-  m_part_y->clear();
+  m_part_hits ->clear();
+  m_part_pdg  ->clear();
+  m_part_px   ->clear();
+  m_part_py   ->clear();
+  m_part_eta  ->clear();
+  m_part_x    ->clear();
+  m_part_y    ->clear();
   m_part_evtId->clear();
-  m_part_stId->clear();
+  m_part_stId- >clear();
    
   m_tkclus_nstrips->clear();
-  m_tkclus_layer->clear(); 
-  m_tkclus_module->clear();								       
-  m_tkclus_bottom->clear();								       
-  m_tkclus_ladder->clear();				      
-  m_tkclus_seg->clear();   
-  m_tkclus_strip->clear();
-  m_tkstub_layer->clear();
-  m_tkstub_type->clear();
-  m_tkstub_ladder->clear();
-  m_tkstub_clust1->clear();
-  m_tkstub_clust2->clear();
-  m_tkstub_tp->clear();
-  m_tkstub_type->clear();
-  m_tkclus_tp->clear();
-  m_tkclus_pdg->clear();
+  m_tkclus_layer  ->clear(); 
+  m_tkclus_module ->clear();								       
+  m_tkclus_bottom ->clear();								       
+  m_tkclus_ladder ->clear();				      
+  m_tkclus_seg    ->clear();   
+  m_tkclus_strip  ->clear();
+  m_tkstub_layer  ->clear();
+  m_tkstub_type   ->clear();
+  m_tkstub_ladder ->clear();
+  m_tkstub_clust1 ->clear();
+  m_tkstub_clust2 ->clear();
+  m_tkstub_tp     ->clear();
+  m_tkstub_type   ->clear();
+  m_tkclus_tp     ->clear();
+  m_tkclus_pdg    ->clear();
 }
 
 
 void efficiencies::initTuple(std::string in,std::string out) {
 
-  L1TT  = new TChain("TkStubs"); 
-  Pix   = new TChain("Pixels");
-  MC    = new TChain("MC");
+  L1TT = new TChain("TkStubs"); 
+  Pix  = new TChain("Pixels");
+  MC   = new TChain("MC");
 
   L1TT->Add(in.c_str());
-  Pix->Add(in.c_str());
-  MC->Add(in.c_str()); 
+  Pix ->Add(in.c_str());
+  MC  ->Add(in.c_str()); 
 
   m_pixclus_row      = new std::vector<int>;      
   m_pixclus_column   = new std::vector<int>;      
@@ -554,50 +545,50 @@ void efficiencies::initTuple(std::string in,std::string out) {
   m_tkclus_tp      = new  std::vector<int>;
     
 
-  Pix->SetBranchStatus("*",0);
-  MC->SetBranchStatus("*",0);
+  Pix ->SetBranchStatus("*",0);
+  MC  ->SetBranchStatus("*",0);
   L1TT->SetBranchStatus("*",0);
 
-  Pix->SetBranchStatus("PIX_n",1);
-  Pix->SetBranchStatus("PIX_layer",1);   
-  Pix->SetBranchStatus("PIX_module",1);  
-  Pix->SetBranchStatus("PIX_bottom",1);  
-  Pix->SetBranchStatus("PIX_ladder",1);  
-  Pix->SetBranchStatus("PIX_x",1);       
-  Pix->SetBranchStatus("PIX_y",1);       
-  Pix->SetBranchStatus("PIX_row",1);     
-  Pix->SetBranchStatus("PIX_column",1);  
-  Pix->SetBranchStatus("PIX_type",1);  
+  Pix->SetBranchStatus("PIX_n",       1);
+  Pix->SetBranchStatus("PIX_layer",   1);   
+  Pix->SetBranchStatus("PIX_module",  1);  
+  Pix->SetBranchStatus("PIX_bottom",  1);  
+  Pix->SetBranchStatus("PIX_ladder",  1);  
+  Pix->SetBranchStatus("PIX_x",       1);       
+  Pix->SetBranchStatus("PIX_y",       1);       
+  Pix->SetBranchStatus("PIX_row",     1);     
+  Pix->SetBranchStatus("PIX_column",  1);  
+  Pix->SetBranchStatus("PIX_type",    1);  
   Pix->SetBranchStatus("PIX_simhitID",1);     
-  Pix->SetBranchStatus("PIX_evtID",1); 
+  Pix->SetBranchStatus("PIX_evtID",   1); 
 
-  MC->SetBranchStatus("subpart_n",1);    
-  MC->SetBranchStatus("subpart_x",1);    
-  MC->SetBranchStatus("subpart_y",1);    
-  MC->SetBranchStatus("subpart_px",1);   
-  MC->SetBranchStatus("subpart_py",1);   
-  MC->SetBranchStatus("subpart_eta",1);
+  MC->SetBranchStatus("subpart_n",    1);    
+  MC->SetBranchStatus("subpart_x",    1);    
+  MC->SetBranchStatus("subpart_y",    1);    
+  MC->SetBranchStatus("subpart_px",   1);   
+  MC->SetBranchStatus("subpart_py",   1);   
+  MC->SetBranchStatus("subpart_eta",  1);
   MC->SetBranchStatus("subpart_pdgId",1);  
   MC->SetBranchStatus("subpart_evtId",1); 
-  MC->SetBranchStatus("subpart_stId",1); 
+  MC->SetBranchStatus("subpart_stId", 1); 
 
-  L1TT->SetBranchStatus("L1TkSTUB_n",1);      
-  L1TT->SetBranchStatus("L1TkSTUB_layer",1);  
-  L1TT->SetBranchStatus("L1TkSTUB_type",1);  
+  L1TT->SetBranchStatus("L1TkSTUB_n",     1);      
+  L1TT->SetBranchStatus("L1TkSTUB_layer", 1);  
+  L1TT->SetBranchStatus("L1TkSTUB_type",  1);  
   L1TT->SetBranchStatus("L1TkSTUB_ladder",1); 
-  L1TT->SetBranchStatus("L1TkSTUB_tp",1);     
+  L1TT->SetBranchStatus("L1TkSTUB_tp",    1);     
   L1TT->SetBranchStatus("L1TkSTUB_clust1",1); 
   L1TT->SetBranchStatus("L1TkSTUB_clust2",1); 
 
-  L1TT->SetBranchStatus("L1TkCLUS_n",1);      
-  L1TT->SetBranchStatus("L1TkCLUS_layer",1);  
+  L1TT->SetBranchStatus("L1TkCLUS_n",     1);      
+  L1TT->SetBranchStatus("L1TkCLUS_layer", 1);  
   L1TT->SetBranchStatus("L1TkCLUS_module",1); 
   L1TT->SetBranchStatus("L1TkCLUS_bottom",1);
   L1TT->SetBranchStatus("L1TkCLUS_ladder",1); 
-  L1TT->SetBranchStatus("L1TkCLUS_seg",1);
-  L1TT->SetBranchStatus("L1TkCLUS_tp",1);
-  L1TT->SetBranchStatus("L1TkCLUS_pdgID",1);
-  L1TT->SetBranchStatus("L1TkCLUS_strip",1);  
+  L1TT->SetBranchStatus("L1TkCLUS_seg",   1);
+  L1TT->SetBranchStatus("L1TkCLUS_tp",    1);
+  L1TT->SetBranchStatus("L1TkCLUS_pdgID", 1);
+  L1TT->SetBranchStatus("L1TkCLUS_strip", 1);  
   L1TT->SetBranchStatus("L1TkCLUS_nstrip",1); 
   
   Pix->SetBranchAddress("PIX_n",         &m_pclus);
@@ -620,7 +611,7 @@ void efficiencies::initTuple(std::string in,std::string out) {
   MC->SetBranchAddress("subpart_py",       &m_part_py);   
   MC->SetBranchAddress("subpart_eta",      &m_part_eta);  
   MC->SetBranchAddress("subpart_pdgId",    &m_part_pdg);  
-  MC->SetBranchAddress("subpart_stId",    &m_part_stId);
+  MC->SetBranchAddress("subpart_stId",     &m_part_stId);
   MC->SetBranchAddress("subpart_evtId",    &m_part_evtId);
 
   L1TT->SetBranchAddress("L1TkSTUB_n",         &m_tkstub);    
@@ -646,17 +637,42 @@ void efficiencies::initTuple(std::string in,std::string out) {
   m_outfile  = new TFile(out.c_str(),"recreate");
   m_tree     = new TTree("Efficiencies","Efficiencies info");
 
-  m_tree->Branch("pt_val",&pt_val,"pt_val[100]");
-  m_tree->Branch("eta_val",&eta_val,"eta_val[50]");
-
-  m_tree->Branch("digi_pt",&digi_pt,"digi_pt[30][100]");
-  m_tree->Branch("digi_eta",&digi_eta,"digi_eta[30][50]");
-  m_tree->Branch("clus_pt",&clus_pt,"clus_pt[30][100]");
-  m_tree->Branch("clus_eta",&clus_eta,"clus_eta[30][50]");
-  m_tree->Branch("clus_pt_lay",&clus_pt_lay,"clus_pt_lay[30][100]");
+  m_tree->Branch("pt_val",      &pt_val,      "pt_val[100]");
+  m_tree->Branch("eta_val",     &eta_val,     "eta_val[50]");
+  m_tree->Branch("digi_pt",     &digi_pt,     "digi_pt[30][100]");
+  m_tree->Branch("digi_eta",    &digi_eta,    "digi_eta[30][50]");
+  m_tree->Branch("clus_pt",     &clus_pt,     "clus_pt[30][100]");
+  m_tree->Branch("clus_eta",    &clus_eta,    "clus_eta[30][50]");
+  m_tree->Branch("clus_pt_lay", &clus_pt_lay, "clus_pt_lay[30][100]");
   m_tree->Branch("clus_eta_lay",&clus_eta_lay,"clus_eta_lay[30][50]");
-  m_tree->Branch("stub_pt",&stub_pt,"stub_pt[30][100]");
-  m_tree->Branch("stub_eta",&stub_eta,"stub_eta[30][50]");
-  m_tree->Branch("stub_pt_lay",&stub_pt_lay,"stub_pt_lay[30][100]");
+  m_tree->Branch("stub_pt",     &stub_pt,     "stub_pt[30][100]");
+  m_tree->Branch("stub_eta",    &stub_eta,    "stub_eta[30][50]");
+  m_tree->Branch("stub_pt_lay", &stub_pt_lay, "stub_pt_lay[30][100]");
   m_tree->Branch("stub_eta_lay",&stub_eta_lay,"stub_eta_lay[30][50]");
 }
+
+
+/*
+Comments on binning
+
+  Originally, binning was set at 100 and pT max was set at 20 GeV.
+  
+  When looping over TPs, and adding counts to clusters, stubs, and entries, Seb used:
+      if (PTGEN<20)                   clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
+      if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
+  where clus_pt, clus_eta could be stub_pt, stub_eta and so on.
+
+  The 5*PTGEN was set this way because he had a pT max of 20 and binning set at 100. So, at absolute maximum where PTGEN=PTMAX=20, this value would be 5*20=100. He would then round this to an integer and use it to fill the counts.
+
+  What I've done is kept the binning set at 100 (because making the binning variable will require an overhaul of the code that isn't necessary at this time) but allowed the pT max to be set by the user. To do so, I've created the variable MSV (momentum scale variable) and changed the factor of 5 to the variable 1/MSV (aka iMSV).
+
+  This means that pT max is related to the number of bins (100) by PTMAX=100*MSV. Because, remember
+      5*20=100
+      (1/MSV)*PTMAX=100
+      PTMAX=100*MSV
+
+  This also changed the definition pt_val[j] in the initVars() void. Previously, it was
+      for (int j=0;j<100;++j) pt_val[j]=0.2*j;
+  where 0.2 = 1/5 = MSV.
+
+*/

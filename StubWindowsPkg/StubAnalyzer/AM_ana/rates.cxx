@@ -12,8 +12,7 @@ rates::rates(std::string filename, std::string outfile, bool fe) {
 }
 
 
-void rates::get_rates(bool fe)
-{
+void rates::get_rates(bool fe) {
   // Initialize some params
   int B_id,E_id;   // The detector module IDs (defined in the header)
   int Bl_id,El_id; // This ID is for the averages per ladder/rings (for 1D plots)
@@ -140,13 +139,13 @@ void rates::get_rates(bool fe)
     if (m_b_rate_f[i]+m_b_rate_s[i]+m_b_rate_p[i]==0.) continue;
     
     for (int j=0;j<16;++j) {
-      m_disk= 0;
-      m_lay = static_cast<int>(i/10000);
-      m_lad = static_cast<int>((i-10000*m_lay)/100);
-      m_mod = static_cast<int>((i-10000*m_lay-100*m_lad));
-      m_sen = j/8+1;
-      m_chp = j%8+1;
-      m_rate= m_b_rate[j][i];
+      m_disk = 0;
+      m_lay  = static_cast<int>(i/10000);
+      m_lad  = static_cast<int>((i-10000*m_lay)/100);
+      m_mod  = static_cast<int>((i-10000*m_lay-100*m_lad));
+      m_sen  = j/8+1;
+      m_chp  = j%8+1;
+      m_rate = m_b_rate[j][i];
       m_dbgtree->Fill();
     }
   }
@@ -156,13 +155,13 @@ void rates::get_rates(bool fe)
     if (m_e_rate_f[i]+m_e_rate_s[i]+m_e_rate_p[i]==0.) continue;
 
     for (int j=0;j<16;++j) {
-      m_disk= 1;
-      m_lay = static_cast<int>(i/10000);
-      m_lad = static_cast<int>((i-10000*m_lay)/100);
-      m_mod = static_cast<int>((i-10000*m_lay-100*m_lad));
-      m_sen = j/8+1;
-      m_chp = j%8+1;
-      m_rate= m_e_rate[j][i];
+      m_disk = 1;
+      m_lay  = static_cast<int>(i/10000);
+      m_lad  = static_cast<int>((i-10000*m_lay)/100);
+      m_mod  = static_cast<int>((i-10000*m_lay-100*m_lad));
+      m_sen  = j/8+1;
+      m_chp  = j%8+1;
+      m_rate = m_e_rate[j][i];
       m_dbgtree->Fill(); 
     }
   }
@@ -182,8 +181,7 @@ void rates::get_rates(bool fe)
 /////////////////////////////////////////////////////////////
 
 
-void rates::initVars()
-{
+void rates::initVars() {
   for (int i=0;i<58000;++i) {
     for (int j=0;j<16;++j) m_b_rate[j][i]   = 0.;
     m_b_rate_p[i]  = 0.;
@@ -214,16 +212,12 @@ void rates::initVars()
 }
 
 
-// 
+///////////////////////////////////////////////////////////////////////
 // Initialization of the ntuple. By default we now use official stubs
-//
 
-void rates::initTuple(std::string in,std::string out)
-{
-  //
-  // Input File (filename)
-  //
-
+void rates::initTuple(std::string in,std::string out) {
+  
+  // ----- Input File (filename) ----- //
   L1TT   = new TChain("TkStubs"); 
 
   // Input data file
@@ -309,9 +303,7 @@ void rates::initTuple(std::string in,std::string out)
   L1TT->SetBranchAddress("L1TkCLUS_PS",        &pm_clus_nseg);
 
 
-  //
-  // Output file name (outfile)
-  //
+  // ----- Output file name (outfile) ----- //
   m_outfile  = new TFile(out.c_str(),"recreate");
   m_ratetree = new TTree("L1Rates","L1Rates info");
   m_dbgtree  = new TTree("Details","Debug");

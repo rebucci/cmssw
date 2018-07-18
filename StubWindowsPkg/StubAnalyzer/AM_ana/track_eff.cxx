@@ -4,7 +4,8 @@
 #include "track_eff.h"
 
 track_eff::track_eff(std::string filename, std::string secfilename, std::string outfile, int nevt, float pt_min, float d0_min, bool dbg) :
-//Variables
+
+  //Variables
   stub_x(new std::vector<float>),
   stub_y(new std::vector<float>),
   stub_z(new std::vector<float>),
@@ -109,8 +110,7 @@ track_eff::track_eff(std::string filename, std::string secfilename, std::string 
   for (int i=0; i < 6; ++i) n_tilted_rings[i]=0;
   for (int i=0; i < 6; ++i) n_flat_rings[i]  =0;
   
-  if (m_tilted)
-  {
+  if (m_tilted) {
     n_tilted_rings[0]=12;
     n_tilted_rings[1]=12;
     n_tilted_rings[2]=12;
@@ -119,10 +119,8 @@ track_eff::track_eff(std::string filename, std::string secfilename, std::string 
     n_flat_rings[2]=15;
   }
     
-  for (int i=0; i < 6; ++i)
-  {
-    for (int j=0; j < 3; ++j)
-    {
+  for (int i=0; i < 6; ++i) {
+    for (int j=0; j < 3; ++j) {
       limits[i][j]=0;
       if (n_tilted_rings[i]==0) continue;
       limits[i][j]=(j%2)*n_flat_rings[i]+(j>0)*n_tilted_rings[i];
@@ -133,12 +131,10 @@ track_eff::track_eff(std::string filename, std::string secfilename, std::string 
   track_eff::initTuple(filename,outfile);
   cout << "Success! Initialized tuples for input and output files." << endl;  
 
-  if (has_patt)
-  {
+  if (has_patt) {
     if (!track_eff::convert_towers(secfilename)) return; 
   }
-  else
-  {
+  else {
     if (!track_eff::convert_cabling(secfilename)) return; 
   }
   //  For this here bool if
@@ -162,8 +158,7 @@ track_eff::track_eff(std::string filename, std::string secfilename, std::string 
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-void track_eff::do_test(int nevt)
-{
+void track_eff::do_test(int nevt) {
   int id,dtcid;
 
   if (!has_patt) m_sec_mult=1; // We don't deal with trigger towers then
@@ -206,8 +201,7 @@ void track_eff::do_test(int nevt)
   std::vector<int> dtc_list_FE;
   
   // Loop over the events   
-  for (int i=0;i<ndat;++i)
-  {
+  for (int i=0;i<ndat;++i) {
     for (int j=0;j<48;++j) patt_psec[j]=0;
     for (int j=0;j<48;++j) patt_psec_full[j]=0;
 
@@ -249,10 +243,8 @@ void track_eff::do_test(int nevt)
     // Here we fill the pattern and tracks containers
     // the info is already there
 
-    if (nb_patterns>0)
-    {
-      for(int kk=0;kk<nb_patterns;kk++)
-      {
+    if (nb_patterns>0) {
+      for(int kk=0;kk<nb_patterns;kk++) {
       	patt_psec[m_pattsecid.at(kk)]+=1;
       	if (m_pattmiss.at(kk)==0) patt_psec_full[m_pattsecid.at(kk)]+=1;
       	patt_rank->push_back(int(patt_psec[m_pattsecid.at(kk)]));
@@ -268,23 +260,20 @@ void track_eff::do_test(int nevt)
       	n_comb=1;
       	lay_content.clear();
               
-      	for (int kb=0;kb<20;++kb)
-      	{
+      	for (int kb=0;kb<20;++kb) {
       	  stub_list.clear();
       	  lay_content.push_back(stub_list);
       	}
-              
-      	for (unsigned int kb=0;kb<patt_stubs->at(kk).size();++kb) // Loop over stubs in the pattern
-      	{
+        
+        // Loop over stubs in the pattern      
+      	for (unsigned int kb=0;kb<patt_stubs->at(kk).size();++kb) {
       	  sval = m_stub_strip[patt_stubs->at(kk).at(kb)];
       	  lay  = m_stub_layer[patt_stubs->at(kk).at(kb)]-5;                
       	  lay_content.at(lay).push_back(sval);
       	}
                       
       	// We now know how many stubs per layer are in the pattern
-              
-      	for (int kb=0;kb<20;++kb)
-      	{
+      	for (int kb=0;kb<20;++kb) {
       	  n_inlayer[kb] = lay_content.at(kb).size();
       	  if (n_inlayer[kb]==0) continue;
       	  n_comb = n_comb*n_inlayer[kb];
@@ -295,18 +284,15 @@ void track_eff::do_test(int nevt)
       	patt_gcomb->push_back(0);
       }
 
-      for(int kk=0;kk<nb_patterns;kk++)
-      {
+      for(int kk=0;kk<nb_patterns;kk++) {
       	patt_insec->push_back(patt_psec[m_pattsecid.at(kk)]);
       	patt_insec_full->push_back(patt_psec_full[m_pattsecid.at(kk)]);
       }
     }
       
     // Look at the track candidates then
-    if (nb_tcs>0)
-    {
-      for(int kk=0;kk<nb_tcs;kk++)
-      {
+    if (nb_tcs>0) {
+      for(int kk=0;kk<nb_tcs;kk++) {
       	tc_sec->push_back(m_tcsecid.at(kk));
       	tc_id->push_back(m_tcid.at(kk));
       	tc_pt->push_back(m_tcpt.at(kk));
@@ -324,10 +310,8 @@ void track_eff::do_test(int nevt)
     }
 
     // And finally at the L1Tracks
-    if (nb_tracks>0)
-    {
-      for(int kk=0;kk<nb_tracks;kk++)
-      {
+    if (nb_tracks>0) {
+      for(int kk=0;kk<nb_tracks;kk++) {
       	trk_sec->push_back(m_trksecid.at(kk));
       	trk_pt->push_back(m_trkpt.at(kk));
       	trk_eta->push_back(m_trketa.at(kk));
@@ -363,8 +347,7 @@ void track_eff::do_test(int nevt)
     int nchip,ncic,ncn1,ncn2;
     bool isPS;
     
-    for (int j=0;j<m_stub;++j)
-    {
+    for (int j=0;j<m_stub;++j) {
       msec.clear();
       psec.clear();
       msec.push_back(-1);
@@ -386,8 +369,7 @@ void track_eff::do_test(int nevt)
       if (layer>=11 && (layer-11)%7>1 && ladder>=6) isPS =false;
 
 
-      for (int jj=0;jj<m_stub;++jj)
-      {
+      for (int jj=0;jj<m_stub;++jj) {
       	if (layer   != m_stub_layer[jj]) continue;
       	if (ladder  != m_stub_ladder[jj]) continue;
       	if (module  != m_stub_module[jj]) continue;
@@ -420,12 +402,10 @@ void track_eff::do_test(int nevt)
       	  : ncn2+=m_clus_cw[jj];
       }
       */
-      if (has_patt)
-      {
-      	if (m_modules.at(id).size()>0)
-      	{
-      	  for (unsigned int kk=0;kk<m_modules.at(id).size();++kk) // In which sector the module is
-      	  {
+      if (has_patt) {
+      	if (m_modules.at(id).size()>0) {
+          // In which sector the module is
+      	  for (unsigned int kk=0;kk<m_modules.at(id).size();++kk) {
       	    msec.push_back(m_modules.at(id).at(kk));
 
       	    if (std::abs(m_stub_sw[j])>7) continue;
@@ -434,10 +414,8 @@ void track_eff::do_test(int nevt)
       	  }
       	}
       }          
-      else
-      {
-      	if ( m_modules_to_DTC.at(id).size()>0)
-      	{
+      else {
+      	if ( m_modules_to_DTC.at(id).size()>0) {
       	  dtcid  = m_modules_to_DTC.at(id).at(0);
       	  
       	  ++dtc_list.at(dtcid);
@@ -455,8 +433,7 @@ void track_eff::do_test(int nevt)
       tilt   = 0;
       if (m_stub_layer[j]<11) tilt=2.*atan(1.);
  
-      if (m_stub_layer[j]<8 || (m_stub_layer[j]>10 && m_stub_ladder[j]<9))
-      {
+      if (m_stub_layer[j]<8 || (m_stub_layer[j]>10 && m_stub_ladder[j]<9)) {
       	thick = 0.16;
       	pitch = 0.1;
       	
@@ -542,13 +519,11 @@ void track_eff::do_test(int nevt)
       stub_z0GEN->at(j)   = m_stub_Z0[j];
       stub_sw_truth->at(j)= 1/stub_ptGEN->at(j)*0.057*sin(theta0)/cos(theta0-tilt)*r_s*thick/pitch;
       
-      if (m_clus_bottom[m_stub_clust1[j]])
-      {
+      if (m_clus_bottom[m_stub_clust1[j]]) {
       	stub_cw1->at(j)    = m_clus_cw[m_stub_clust1[j]];
       	stub_cw2->at(j)    = m_clus_cw[m_stub_clust2[j]];
       }
-      else
-      {
+      else {
       	stub_cw2->at(j)    = m_clus_cw[m_stub_clust1[j]];
       	stub_cw1->at(j)    = m_clus_cw[m_stub_clust2[j]];
       }
@@ -564,9 +539,8 @@ void track_eff::do_test(int nevt)
       already_there = false;
 
 
-
-      for (unsigned int k=0;k<m_primaries.size();++k) // Check if it's already been found
-      {
+      // Check if it's already been found
+      for (unsigned int k=0;k<m_primaries.size();++k) {
       	if (m_primaries.at(k).at(0)!=m_stub_tp[j]) continue;
       	
       	stub_tp->at(j)=k;
@@ -605,8 +579,7 @@ void track_eff::do_test(int nevt)
       stub_tp->at(j)=m_primaries.size()-1; // Link the stub to the local tree now
     } // End of loop over stubs
 
-    for (int k=0;k<2000;++k)
-    {
+    for (int k=0;k<2000;++k) {
       if (dtc_list.at(k)==0) continue;
 
       dtc_id->push_back(k);
@@ -623,14 +596,12 @@ void track_eff::do_test(int nevt)
     
     float dist_min, dist, deta, dphi;
     
-    for (int k=0;k<n_part;++k)
-    {
+    for (int k=0;k<n_part;++k) {
       dist_min = 1000;
       if (part_pt->at(k)  < 3) continue;
       if (fabs(part_rho->at(k)) > 1) continue;
 
-      for (int l=0;l<n_part;++l)
-      {
+      for (int l=0;l<n_part;++l) {
       	if (k==l) continue;
       	if (part_pt->at(l)  < 3) continue;
       	if (part_rho->at(l) > 1) continue;
@@ -638,8 +609,7 @@ void track_eff::do_test(int nevt)
       	deta = part_eta->at(k)-part_eta->at(l);
       	dphi = part_phi->at(k)-part_phi->at(l);
       	
-      	if (part_phi->at(k)*part_phi->at(l)<0 && fabs(dphi)>4*atan(1))
-      	{
+      	if (part_phi->at(k)*part_phi->at(l)<0 && fabs(dphi)>4*atan(1)) {
       	  if (part_phi->at(k)<0) dphi = part_phi->at(k) + 8*atan(1) -part_phi->at(l) ;
       	  if (part_phi->at(l)<0) dphi = part_phi->at(k) - 8*atan(1) -part_phi->at(l) ;
       	}
@@ -662,8 +632,7 @@ void track_eff::do_test(int nevt)
     int ns_f=0;
     int discrep;
       
-    for (unsigned int k=0;k<m_primaries.size();++k)
-    {
+    for (unsigned int k=0;k<m_primaries.size();++k) {
       if (m_primaries.at(k).size()<1) continue; // Less then 4 stubs, give up this one
                                                 // as this is the lowest possible threshold
 
@@ -695,8 +664,7 @@ void track_eff::do_test(int nevt)
       // this corresponds to the number of active layers of the track, in AM langage
       //
                   
-      for (unsigned int j=1;j<m_primaries.at(k).size();++j)
-      {	
+      for (unsigned int j=1;j<m_primaries.at(k).size();++j) {	
       	idx    = m_primaries.at(k).at(j); // stub index
 
       	// First of all we compute the ID of the stub's module
@@ -705,14 +673,12 @@ void track_eff::do_test(int nevt)
       	module = m_stub_module[idx];
       	id     = 10000*layer+100*ladder+module; // Get the module ID
       	                
-      	if (has_patt)
-      	{
-      	  if (m_modules.at(id).size()>0)
-      	  {
+      	if (has_patt) {
+      	  if (m_modules.at(id).size()>0) {
       	    // Just to be precise, sectors are numbered starting from 1 in convert()
       	    
-      	    for (unsigned int kk=0;kk<m_modules.at(id).size();++kk) // In which sector the module is
-      	    {
+            // In which sector the module is
+      	    for (unsigned int kk=0;kk<m_modules.at(id).size();++kk) {
       	      ++is_sec_there[m_modules.at(id).at(kk)];
       	    }
       	  }
@@ -736,15 +702,13 @@ void track_eff::do_test(int nevt)
       // stubs (nsec)
       
       // First we get the number of different layers/disks hit by the track (nhits)
-      for (int kk=0;kk<20;++kk)
-      {
+      for (int kk=0;kk<20;++kk) {
       	if (n_per_lay[kk]!=0) ++nhits;
       	if (n_per_lay_patt[kk]!=0) ++nhits_fe;
       }
       
       // Then we get the number of sectors containing more than 4 primary hits
-      for (int kk=0;kk<m_nsec;++kk)
-      {
+      for (int kk=0;kk<m_nsec;++kk) {
       	if (is_sec_there[kk]>=4) part_sec->at(k).push_back(kk);
       	if (is_sec_there[kk]>=4) ++nsec;
       }
@@ -760,8 +724,7 @@ void track_eff::do_test(int nevt)
       ntc      = 0;           // The tcs containing at least 4 prim hits
       ntrack   = 0;           // The tracks containing at least 4 prim hits
       
-      if (nsec==0)
-      {
+      if (nsec==0) {
       	part_npatt->at(k) = npatt;
       	part_ntc->at(k)   = ntc;
       	part_ntrk->at(k)  = ntrack;
@@ -769,26 +732,22 @@ void track_eff::do_test(int nevt)
       	continue;
       }
 
-      if (nb_patterns>0)
-      {
-      	for(int kk=0;kk<nb_patterns;kk++)
-      	{
+      if (nb_patterns>0) {
+      	for(int kk=0;kk<nb_patterns;kk++) {
       	  for (int j=0;j<20;++j) n_per_lay_patt[j]=0;
       	  for (int j=0;j<20;++j) n_per_lay[j]=0;
       	  
       	  // First we count the number of prim stubs in the pattern
-      	  
       	  if (m_pattlinks.at(kk).size()==0) continue;
       	  
-      	  for(unsigned int m=0;m<m_pattlinks.at(kk).size();m++) // Loop over pattern stubs
-      	  {
+          // Loop over pattern stubs
+      	  for(unsigned int m=0;m<m_pattlinks.at(kk).size();m++) {
       	    n_per_lay[m_stub_layer[m_pattlinks.at(kk).at(m)]-5]++;
       	    
       	    if (m_stub_tp[m_pattlinks.at(kk).at(m)]==m_primaries.at(k).at(0)) // Stub belongs to the primary
       	      n_per_lay_patt[m_stub_layer[m_pattlinks.at(kk).at(m)]-5]++;
 
-      	    if (stub_inpatt->at(m_pattlinks.at(kk).at(m))==0)
-      	    {
+      	    if (stub_inpatt->at(m_pattlinks.at(kk).at(m))==0) {
       	      stub_inpatt->at(m_pattlinks.at(kk).at(m))=1;
       	      ++n_stub_patt;
       	    }
@@ -797,29 +756,24 @@ void track_eff::do_test(int nevt)
       	  nhits_p=0;
       	  discrep=0;
       	  
-      	  for (int jk=0;jk<20;++jk)
-      	  {
+      	  for (int jk=0;jk<20;++jk) {
       	    if (n_per_lay_patt[jk]!=0) ++nhits_p;
       	    if (n_per_lay_patt[jk]==0 && n_per_lay[jk]!=0) ++discrep;
       	  }
       	  
-      	  if (nhits_p>=4)
-      	  {
+      	  if (nhits_p>=4) {
       	    ++npatt; // More than 4, the pattern is good
       	    patt_parts->at(kk).push_back(k);
       	  }
 
-      	  if (discrep==0)
-      	  {
+      	  if (discrep==0) {
       	    patt_gcomb->at(kk) = patt_gcomb->at(kk)+1;
       	  }
 	      }
       } // End of loop over patterns
       
-      if (nb_tcs>0)
-      {
-      	for(int kk=0;kk<nb_tcs;kk++)
-      	{
+      if (nb_tcs>0) {
+      	for(int kk=0;kk<nb_tcs;kk++) {
       	  ns      = 0;
       	  ns_f    = 0;
 	  
@@ -827,20 +781,18 @@ void track_eff::do_test(int nevt)
       	  
       	  if (m_tclinks.at(kk).size()==0) continue;
       	  
-      	  for(unsigned int m=0;m<m_tclinks.at(kk).size();m++) // Loop over track stubs
-      	  {
+          // Loop over track stubs
+      	  for(unsigned int m=0;m<m_tclinks.at(kk).size();m++) {
       	    ++ns;
       	    if (m_stub_tp[m_tclinks.at(kk).at(m)]==m_primaries.at(k).at(0)) ++ns_f;
       	    
-      	    if (stub_intc->at(m_tclinks.at(kk).at(m))==0)
-      	    {
+      	    if (stub_intc->at(m_tclinks.at(kk).at(m))==0) {
       	      stub_intc->at(m_tclinks.at(kk).at(m))=1;
       	      ++n_stub_tc;
       	    }
       	  }
 
-      	  if ((ns-ns_f)<=1)
-      	  {
+      	  if ((ns-ns_f)<=1) {
       	    tc_parts->at(kk).push_back(k);
       	    tc_pt_t->at(kk)  = pt;
       	    tc_eta_t->at(kk) = eta;
@@ -852,31 +804,27 @@ void track_eff::do_test(int nevt)
       	}
       } // End of loop over tracks
       
-      if (nb_tracks>0)
-      {
-      	for(int kk=0;kk<nb_tracks;kk++)
-      	{
+      if (nb_tracks>0) {
+      	for(int kk=0;kk<nb_tracks;kk++) {
       	  ns      = 0;
       	  ns_f    = 0;
       	  
       	  // First we count the number of prim stubs in the track
       	
       	  if (m_trklinks.at(kk).size()==0) continue;
-                          
-      	  for(unsigned int m=0;m<m_trklinks.at(kk).size();m++) // Loop over track stubs
-      	  {
+          
+          // Loop over track stubs                
+      	  for(unsigned int m=0;m<m_trklinks.at(kk).size();m++) {
       	    ++ns;
       	    if (m_stub_tp[m_trklinks.at(kk).at(m)]==m_primaries.at(k).at(0)) ++ns_f;
 
-      	    if (stub_intrk->at(m_trklinks.at(kk).at(m))==0)
-      	    {
+      	    if (stub_intrk->at(m_trklinks.at(kk).at(m))==0) {
       	      stub_intrk->at(m_trklinks.at(kk).at(m))=1;
       	      ++n_stub_trk;
       	    }
       	  }
 
-      	  if ((ns-ns_f)<=1)
-      	  {
+      	  if ((ns-ns_f)<=1) {
       	    trk_parts->at(kk).push_back(k);
       	    trk_pt_t->at(kk)  = pt;
       	    trk_eta_t->at(kk) = eta;
@@ -910,8 +858,7 @@ void track_eff::do_test(int nevt)
 /////////////////////////////////////////////////////////////////////////////////
 
 
-void track_eff::initTuple(std::string test,std::string out)
-{
+void track_eff::initTuple(std::string test,std::string out) {
   m_PIX    = new TChain("Pixels");    // Tree containing the Digi info
   m_L1TT   = new TChain("TkStubs");   // Tree containing the Stub info 
   m_PATT   = new TChain("L1tracks");  // Tree containing the L1Track reco info
@@ -921,29 +868,25 @@ void track_eff::initTuple(std::string test,std::string out)
   std::size_t found = test.find(".root");
 
   // Case 1, it's a root file
-  if (found!=std::string::npos)
-  {
+  if (found!=std::string::npos) {
     m_L1TT->Add(test.c_str());
     m_PIX->Add(test.c_str());
     if (has_patt) m_PATT->Add(test.c_str());
   }
-  else // This is a list provided into a text file
-  {
+  // This is a list provided into a text file
+  else {
     std::string STRING;
     std::ifstream in(test.c_str());
-    if (!in) 
-    {
+    if (!in) {
       std::cout << "Please provide a valid data filename list" << std::endl; 
       return;
     }    
   
-    while (!in.eof()) 
-    {
+    while (!in.eof()) {
       getline(in,STRING);
 
       found = STRING.find(".root");
-      if (found!=std::string::npos)
-      {
+      if (found!=std::string::npos) {
       	m_L1TT->Add(STRING.c_str());   
       	m_PIX->Add(STRING.c_str());   
       	if (has_patt) m_PATT->Add(STRING.c_str());   
@@ -1013,7 +956,6 @@ void track_eff::initTuple(std::string test,std::string out)
   m_PIX->SetBranchAddress("PIX_nPU",            &m_PU); 
   m_PIX->SetBranchAddress("PIX_n",              &m_pix); 
 
-
   m_L1TT->SetBranchAddress("L1Tkevt",            &m_evtid);
   m_L1TT->SetBranchAddress("L1TkCLUS_n",         &m_clus); 
   m_L1TT->SetBranchAddress("L1TkCLUS_tp",        &pm_clus_tp);
@@ -1053,8 +995,7 @@ void track_eff::initTuple(std::string test,std::string out)
   //m_L1TT->SetBranchAddress("L1TkCLUS_z",         &pm_clus_z);
   m_L1TT->SetBranchAddress("L1TkCLUS_nstrip",    &pm_clus_cw);
 
-  if (has_patt)
-  {
+  if (has_patt) {
     m_PATT->SetBranchAddress("L1PATT_n",           &nb_patterns);
     m_PATT->SetBranchAddress("L1PATT_links",       &pm_pattlinks);
     m_PATT->SetBranchAddress("L1PATT_secid",       &pm_pattsecid);
@@ -1086,8 +1027,7 @@ void track_eff::initTuple(std::string test,std::string out)
   m_finaltree->Branch("evt", &evt); 
   m_finaltree->Branch("npu", &m_npu); 
 
-  if (m_dbg)
-  {
+  if (m_dbg) {
     m_finaltree->Branch("n_pix_total",    &n_pix_total); 
     m_finaltree->Branch("n_clus_total",   &n_clus_total); 
     m_finaltree->Branch("n_clus_total_c", &n_clus_total_c); 
@@ -1149,8 +1089,7 @@ void track_eff::initTuple(std::string test,std::string out)
   m_finaltree->Branch("part_phi",     &part_phi); 
   m_finaltree->Branch("part_dist",    &part_dist);  
 
-  if (m_dbg)
-  {
+  if (m_dbg) {
     m_finaltree->Branch("n_patt",       &n_patt); 
     m_finaltree->Branch("n_combs",      &n_patt_comb); 
     m_finaltree->Branch("patt_sec",     &patt_sec);
@@ -1209,8 +1148,7 @@ void track_eff::initTuple(std::string test,std::string out)
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-bool track_eff::convert_cabling(std::string cablingfilename)
-{
+bool track_eff::convert_cabling(std::string cablingfilename) {
   cout << "Converting cabling..." << endl;
   
   int modid,lay,lad,mod,disk,type,dtcid;
@@ -1222,37 +1160,32 @@ bool track_eff::convert_cabling(std::string cablingfilename)
   m_modules_to_DTC.clear();
   m_DTC_to_modules.clear();
     
-  for (unsigned int i=0;i<230000;++i)
-  {
+  for (unsigned int i=0;i<230000;++i) {
     module.clear();
     m_modules_to_DTC.push_back(module);
   }
 
-  for (unsigned int i=0;i<2000;++i)
-  {
+  for (unsigned int i=0;i<2000;++i) {
     module.clear();
     m_DTC_to_modules.push_back(module);
   }
     
   std::string STRING;
   std::ifstream in(cablingfilename.c_str());
-  if (!in)
-  {
+  if (!in) {
     std::cout << "     Please provide a valid csv sector filename" << std::endl;
     return false;
   }
     
   int npar = 0;
 
-  while (!in.eof())
-  {
+  while (!in.eof()) {
     ++m_sec_mult;
     getline(in,STRING);
     std::istringstream ss(STRING);
     npar = 0;
     
-    while (ss)
-    {
+    while (ss) {
       std::string s;
       if (!getline( ss, s, ',' )) break;
       
@@ -1266,26 +1199,24 @@ bool track_eff::convert_cabling(std::string cablingfilename)
     int rmodid; // Le modid que l'on utilise (the module ID we're using right now)
     
     // Barrel     
-    if (detid[25])
-    {
+    if (detid[25]) {
       lay  = 8*detid[23]+4*detid[22]+2*detid[21]+detid[20]+4;
       type = 2*detid[19]+detid[18];
       
-      if (type==3) // Pas tilté
-      {
+      // Pas tilté
+      if (type==3) {
       	lad  = 128*detid[17]+64*detid[16]+32*detid[15]+16*detid[14]+8*detid[13]+4*detid[12]+2*detid[11]+detid[10]-1;
       	mod  = 128*detid[9]+64*detid[8]+32*detid[7]+16*detid[6]+8*detid[5]+4*detid[4]+2*detid[3]+detid[2]-1+limits[lay-5][type-1];
       }
-      else // tilté
-      {
+      // tilté
+      else {
       	mod  = 128*detid[17]+64*detid[16]+32*detid[15]+16*detid[14]+8*detid[13]+4*detid[12]+2*detid[11]+detid[10]-1+limits[lay-5][type-1];
       	lad  = 128*detid[9]+64*detid[8]+32*detid[7]+16*detid[6]+8*detid[5]+4*detid[4]+2*detid[3]+detid[2]-1;
       }
     }
     
     // Endcap
-    else
-    {
+    else {
       disk  = 8*detid[21]+4*detid[20]+2*detid[19]+detid[18];
       lay   = 10+disk+abs(2-(2*detid[24]+detid[23]))*7;
       lad   = 32*detid[17]+16*detid[16]+8*detid[15]+4*detid[14]+2*detid[13]+detid[12]-1;          
@@ -1330,13 +1261,11 @@ bool track_eff::convert_cabling(std::string cablingfilename)
     
   int n_mods=0, n_DTCs=0;
   
-  for (unsigned int i=0;i<230000;++i)
-  {
+  for (unsigned int i=0;i<230000;++i) {
     if (m_modules_to_DTC.at(i).size()!=0) ++n_mods;
   }
   
-  for (unsigned int i=0;i<2000;++i)
-  {
+  for (unsigned int i=0;i<2000;++i) {
     if (m_DTC_to_modules.at(i).size()!=0) ++n_DTCs;
   }
 
@@ -1348,8 +1277,7 @@ bool track_eff::convert_cabling(std::string cablingfilename)
 }
 
 
-bool track_eff::convert_towers(std::string towerfilename)
-{
+bool track_eff::convert_towers(std::string towerfilename) {
   cout << "Converting towers..." << endl;
 
   int modid,lay,lad,mod,disk,type;
@@ -1360,24 +1288,21 @@ bool track_eff::convert_towers(std::string towerfilename)
   
   m_modules.clear();
     
-  for (unsigned int i=0;i<230000;++i)
-  {
+  for (unsigned int i=0;i<230000;++i) {
     module.clear();
     m_modules.push_back(module);
   }
     
   std::string STRING;
   std::ifstream in(towerfilename.c_str());
-  if (!in)
-  {
+  if (!in) {
     std::cout << "     Please provide a valid csv sector filename" << std::endl;
     return false;
   }
   
   int npar = 0;
   
-  while (!in.eof())
-  {
+  while (!in.eof()) {
     ++m_sec_mult;
     getline(in,STRING);
     
@@ -1386,8 +1311,7 @@ bool track_eff::convert_towers(std::string towerfilename)
     std::istringstream ss(STRING);
     npar = 0;
         
-    while (ss)
-    {
+    while (ss) {
       std::string s;
       if (!getline( ss, s, ',' )) break;
       
@@ -1401,26 +1325,24 @@ bool track_eff::convert_towers(std::string towerfilename)
       int rmodid; // Le modid que l'on utilise (the module ID we're using right now)
       
       // Barrel
-      if (detid[25])
-      {
+      if (detid[25]) {
       	lay  = 8*detid[23]+4*detid[22]+2*detid[21]+detid[20]+4;
       	type = 2*detid[19]+detid[18];
-              
-      	if (type==3) // Pas tilté
-      	{
+        
+        // Pas tilté       
+      	if (type==3) {
       	  lad  = 128*detid[17]+64*detid[16]+32*detid[15]+16*detid[14]+8*detid[13]+4*detid[12]+2*detid[11]+detid[10]-1;
       	  mod  = 128*detid[9]+64*detid[8]+32*detid[7]+16*detid[6]+8*detid[5]+4*detid[4]+2*detid[3]+detid[2]-1+limits[lay-5][type-1];
       	}
-      	else // tilté
-      	{
+        // tilté
+      	else {
       	  mod  = 128*detid[17]+64*detid[16]+32*detid[15]+16*detid[14]+8*detid[13]+4*detid[12]+2*detid[11]+detid[10]-1+limits[lay-5][type-1];
       	  lad  = 128*detid[9]+64*detid[8]+32*detid[7]+16*detid[6]+8*detid[5]+4*detid[4]+2*detid[3]+detid[2]-1;
       	}
       }
       
       // Endcap
-      else
-      {
+      else {
       	disk  = 8*detid[21]+4*detid[20]+2*detid[19]+detid[18];
       	lay   = 10+disk+abs(2-(2*detid[24]+detid[23]))*7;
       	lad   = 32*detid[17]+16*detid[16]+8*detid[15]+4*detid[14]+2*detid[13]+detid[12]-1;     	
@@ -1442,8 +1364,7 @@ bool track_eff::convert_towers(std::string towerfilename)
 }
 
 
-void track_eff::reset() 
-{
+void track_eff::reset()  {
   m_primaries.clear(); 
 
   m_npu=0;

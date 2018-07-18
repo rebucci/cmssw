@@ -10,6 +10,8 @@
 #
 # Script tested with release CMSSW_10_0_0_pre1 (works either for Tilted of Flat geometries)
 #
+# Script, extractors, and tools updated by R.Bucci (rbucci@nd.edu). 2018.
+# 
 #########
 
 
@@ -26,11 +28,11 @@ process = cms.Process("MIBextractor")
 flat=False
 
 # Select stub windows
-STUBWINDOWS = "0SW"
-    # 9    stub  windows in CMSSW_9_4_0 and 10_0_0
-    # 10T  tight windows in CMSSW_10_2_X
-    # 10L  loose windows in CMSSW_10_2_X
-    # SANITY everything is zero!
+STUBWINDOWS = "Loose"
+    # Tab2013  stub  windows in CMSSW_9_4_0 and 10_0_0
+    # Tight    tight windows in CMSSW_10_2_X
+    # Loose    loose windows in CMSSW_10_2_X
+    # Zero     everything is zero!
 
 
 
@@ -60,24 +62,34 @@ process.options = cms.untracked.PSet(
 
 # Number of events
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
+    input = cms.untracked.int32(1)
 )
 
 # input files
 Source_Files = cms.untracked.vstring(
-		##### EXAMPLES #####
-		#'file:PGun_example.root',       
-		#'file:PU_sample.root', 
-		#'file:TT_example.root',       
-		#'file:QCD_example.root', 
-
-		##### RELVALS #####
-		#'file:/hadoop/store/user/rbucci/mc_gen/SingleElectronFlatPt5To100_20180624/SingleElectronFlatPt5To100.root',
-		#'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/52A9842F-C9CF-E711-84DE-0242AC130002.root',  #TTBar PU200
-		#'/store/relval/CMSSW_10_0_0_pre1/RelValSingleMuPt10/GEN-SIM-DIGI-RAW/94X_upgrade2023_realistic_v2_2023D17noPU-v2/10000/4A774661-DECE-E711-9826-0CC47A4C8F18.root',  #SingleMu PU0
+    ##### RELVALS #####
+        #'file:/hadoop/store/user/rbucci/mc_gen/SingleElectronFlatPt5To100/step2_PU0/SingleElectronFlatPt5To100_PU0_01.root',
+        #'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/52A9842F-C9CF-E711-84DE-0242AC130002.root',  #TTBar PU200
+        #'/store/relval/CMSSW_10_0_0_pre1/RelValSingleMuPt10/GEN-SIM-DIGI-RAW/94X_upgrade2023_realistic_v2_2023D17noPU-v2/10000/4A774661-DECE-E711-9826-0CC47A4C8F18.root', #SingleMu PU00
+        #'root://cms-xrd-global.cern.ch//store/relval/CMSSW_10_0_0_pre1/RelValSingleMuPt10/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/F4C816CF-DFCF-E711-8CD1-0242AC130002.root'  #SingleMu PU0 can't find
+        #'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/94X_upgrade2023_realistic_v2_2023D17noPU-v2/10000/C42AECEA-E0CE-E711-B866-0025905A60C6.root' # TTBar PU0, 10X
+        
+    ##### Single Mu with Range of pT #####
+        #'/store/relval/CMSSW_9_3_7/RelValSingleMuPt2to100_pythia8/GEN-SIM-DIGI-RAW/93X_upgrade2023_realistic_v5_2023D17noPU-v1/20000/4C5AA39A-7552-E811-8719-0025905A60A8.root', # pT 2 to 100
+        #'/store/relval/CMSSW_9_3_7/RelValSingleMuPt1p5to8_pythia8/GEN-SIM-DIGI-RAW/93X_upgrade2023_realistic_v5_2023D17noPU-v1/20000/66E0EFD6-8352-E811-B3EA-0CC47A7C3610.root', # pT 1.5 to 8
 )
 
-process.source = cms.Source("PoolSource", fileNames = Source_Files, duplicateCheckMode = cms.untracked.string( 'noDuplicateCheck' )
+process.source = cms.Source("PoolSource", 
+                            fileNames = Source_Files,
+                            inputCommands=cms.untracked.vstring(
+                            		'keep *_*_*_*',
+                                'drop l1tEMTFHit2016Extras_*_*_*',
+                                'drop l1tEMTFHit2016s_*_*_*',
+                                'drop l1tEMTFTrack2016Extras_*_*_*',
+                                'drop l1tEMTFTrack2016s_*_*_*',
+                                'drop l1tHGCalTowerMapBXVector_*_*_*',
+                            ), # Need to drop these branch names to run the 937 datasets here.
+                            duplicateCheckMode = cms.untracked.string( 'noDuplicateCheck' )
 )
 
 # name of output file
@@ -95,15 +107,15 @@ process.load("StubWindowsPkg.RecoExtractor.MIB_extractor_cff")
 ############################################################
 # Customization
 
-process.MIBextraction.doMC       = True
-process.MIBextraction.doSTUB     = True
-process.MIBextraction.doPixel    = True
-process.MIBextraction.doMatch    = True
+process.MIBextraction.doMC       = True     # adds tracking particle information
+process.MIBextraction.doSTUB     = True     # adds official stubs and clusters
+process.MIBextraction.doPixel    = True     # activate digis or not (not for official)
+process.MIBextraction.doMatch    = True     # adds digi matching to MC (used only if doPixel is true)
 
-process.MIBextraction.doL1TRK	   = True
-process.MIBextraction.doBANK 	 	 = False
-process.MIBextraction.getCoords  = False
-process.MIBextraction.fullInfo   = True
+process.MIBextraction.doL1TRK    = True     # adds patterns and L1 track info
+process.MIBextraction.doBANK 	   = False    # 
+process.MIBextraction.getCoords  = False    # 
+process.MIBextraction.fullInfo   = True     # 
 
 
 ############################################################
@@ -132,7 +144,7 @@ process.load('L1Trigger.TrackTrigger.TrackTrigger_cff')
 from L1Trigger.TrackTrigger.TTStubAlgorithmRegister_cfi import *
 
 # Stub Windows
-if   STUBWINDOWS == "9": 
+if   STUBWINDOWS == "Tab2013": 
     print "using stub windows for CMSSW_9_4_0 and 10_0_0"
     TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2.0, 2.0, 3.5, 4.5, 5.5, 6.5)
     TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
@@ -149,7 +161,7 @@ if   STUBWINDOWS == "9":
         cms.PSet( EndcapCut = cms.vdouble( 0, 1.0, 1.5, 1.5, 2, 2, 2, 2, 3, 3, 6, 6, 6.5) ),
         cms.PSet( EndcapCut = cms.vdouble( 0, 1.0, 1.5, 1.5, 1.5, 2, 2, 2, 3, 3, 6, 6, 6.5) ),
     )
-elif STUBWINDOWS == "10T": 
+elif STUBWINDOWS == "Tight": 
     print "using the tight stub windows for CMSSW_10_2_X"
     TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2, 2.5, 3.5, 4.5, 5.5, 7)
     TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
@@ -166,7 +178,7 @@ elif STUBWINDOWS == "10T":
                 cms.PSet( EndcapCut = cms.vdouble( 0, 1, 2.5, 3, 2.5, 3.5, 3, 3, 3.5, 3.5, 3.5, 4, 4) ),
                 cms.PSet( EndcapCut = cms.vdouble( 0, 0.5, 1.5, 3, 2.5, 3.5, 3, 3, 3.5, 4, 3.5, 4, 3.5) ),
     )
-elif STUBWINDOWS == "10L": 
+elif STUBWINDOWS == "Loose": 
     print "using the loose stub windows for CMSSW_10_2_X"
     TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2.0, 3, 4.5, 6, 6.5, 7.0)
     TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
@@ -183,7 +195,7 @@ elif STUBWINDOWS == "10L":
                 cms.PSet( EndcapCut = cms.vdouble( 0, 1., 2.5, 3.5, 6., 6.5, 6.5, 6.5, 6.5, 7, 7, 7, 7) ),
                 cms.PSet( EndcapCut = cms.vdouble( 0, 0.5, 1.5, 3., 4.5, 6.5, 6.5, 7, 7, 7, 7, 7, 7) ),
     )
-elif STUBWINDOWS == "SANITY": 
+elif STUBWINDOWS == "Zero": 
     print "If there's nothing wrong with me...maybe there's something wrong with the universe."
     TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 0, 0, 0, 0, 0, 0)
     TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
@@ -209,11 +221,16 @@ TTClusterAssociatorFromPixelDigis.digiSimLinks = cms.InputTag("simSiPixelDigis",
 process.TTClusterStub      = cms.Path(process.TrackTriggerClustersStubs)
 process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStubs)
 
+process.TTTracksTruth=cms.Path(process.TrackTriggerAssociatorTracks)
+process.TTCSTTruth=cms.Path(process.TrackTriggerAssociatorComplete) #both  the TTAssociatorTracks and the TTAssociatorClustersStubs
+
 
 from L1Trigger.TrackFindingTracklet.Tracklet_cfi import *
 process.load("L1Trigger.TrackFindingTracklet.L1TrackletEmulationTracks_cff")
 process.TTTracksEmulation          = cms.Path(process.L1TrackletEmulationTracks)
 process.TTTracksEmulationWithTruth = cms.Path(process.L1TrackletEmulationTracksWithAssociators)
+
+#from L1Trigger.TrackTrigger.TTCluster_cfi import * # attempted fix
 
 
 ############################################################
@@ -225,8 +242,7 @@ process.p    = cms.Path(process.MIBextraction)
 process.d    = cms.Path(process.dump)
 
 # Don't re-run stub making (will use to the stub windows original to the release area)
-process.schedule = cms.Schedule(process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
+# process.schedule = cms.Schedule(process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
 
 # Re-run stub making
 process.schedule = cms.Schedule(process.TTClusterStub,process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
-
