@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   // Documented in part 6.2.2 of the official tutorial page
   if (params.option()=="L1track_eff")
   {
-    track_eff* my_test = new track_eff(params.testfile(),params.inputfile(),
+    track_eff* my_test = new track_eff(params.inputfile(),params.testfile(),
 				       params.outfile(),params.nevt(),params.ptmin(),
 				       params.qmax(),params.dbg());
 

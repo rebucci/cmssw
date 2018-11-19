@@ -98,11 +98,15 @@ class efficiencies
   // https://github.com/sviret/HL_LHC/blob/master/Extractors/RecoExtractor/interface/L1TrackTrigger_analysis.h
   //
 
-  int                 m_type;
-  int    	            m_part_n;
-  int                 m_pclus;
-  int                 m_tkclus;            
-  int                 m_tkstub; 
+  int   m_type;
+  int   m_part_n;
+  int   m_pclus;
+  int   m_tkclus;            
+  int   m_tkstub; 
+  
+  float PTMAX;
+  float MSV;
+  float iMSV;
 
   std::vector<int>    *m_pixclus_row;
   std::vector<int>    *m_pixclus_column;

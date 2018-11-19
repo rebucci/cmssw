@@ -14,6 +14,9 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TChain.h"
+#include "TFileCollection.h"
+#include "TCollection.h"
+#include "TDSet.h"
 
 #include <fstream>
 #include <string>

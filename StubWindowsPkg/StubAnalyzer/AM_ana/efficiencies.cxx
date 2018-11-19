@@ -8,6 +8,10 @@
 efficiencies::efficiencies(std::string filename, std::string outfile, int ptype) {
   m_type = ptype;
 
+  PTMAX=100.;       // changeable pT maximum
+  MSV=PTMAX/100;    // momentum scale variable
+  iMSV=1/MSV;       // inverse of momentum scale variable
+
   efficiencies::initTuple(filename,outfile);
   efficiencies::reset();
   efficiencies::initVars();
@@ -30,11 +34,6 @@ void efficiencies::get_efficiencies() {
   // Initialize some params
   double PTGEN=0;
   double D0GEN=0;
-
-  float PTMAX=100.;       // changeable pT maximum
-  
-  float MSV=PTMAX/100;    // momentum scale variable
-  float iMSV=1/MSV;       // inverse of momentum scale variable
 
   int pix_i;
   int clus_i;
@@ -474,7 +473,7 @@ void efficiencies::reset() {
   m_part_x    ->clear();
   m_part_y    ->clear();
   m_part_evtId->clear();
-  m_part_stId- >clear();
+  m_part_stId ->clear();
    
   m_tkclus_nstrips->clear();
   m_tkclus_layer  ->clear(); 
@@ -497,13 +496,30 @@ void efficiencies::reset() {
 
 void efficiencies::initTuple(std::string in,std::string out) {
 
-  L1TT = new TChain("TkStubs"); 
+  // ----- Input File (filename) ----- //
+  L1TT = new TChain("TkStubs");
   Pix  = new TChain("Pixels");
   MC   = new TChain("MC");
 
-  L1TT->Add(in.c_str());
-  Pix ->Add(in.c_str());
-  MC  ->Add(in.c_str()); 
+  // Input data file
+  std::size_t found = in.find(".root");
+
+  // Case 1: It's a root file
+  if (found!=std::string::npos) {
+    L1TT->Add(in.c_str());
+    Pix ->Add(in.c_str());
+    MC  ->Add(in.c_str());
+  }
+  
+  // Case 2: It's a directory
+  else {
+    TString inputDIR;
+    inputDIR = in.c_str();
+
+    L1TT->Add(inputDIR+"/*.root" );
+    Pix ->Add(inputDIR+"/*.root" );
+    MC  ->Add(inputDIR+"/*.root" );
+  }
 
   m_pixclus_row      = new std::vector<int>;      
   m_pixclus_column   = new std::vector<int>;      

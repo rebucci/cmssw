@@ -45,7 +45,7 @@ class jobparams{
  private:
 
   bool         m_dbg;   
-  std::string  m_opt;  
+  std::string  m_opt;
   std::string  m_inputfile;
   std::string  m_inputfileQCD;
   std::string  m_outfile;

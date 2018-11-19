@@ -52,7 +52,8 @@
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/SiPixelDetId/interface/PXBDetId.h"
 #include "DataFormats/SiPixelDetId/interface/PXFDetId.h"
-//#include "CommonTools/RecoAlgos/interface/TrackingParticleSelector.h"
+//#include "CommonTools/RecoAlgos/interface/TrackingParticleSelector.h" //old
+//#include "SimTracker/Common/interface/TrackingParticleSelector.h" //new
 
 //std C++
 #include <iostream>
@@ -69,8 +70,13 @@ class MCExtractor
   
   /// Constructor
   MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken, 
-  						edm::EDGetTokenT< TrackingParticleCollection > tToken,
-  						bool doTree);
+  						edm::EDGetTokenT< TrackingParticleCollection  > tToken,
+              bool doTree,
+              bool TP_hitTracker,
+              double TP_minPt,
+              double TP_maxEta,
+              double TP_maxR
+             );
   MCExtractor(TFile *a_file);
   MCExtractor(){}
   
@@ -88,12 +94,13 @@ class MCExtractor
   void getInfo(int ievt); 
 
   // Setters/Getters
-  bool isOK() {return m_OK;}
+  bool isOK()   {return m_OK;}
 
   int getNGen() {return m_gen_n;}
-  int getNTP() {return m_part_n;}
+  int getNTP()  {return m_part_n;}
 
   int getTP_ID(int i)      {return m_part_pdgId->at(i);}
+  int getTP_Hit(int i)     {return m_hits->at(i);}
   float getTP_x(int i)     {return m_part_x->at(i);}
   float getTP_y(int i)     {return m_part_y->at(i);}
   float getTP_z(int i)     {return m_part_z->at(i);}
@@ -102,20 +109,15 @@ class MCExtractor
   float getTP_px(int i)    {return m_part_px->at(i);}
   float getTP_py(int i)    {return m_part_py->at(i);}
   float getTP_pz(int i)    {return m_part_pz->at(i);}
-  float getTP_pt(int i)    {return sqrt(m_part_px->at(i)*m_part_px->at(i)+m_part_py->at(i)*m_part_py->at(i));}
+  //float getTP_pt(int i)    {return sqrt(m_part_px->at(i)*m_part_px->at(i)+m_part_py->at(i)*m_part_py->at(i));} //OLD
+  float getTP_pt(int i)    {return m_part_pt->at(i);}
 
   void printhits(float x, float y, float z);
-
-  void clearTP(float ptmin,float rmax);
-
-  void findMatchingTP(const int &stID, const int &evtID,
-		      int &itp, bool verb);
-
-  int getMatchingTP(float x,float y, float z,
-		    float px,float py, float pz);
+  void clearTP();
+  void findMatchingTP(const int &stID, const int &evtID, int &itp, bool verb);
+  int getMatchingTP(float x, float y, float z, float px, float py, float pz);
 
  private:
- 			      
 
   void getGenInfo(const edm::Event *event); 
  
@@ -129,11 +131,10 @@ class MCExtractor
   std::vector<int>      *m_hits_used;
 
   edm::EDGetTokenT< reco::GenParticleCollection > m_gtoken;
-  edm::EDGetTokenT< TrackingParticleCollection > m_ttoken;
+  edm::EDGetTokenT< TrackingParticleCollection  > m_ttoken;
 
-  edm::Handle<reco::GenParticleCollection> genParticles;
-  edm::Handle<TrackingParticleCollection>  TPCollection ;
-
+  edm::Handle< reco::GenParticleCollection > genParticles;
+  edm::Handle< TrackingParticleCollection  > TPCollection ;
   edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle;
 
   /*
@@ -166,7 +167,7 @@ class MCExtractor
     
   */
   
-  int    		m_gen_n;       // Number of particles generated
+  int m_gen_n;       // Number of particles generated
  
   // Size of the following vectors is m_gen_n
   std::vector<float>    *m_gen_x;     // x-origin of particle i (in cm)
@@ -179,7 +180,7 @@ class MCExtractor
   std::vector<int>      *m_gen_pdg;   // PDG code of particle
 
 
-  int    		m_part_n;     // Number of TrackingParticles retrieved
+  int m_part_n;     // Number of TrackingParticles retrieved
 
   // Size of the following vectors is m_part_n
   std::vector<int>      *m_part_pdgId;// PDG code of TP i
@@ -188,6 +189,7 @@ class MCExtractor
   std::vector<float> 	  *m_part_px;   // px-origin of TP i (in cm)
   std::vector<float> 	  *m_part_py;   // py-origin of TP i (in cm)
   std::vector<float>	  *m_part_pz;   // pz-origin of TP i (in cm)
+  std::vector<float>    *m_part_pt;   // pt-origin of TP i (in cm)
   std::vector<float>    *m_part_eta;  // eta-origin of TP i (in cm)
   std::vector<float> 	  *m_part_phi;  // phi-origin of TP i (in cm)
   std::vector<float>    *m_part_x;    // x-origin of TP i (in cm)
@@ -198,11 +200,11 @@ class MCExtractor
 
 
   // Finally the geometry information
-  edm::ESHandle<DTGeometry> dtGeometry;
-  edm::ESHandle<CSCGeometry> cscGeometry;
-  edm::ESHandle<RPCGeometry> rpcGeometry;
-  edm::ESHandle<TrackerGeometry> theTrackerGeometry;
-  edm::ESHandle<CaloGeometry> caloGeometry;
+  edm::ESHandle< DTGeometry  >     dtGeometry;
+  edm::ESHandle< CSCGeometry >     cscGeometry;
+  edm::ESHandle< RPCGeometry >     rpcGeometry;
+  edm::ESHandle< TrackerGeometry > theTrackerGeometry;
+  edm::ESHandle< CaloGeometry >    caloGeometry;
 
   const CaloSubdetectorGeometry* HFgeom;
   const CaloSubdetectorGeometry* HEgeom;
@@ -243,6 +245,11 @@ class MCExtractor
 
   std::vector<int>      the_ids;
   float x,y,z;
+
+  bool  needhit;
+  float minpt;
+  float maxeta;
+  float maxr;
 };
 
 

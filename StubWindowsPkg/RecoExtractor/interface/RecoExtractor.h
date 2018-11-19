@@ -46,7 +46,7 @@ class RecoExtractor : public edm::EDAnalyzer{
   void endJob();
 
   void beginRun(edm::Run const&, edm::EventSetup const&);
-  void endRun(edm::Run const&, edm::EventSetup const&);
+  void endRun(  edm::Run const&, edm::EventSetup const&);
 
   /// Method called once per event
   void analyze(const edm::Event&, const edm::EventSetup& );
@@ -63,7 +63,6 @@ class RecoExtractor : public edm::EDAnalyzer{
  
   bool do_fill_;
 
-
   bool do_COORDS_;
   bool do_PIX_;
   bool do_MC_;
@@ -78,20 +77,29 @@ class RecoExtractor : public edm::EDAnalyzer{
   int  nevts_;
   int  skip_;
 
-  edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > clustersToken_;
-  edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > clustersTToken_;
-  edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stubsToken_;
-  edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > stubsTToken_;
-  edm::EDGetTokenT< reco::GenParticleCollection > gpToken_;
-  edm::EDGetTokenT< TrackingParticleCollection > tpToken_;
+  // Tracking Particle requirements
+  bool  TP_hitTracker_;
+  double TP_minPt_;
+  double TP_maxEta_;
+  double TP_maxR_;
+
+
+
+  // Tokens
+  edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ >             > > clustersToken_;
+  edm::EDGetTokenT<                       TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > clustersTToken_;
+  edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ >                > > stubsToken_;
+  edm::EDGetTokenT<                       TTStubAssociationMap< Ref_Phase2TrackerDigi_    > > stubsTToken_;
+  edm::EDGetTokenT< reco::GenParticleCollection      > gpToken_;
+  edm::EDGetTokenT<       TrackingParticleCollection > tpToken_;
   edm::EDGetTokenT< edm::DetSetVector< Phase2TrackerDigi> > pixToken_;
-  edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink> > pixslToken_;
-  edm::EDGetTokenT< std::vector<PileupSummaryInfo> > puToken_;
+  edm::EDGetTokenT< edm::DetSetVector< PixelDigiSimLink>  > pixslToken_;
+  edm::EDGetTokenT< std::vector< PileupSummaryInfo                 > > puToken_;
   edm::EDGetTokenT< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > > trkToken_;
 
   edm::EDGetTokenT< std::vector< TrackingParticle > > tpToken2_;
-  edm::EDGetTokenT< std::vector< TrackingVertex > > tvToken_;
-  edm::EDGetTokenT< edm::SimTrackContainer > simtToken_;
+  edm::EDGetTokenT< std::vector< TrackingVertex   > > tvToken_;
+  edm::EDGetTokenT< edm::SimTrackContainer  > simtToken_;
   edm::EDGetTokenT< edm::SimVertexContainer > simvToken_;
 
 

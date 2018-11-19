@@ -28,7 +28,7 @@ process = cms.Process("MIBextractor")
 flat=False
 
 # Select stub windows
-STUBWINDOWS = "Loose"
+STUBWINDOWS = "Tight"
     # Tab2013  stub  windows in CMSSW_9_4_0 and 10_0_0
     # Tight    tight windows in CMSSW_10_2_X
     # Loose    loose windows in CMSSW_10_2_X
@@ -62,27 +62,18 @@ process.options = cms.untracked.PSet(
 
 # Number of events
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1)
+    input = cms.untracked.int32(-1)
 )
 
 # input files
 Source_Files = cms.untracked.vstring(
-    ##### RELVALS #####
-        #'file:/hadoop/store/user/rbucci/mc_gen/SingleElectronFlatPt5To100/step2_PU0/SingleElectronFlatPt5To100_PU0_01.root',
-        #'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/52A9842F-C9CF-E711-84DE-0242AC130002.root',  #TTBar PU200
-        #'/store/relval/CMSSW_10_0_0_pre1/RelValSingleMuPt10/GEN-SIM-DIGI-RAW/94X_upgrade2023_realistic_v2_2023D17noPU-v2/10000/4A774661-DECE-E711-9826-0CC47A4C8F18.root', #SingleMu PU00
-        #'root://cms-xrd-global.cern.ch//store/relval/CMSSW_10_0_0_pre1/RelValSingleMuPt10/GEN-SIM-DIGI-RAW/PU25ns_94X_upgrade2023_realistic_v2_2023D17PU200-v1/10000/F4C816CF-DFCF-E711-8CD1-0242AC130002.root'  #SingleMu PU0 can't find
-        #'/store/relval/CMSSW_10_0_0_pre1/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/94X_upgrade2023_realistic_v2_2023D17noPU-v2/10000/C42AECEA-E0CE-E711-B866-0025905A60C6.root' # TTBar PU0, 10X
-        
-    ##### Single Mu with Range of pT #####
-        #'/store/relval/CMSSW_9_3_7/RelValSingleMuPt2to100_pythia8/GEN-SIM-DIGI-RAW/93X_upgrade2023_realistic_v5_2023D17noPU-v1/20000/4C5AA39A-7552-E811-8719-0025905A60A8.root', # pT 2 to 100
-        #'/store/relval/CMSSW_9_3_7/RelValSingleMuPt1p5to8_pythia8/GEN-SIM-DIGI-RAW/93X_upgrade2023_realistic_v5_2023D17noPU-v1/20000/66E0EFD6-8352-E811-B3EA-0CC47A7C3610.root', # pT 1.5 to 8
-)
+        #'file:/hadoop/store/user/rbucci/mc_gen/SingleElectronFlatPt5To100/step2_PU200/SingleElectronFlatPt5To100_PU200_100.root',
+        )
 
 process.source = cms.Source("PoolSource", 
-                            fileNames = Source_Files,
+                            fileNames = Source_Files, 
                             inputCommands=cms.untracked.vstring(
-                            		'keep *_*_*_*',
+                                'keep *_*_*_*',
                                 'drop l1tEMTFHit2016Extras_*_*_*',
                                 'drop l1tEMTFHit2016s_*_*_*',
                                 'drop l1tEMTFTrack2016Extras_*_*_*',
@@ -94,7 +85,6 @@ process.source = cms.Source("PoolSource",
 
 # name of output file
 OUTPUT_NAME="extracted.root"
-
 
 
 ############################################################
@@ -116,6 +106,12 @@ process.MIBextraction.doL1TRK    = True     # adds patterns and L1 track info
 process.MIBextraction.doBANK 	   = False    # 
 process.MIBextraction.getCoords  = False    # 
 process.MIBextraction.fullInfo   = True     # 
+
+process.MIBextraction.TP_hitTracker = True        # Require tracking particle to hit in the tracker
+process.MIBextraction.TP_minPt      = 2.0         # minimum pT of tracking particles  (default=0.0)
+process.MIBextraction.TP_maxEta     = 2.4         # minimum eta of tracking particles (default=5.5)
+process.MIBextraction.TP_maxR       = 10000000.0  # maximum R of tracking particles   (default=10000000.0)
+
 
 
 ############################################################
@@ -221,8 +217,8 @@ TTClusterAssociatorFromPixelDigis.digiSimLinks = cms.InputTag("simSiPixelDigis",
 process.TTClusterStub      = cms.Path(process.TrackTriggerClustersStubs)
 process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStubs)
 
-process.TTTracksTruth=cms.Path(process.TrackTriggerAssociatorTracks)
-process.TTCSTTruth=cms.Path(process.TrackTriggerAssociatorComplete) #both  the TTAssociatorTracks and the TTAssociatorClustersStubs
+process.TTTracksTruth = cms.Path(process.TrackTriggerAssociatorTracks)
+process.TTCSTTruth    = cms.Path(process.TrackTriggerAssociatorComplete) # both  the TTAssociatorTracks and the TTAssociatorClustersStubs
 
 
 from L1Trigger.TrackFindingTracklet.Tracklet_cfi import *
@@ -230,7 +226,7 @@ process.load("L1Trigger.TrackFindingTracklet.L1TrackletEmulationTracks_cff")
 process.TTTracksEmulation          = cms.Path(process.L1TrackletEmulationTracks)
 process.TTTracksEmulationWithTruth = cms.Path(process.L1TrackletEmulationTracksWithAssociators)
 
-#from L1Trigger.TrackTrigger.TTCluster_cfi import * # attempted fix
+from L1Trigger.TrackTrigger.TTCluster_cfi import * # attempted fix
 
 
 ############################################################

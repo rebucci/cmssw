@@ -3,26 +3,27 @@
 // -----------------------------------------------------------------------------------------------------------
 // Tokens
 StubExtractor::StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ctoken,
-                             edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stoken, 
+                             edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_    > > > stoken, 
                              edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > cttoken, 
-                             edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > sttoken, 
+                             edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_    > > sttoken, 
                              edm::EDGetTokenT< std::vector< TrackingParticle > > tptoken, 
-                             edm::EDGetTokenT< std::vector< TrackingVertex > > tvtoken, 
-                             edm::EDGetTokenT< edm::SimTrackContainer > simttoken, 
+                             edm::EDGetTokenT< std::vector< TrackingVertex   > > tvtoken, 
+                             edm::EDGetTokenT< edm::SimTrackContainer  > simttoken, 
                              edm::EDGetTokenT< edm::SimVertexContainer > simvtoken, 
-                             bool doTree)
+                             bool doTree
+                            )
 {
-  m_ctoken = ctoken;
-  m_cttoken= cttoken;
-  m_stoken = stoken;
-  m_sttoken= sttoken;
-  m_tptoken= tptoken;
-  m_tvtoken= tvtoken;
-  m_simttoken=simttoken;
-  m_simvtoken=simvtoken;
+  m_ctoken  = ctoken;
+  m_cttoken = cttoken;
+  m_stoken  = stoken;
+  m_sttoken = sttoken;
+  m_tptoken = tptoken;
+  m_tvtoken = tvtoken;
+  m_simttoken = simttoken;
+  m_simvtoken = simvtoken;
 
   m_OK = false;
-  n_tot_evt=0;
+  n_tot_evt = 0;
 
   // Tree definition
   m_clus_x       = new  std::vector<float>;
@@ -356,7 +357,7 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
   const TrackerTopology* const tTopo = tTopoHandle.product();
   const TrackerGeometry* const theTrackerGeom = tGeomHandle.product();
 
-  if (MCinfo) mc->clearTP(0.001,10000000.0);
+  if (MCinfo) mc->clearTP();
   
   /// Sim Tracks and Vtx
   event->getByToken(m_simttoken,SimTrackHandle);  
@@ -410,102 +411,96 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
 
       for ( auto clusterIter = clusters.begin();clusterIter != clusters.end();++clusterIter ) 
       {
+      	edm::Ref< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_  > >, TTCluster< Ref_Phase2TrackerDigi_  > > tempCluRef = edmNew::makeRefTo( PixelDigiL1TkClusterHandle, clusterIter );
+        
+        bool genuineClu = MCTruthTTClusterHandle->isGenuine( tempCluRef );
 
-	edm::Ref< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_  > >, TTCluster< Ref_Phase2TrackerDigi_  > > tempCluRef = 
-	  edmNew::makeRefTo( PixelDigiL1TkClusterHandle, clusterIter );
-       	bool genuineClu = MCTruthTTClusterHandle->isGenuine( tempCluRef );
+      	MeasurementPoint coords = tempCluRef->findAverageLocalCoordinatesCentered();
 
-	MeasurementPoint coords = tempCluRef->findAverageLocalCoordinatesCentered();
+      	clustlp   = topol     ->localPosition(coords);
+      	posClu    = theGeomDet->surface().toGlobal(clustlp);
+      	clus_rows = tempCluRef->getRows();
+      	clus_cols = tempCluRef->getCols();
+      	clus_coords.clear();
 
-	clustlp = topol->localPosition(coords);
-	posClu  =  theGeomDet->surface().toGlobal(clustlp);
+      	for (unsigned int i = 0; i < clus_rows.size(); ++i) 
+      	{
+      	  clus_coords.push_back(clus_rows.at(i));
+      	  clus_coords.push_back(clus_cols.at(i));
+      	}
 
-	clus_rows = tempCluRef->getRows();
-	clus_cols = tempCluRef->getCols();
-	clus_coords.clear();
+      	++m_clus;
 
-	for (unsigned int i=0;i<clus_rows.size();++i) 
-	{
-	  clus_coords.push_back(clus_rows.at(i));
-	  clus_coords.push_back(clus_cols.at(i));
-	}
+      	m_clus_pix    ->push_back(clus_coords);
+      	m_clus_x      ->push_back(posClu.x());
+      	m_clus_y      ->push_back(posClu.y());
+      	m_clus_z      ->push_back(posClu.z());
+      	m_clus_seg    ->push_back(coords.y());
+      	m_clus_strip  ->push_back(coords.x());
+      	m_clus_nstrips->push_back(tempCluRef->findWidth());
+      	
+      	segs = topol->ncolumns();
+      	rows = topol->nrows();;
 
-	++m_clus;
+      	m_clus_bot->push_back(static_cast<int>(tTopo->isLower(detid)));
 
-	m_clus_pix->push_back(clus_coords);
+      	if ( detid.subdetId()==StripSubdetector::TOB )
+      	{
+      	  type   = static_cast<int>(tTopo->tobSide(detid)); // Tilt-/Tilt+/Flat <-> 1/2/3
+      	  layer  = static_cast<int>(tTopo->layer(detid))+4;
+      	  ladder = static_cast<int>(tTopo->tobRod(detid))-1;
+      	  module = static_cast<int>(tTopo->module(detid))-1+limits[layer-5][type-1];
 
-	m_clus_x->push_back(posClu.x());
-	m_clus_y->push_back(posClu.y());
-	m_clus_z->push_back(posClu.z());
-	
-	m_clus_seg->push_back(coords.y());
-	m_clus_strip->push_back(coords.x());
-	m_clus_nstrips->push_back(tempCluRef->findWidth());
-	
-	segs= topol->ncolumns();
-	rows= topol->nrows();;
+      	  if (type<3)
+      	  {
+      	    ladder = static_cast<int>(tTopo->module(detid))-1;
+      	    module = static_cast<int>(tTopo->tobRod(detid))-1+limits[layer-5][type-1];
+      	  }
+      	}
+      	else if ( detid.subdetId()==StripSubdetector::TID )
+      	{	
+      	  layer  = 10+static_cast<int>(tTopo->tidWheel(detid))+abs(2-static_cast<int>(tTopo->side(detid)))*7;
+      	  ladder =    static_cast<int>(tTopo->tidRing(detid))-1;
+      	  module =    static_cast<int>(tTopo->module(detid)) -1;
+      	  type   = 0;
+      	}
+      	
+      	m_clus_layer ->push_back(layer);
+      	m_clus_ladder->push_back(ladder);
+      	m_clus_module->push_back(module);
+      	m_clus_type  ->push_back(type);
+      	m_clus_PS    ->push_back(segs);
 
-	m_clus_bot->push_back(static_cast<int>(tTopo->isLower(detid)));
+      	if (genuineClu)
+      	{
+      	  edm::Ptr< TrackingParticle > tpPtr = MCTruthTTClusterHandle->findTrackingParticlePtr( tempCluRef );
 
-	if ( detid.subdetId()==StripSubdetector::TOB )
-	{
-	  type   = static_cast<int>(tTopo->tobSide(detid)); // Tilt-/Tilt+/Flat <-> 1/2/3
-	  layer  = static_cast<int>(tTopo->layer(detid))+4;
-	  ladder = static_cast<int>(tTopo->tobRod(detid))-1;
-	  module = static_cast<int>(tTopo->module(detid))-1+limits[layer-5][type-1];
+      	  if ( tpPtr.isNull() )  
+      	  {
+      	    m_clus_matched->push_back(0);
+      	    m_clus_ptGEN  ->push_back(0); 
+      	    m_clus_pdgID  ->push_back(0);
+      	    m_clus_tp     ->push_back(-1);
+      	  }
+      	  else
+      	  {
+      	    m_clus_matched->push_back(1);
+      	    m_clus_ptGEN  ->push_back(tpPtr->p4().pt()); 
+      	    m_clus_pdgID  ->push_back(tpPtr->pdgId());
 
-	  if (type<3)
-	  {
-	    ladder = static_cast<int>(tTopo->module(detid))-1;
-	    module = static_cast<int>(tTopo->tobRod(detid))-1+limits[layer-5][type-1];
-	  }
-	}
-	else if ( detid.subdetId()==StripSubdetector::TID )
-	{	
-	  layer  = 10+static_cast<int>(tTopo->tidWheel(detid))+abs(2-static_cast<int>(tTopo->side(detid)))*7;
-	  ladder = static_cast<int>(tTopo->tidRing(detid))-1;
-	  module = static_cast<int>(tTopo->module(detid))-1;
-	  type   = 0;
-	}
-	
-	m_clus_layer->push_back(layer);
-	m_clus_ladder->push_back(ladder);
-	m_clus_module->push_back(module);
-	m_clus_type->push_back(type);
-	m_clus_PS->push_back(segs);
+      	    if (MCinfo) m_clus_tp->push_back(mc->getMatchingTP(tpPtr->vertex().x(), tpPtr->vertex().y(), tpPtr->vertex().z(), tpPtr->p4().px(), tpPtr->p4().py(), tpPtr->p4().pz()));
+      	  }
+      	}
+      	else
+      	{
+      	  m_clus_matched->push_back(0);
+      	  m_clus_ptGEN  ->push_back(0); 
+      	  m_clus_pdgID  ->push_back(0);
+      	  m_clus_tp     ->push_back(-1);
+      	}
 
-	if (genuineClu)
-	{
-	  edm::Ptr< TrackingParticle > tpPtr = MCTruthTTClusterHandle->findTrackingParticlePtr( tempCluRef );
-
-	  if ( tpPtr.isNull() )  
-	  {
-	    m_clus_matched->push_back(0);
-	    m_clus_ptGEN->push_back(0); 
-	    m_clus_pdgID->push_back(0);
-	    m_clus_tp->push_back(-1);
-	  }
-	  else
-	  {
-	    m_clus_matched->push_back(1);
-	    m_clus_ptGEN->push_back(tpPtr->p4().pt()); 
-	    m_clus_pdgID->push_back(tpPtr->pdgId());
-
-	    if (MCinfo) m_clus_tp->push_back(mc->getMatchingTP(tpPtr->vertex().x(),tpPtr->vertex().y(),tpPtr->vertex().z(),
-							       tpPtr->p4().px(),tpPtr->p4().py(),tpPtr->p4().pz()));
-	  }
-	}
-	else
-	{
-	  m_clus_matched->push_back(0);
-	  m_clus_ptGEN->push_back(0); 
-	  m_clus_pdgID->push_back(0);
-	  m_clus_tp->push_back(-1);
-	}
-
-	m_clus_sat->push_back(0);
-	m_clus_nrows->push_back(rows);
-	
+      	m_clus_sat  ->push_back(0);
+      	m_clus_nrows->push_back(rows);
       } /// End of Loop over L1TkClusters in the detId
     }
   } /// End of if ( PixelDigiL1TkClusterHandle->size() > 0 )
@@ -533,108 +528,109 @@ void StubExtractor::writeInfo(const edm::Event *event, MCExtractor *mc, bool MCi
       edmNew::DetSet< TTStub< Ref_Phase2TrackerDigi_ > > stubs = (*PixelDigiL1TkStubHandle)[ stackDetid ];
       const GeomDetUnit* det0 = theTrackerGeom->idToDetUnit( detid );
       const PixelGeomDetUnit* theGeomDet = dynamic_cast< const PixelGeomDetUnit* >( det0 );
-      const PixelTopology* topol = dynamic_cast< const PixelTopology* >( &(theGeomDet->specificTopology()) );
+      const PixelTopology*    topol      = dynamic_cast< const PixelTopology*    >( &(theGeomDet->specificTopology()) );
 
       for ( auto stubIter = stubs.begin();stubIter != stubs.end();++stubIter ) 
       {
-	edm::Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_  > >, TTStub< Ref_Phase2TrackerDigi_  > > tempStubPtr = edmNew::makeRefTo( PixelDigiL1TkStubHandle, stubIter );
+      	edm::Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_  > >, TTStub< Ref_Phase2TrackerDigi_  > > tempStubPtr = edmNew::makeRefTo( PixelDigiL1TkStubHandle, stubIter );
 
-      
-	// The stub position is the inner cluster position
-	//
+      	// The stub position is the inner cluster position
 
-	MeasurementPoint coords = tempStubPtr->getClusterRef(0)->findAverageLocalCoordinatesCentered();
+      	MeasurementPoint coords = tempStubPtr->getClusterRef(0)->findAverageLocalCoordinatesCentered();
 
-	clustlp = topol->localPosition(coords);
-	posStub =  theGeomDet->surface().toGlobal(clustlp);
+      	clustlp = topol     ->localPosition(coords);
+      	posStub = theGeomDet->surface().toGlobal(clustlp);
 
-	++m_stub;
+      	++m_stub;
 
-	double displStub    = tempStubPtr->getTriggerDisplacement();
-	double offsetStub   = tempStubPtr->getTriggerOffset();
-	double offsetRStub  = tempStubPtr->getRealTriggerOffset();
+      	double displStub    = tempStubPtr->getTriggerDisplacement();
+      	double offsetStub   = tempStubPtr->getTriggerOffset();
+      	double offsetRStub  = tempStubPtr->getRealTriggerOffset();
 
-	bool genuineStub    = MCTruthTTStubHandle->isGenuine( tempStubPtr );
-	
-	segs= topol->ncolumns();
-	rows= topol->nrows();;
-	
-	clust1 = StubExtractor::getClust1Idx(posStub.x(),posStub.y(),posStub.z());
-	clust2 = StubExtractor::getClust2Idx(clust1,m_clus_strip->at(clust1)+displStub);
-	
-	m_stub_x->push_back(posStub.x());
-	m_stub_y->push_back(posStub.y());
-	m_stub_z->push_back(posStub.z());
-	m_stub_clust1->push_back(clust1);
-	m_stub_clust2->push_back(clust2);
-	m_stub_seg->push_back(m_clus_seg->at(clust1));
-	m_stub_chip->push_back(m_clus_strip->at(clust1)/(rows/8));
-	m_stub_strip->push_back(m_clus_strip->at(clust1));
-	m_stub_detid->push_back(static_cast<int>(tTopo->stack(detid)));
-	m_stub_deltas->push_back(displStub-offsetStub);
-	m_stub_deltash->push_back(tempStubPtr->getHardwareBend());
-	m_stub_cor->push_back(offsetStub);
-	m_stub_deltasf->push_back(displStub-offsetRStub);
-	m_stub_corf->push_back(offsetRStub);
+      	bool genuineStub    = MCTruthTTStubHandle->isGenuine( tempStubPtr );
+      	
+      	segs = topol->ncolumns();
+      	rows = topol->nrows();;
+      	
+      	clust1 = StubExtractor::getClust1Idx(posStub.x(),posStub.y(),posStub.z());
+      	clust2 = StubExtractor::getClust2Idx(clust1,m_clus_strip->at(clust1)+displStub);
+      	
+      	m_stub_x      ->push_back(posStub.x());
+      	m_stub_y      ->push_back(posStub.y());
+      	m_stub_z      ->push_back(posStub.z());
+      	m_stub_clust1 ->push_back(clust1);
+      	m_stub_clust2 ->push_back(clust2);
+      	m_stub_seg    ->push_back(m_clus_seg->at(clust1));
+      	m_stub_chip   ->push_back(m_clus_strip->at(clust1)/(rows/8));
+      	m_stub_strip  ->push_back(m_clus_strip->at(clust1));
+      	m_stub_detid  ->push_back(static_cast<int>(tTopo->stack(detid)));
+      	m_stub_deltas ->push_back(displStub-offsetStub);
+      	m_stub_deltash->push_back(tempStubPtr->getHardwareBend());
+      	m_stub_cor    ->push_back(offsetStub);
+      	m_stub_deltasf->push_back(displStub-offsetRStub);
+      	m_stub_corf   ->push_back(offsetRStub);
 
-	m_stub_pt->push_back(0);
+      	m_stub_pt->push_back(0);
 
-	if ( detid.subdetId()==StripSubdetector::TOB )
-	{
-	  type   = static_cast<int>(tTopo->tobSide(detid)); // Tilt-/Tilt+/Flat <-> 1/2/3
-	  layer  = static_cast<int>(tTopo->layer(detid))+4;
-	  ladder = static_cast<int>(tTopo->tobRod(detid))-1;
-	  module = static_cast<int>(tTopo->module(detid))-1+limits[layer-5][type-1];
+      	if ( detid.subdetId()==StripSubdetector::TOB )
+      	{
+      	  type   = static_cast<int>(tTopo->tobSide(detid)); // Tilt-/Tilt+/Flat <-> 1/2/3
+      	  layer  = static_cast<int>(tTopo->layer(detid)) +4;
+      	  ladder = static_cast<int>(tTopo->tobRod(detid))-1;
+      	  module = static_cast<int>(tTopo->module(detid))-1+limits[layer-5][type-1];
 
-	  if (type<3)
-	  {
-	    ladder = static_cast<int>(tTopo->module(detid))-1;
-	    module = static_cast<int>(tTopo->tobRod(detid))-1+limits[layer-5][type-1];
-	  }
-	}
-	else if ( detid.subdetId()==StripSubdetector::TID )
-	{	
-	  layer  = 10+static_cast<int>(tTopo->tidWheel(detid))+abs(2-static_cast<int>(tTopo->side(detid)))*7;
-	  ladder = static_cast<int>(tTopo->tidRing(detid))-1;
-	  module = static_cast<int>(tTopo->module(detid))-1;
-	  type   = 0;
-	}
+      	  if (type<3)
+      	  {
+      	    ladder = static_cast<int>(tTopo->module(detid))-1;
+      	    module = static_cast<int>(tTopo->tobRod(detid))-1+limits[layer-5][type-1];
+      	  }
+      	}
+      	else if ( detid.subdetId()==StripSubdetector::TID )
+      	{	
+      	  layer  = 10+static_cast<int>(tTopo->tidWheel(detid))+abs(2-static_cast<int>(tTopo->side(detid)))*7;
+      	  ladder = static_cast<int>(tTopo->tidRing(detid))-1;
+      	  module = static_cast<int>(tTopo->module(detid)) -1;
+      	  type   = 0;
+      	}
 
-	m_stub_layer->push_back(layer);
-	m_stub_ladder->push_back(ladder);
-	m_stub_module->push_back(module);
-	m_stub_type->push_back(type);
-	m_stub_rank->push_back(0);
+      	m_stub_layer ->push_back(layer);
+      	m_stub_ladder->push_back(ladder);
+      	m_stub_module->push_back(module);
+      	m_stub_type  ->push_back(type);
+      	m_stub_rank  ->push_back(0);
 
-	if ( genuineStub )
-	{
-	  edm::Ptr< TrackingParticle > tpPtr = MCTruthTTStubHandle->findTrackingParticlePtr( tempStubPtr );
-	  
-	  m_stub_pxGEN->push_back(tpPtr->p4().px());
-	  m_stub_pyGEN->push_back(tpPtr->p4().py());
-	  m_stub_etaGEN->push_back(tpPtr->momentum().eta());
-	  m_stub_pdg->push_back(tpPtr->pdgId());
-	  m_stub_pid->push_back(0);
-	  m_stub_X0->push_back(tpPtr->vertex().x());
-	  m_stub_Y0->push_back(tpPtr->vertex().y());
-	  m_stub_Z0->push_back(tpPtr->vertex().z());
-	  m_stub_PHI0->push_back(tpPtr->momentum().phi());
-	  if (MCinfo) m_stub_tp->push_back(mc->getMatchingTP(tpPtr->vertex().x(),tpPtr->vertex().y(),tpPtr->vertex().z(),
-							     tpPtr->p4().px(),tpPtr->p4().py(),tpPtr->p4().pz()));
-	}
-	else
-	{
-	  m_stub_pxGEN->push_back(0);
-	  m_stub_pyGEN->push_back(0);
-	  m_stub_etaGEN->push_back(0);
-	  m_stub_X0->push_back(0);
-	  m_stub_Y0->push_back(0);
-	  m_stub_Z0->push_back(0);
-	  m_stub_PHI0->push_back(0);
-	  m_stub_pdg->push_back(0);
-	  m_stub_pid->push_back(0);
-	  m_stub_tp->push_back(-1);
-	}
+      	if ( genuineStub )
+      	{
+      	  edm::Ptr< TrackingParticle > tpPtr = MCTruthTTStubHandle->findTrackingParticlePtr( tempStubPtr );
+      	  
+      	  m_stub_pxGEN ->push_back(tpPtr->p4().px());
+      	  m_stub_pyGEN ->push_back(tpPtr->p4().py());
+      	  m_stub_etaGEN->push_back(tpPtr->momentum().eta());
+      	  m_stub_pdg   ->push_back(tpPtr->pdgId());
+      	  m_stub_pid   ->push_back(0);
+      	  m_stub_X0    ->push_back(tpPtr->vertex().x());
+      	  m_stub_Y0    ->push_back(tpPtr->vertex().y());
+      	  m_stub_Z0    ->push_back(tpPtr->vertex().z());
+      	  m_stub_PHI0  ->push_back(tpPtr->momentum().phi());
+      	  
+          if (MCinfo) m_stub_tp->push_back(mc->getMatchingTP(tpPtr->vertex().x(), tpPtr->vertex().y(), tpPtr->vertex().z(), 
+                                                             tpPtr->p4().px(),    tpPtr->p4().py(),    tpPtr->p4().pz()
+                                                             )
+                                          );
+      	}
+      	else
+      	{
+      	  m_stub_pxGEN ->push_back(0);
+      	  m_stub_pyGEN ->push_back(0);
+      	  m_stub_etaGEN->push_back(0);
+      	  m_stub_X0    ->push_back(0);
+      	  m_stub_Y0    ->push_back(0);
+      	  m_stub_Z0    ->push_back(0);
+      	  m_stub_PHI0  ->push_back(0);
+      	  m_stub_pdg   ->push_back(0);
+      	  m_stub_pid   ->push_back(0);
+      	  m_stub_tp    ->push_back(-1);
+      	}
       } /// End of loop over L1TkStubs
     } 
   } /// End of if ( PixelDigiL1TkStubHandle->size() > 0 ) 
@@ -657,62 +653,62 @@ void StubExtractor::reset()
   m_clus = 0;
   m_stub = 0;
 
-  m_clus_x->clear(); 
-  m_clus_y->clear(); 
-  m_clus_z->clear(); 
-  m_clus_e->clear(); 
-  m_clus_layer->clear(); 
-  m_clus_module->clear();
-  m_clus_ladder->clear();
-  m_clus_seg->clear();   
-  m_clus_type->clear(); 
-  m_clus_strip->clear(); 
-  m_clus_sat->clear();   
+  m_clus_x      ->clear(); 
+  m_clus_y      ->clear(); 
+  m_clus_z      ->clear(); 
+  m_clus_e      ->clear(); 
+  m_clus_layer  ->clear(); 
+  m_clus_module ->clear();
+  m_clus_ladder ->clear();
+  m_clus_seg    ->clear();   
+  m_clus_type   ->clear(); 
+  m_clus_strip  ->clear(); 
+  m_clus_sat    ->clear();   
   m_clus_nstrips->clear();
-  m_clus_used->clear();   
+  m_clus_used   ->clear();   
   m_clus_matched->clear();
-  m_clus_PS->clear();
-  m_clus_nrows->clear();
-  m_clus_bot->clear();
-  m_clus_pid->clear();
-  m_clus_pdgID->clear();
-  m_clus_ptGEN->clear();
-  m_clus_pix->clear(); 
-  m_clus_tp->clear(); 
+  m_clus_PS     ->clear();
+  m_clus_nrows  ->clear();
+  m_clus_bot    ->clear();
+  m_clus_pid    ->clear();
+  m_clus_pdgID  ->clear();
+  m_clus_ptGEN  ->clear();
+  m_clus_pix    ->clear(); 
+  m_clus_tp     ->clear(); 
 
-  m_stub_X0->clear();     
-  m_stub_Y0->clear();     
-  m_stub_Z0->clear();     
-  m_stub_PHI0->clear();     
-  m_stub_tp->clear();     
-  m_stub_pt->clear();     
-  m_stub_ptMC->clear();   
-  m_stub_pxGEN->clear();  
-  m_stub_pyGEN->clear();  
-  m_stub_etaGEN->clear();  
-  m_stub_layer->clear();  
-  m_stub_module->clear(); 
-  m_stub_ladder->clear(); 
-  m_stub_seg->clear();  
-  m_stub_type->clear();
-  m_stub_chip->clear();   
-  m_stub_strip->clear(); 
-  m_stub_detid->clear(); 
-  m_stub_x->clear(); 
-  m_stub_y->clear(); 
-  m_stub_z->clear(); 
-  m_stub_clust1->clear(); 
-  m_stub_clust2->clear(); 
-  m_stub_cw1->clear(); 
-  m_stub_cw2->clear(); 
-  m_stub_deltas->clear(); 
-  m_stub_cor->clear(); 
+  m_stub_X0     ->clear();     
+  m_stub_Y0     ->clear();     
+  m_stub_Z0     ->clear();     
+  m_stub_PHI0   ->clear();     
+  m_stub_tp     ->clear();     
+  m_stub_pt     ->clear();     
+  m_stub_ptMC   ->clear();   
+  m_stub_pxGEN  ->clear();  
+  m_stub_pyGEN  ->clear();  
+  m_stub_etaGEN ->clear();  
+  m_stub_layer  ->clear();  
+  m_stub_module ->clear(); 
+  m_stub_ladder ->clear(); 
+  m_stub_seg    ->clear();  
+  m_stub_type   ->clear();
+  m_stub_chip   ->clear();   
+  m_stub_strip  ->clear(); 
+  m_stub_detid  ->clear(); 
+  m_stub_x      ->clear(); 
+  m_stub_y      ->clear(); 
+  m_stub_z      ->clear(); 
+  m_stub_clust1 ->clear(); 
+  m_stub_clust2 ->clear(); 
+  m_stub_cw1    ->clear(); 
+  m_stub_cw2    ->clear(); 
+  m_stub_deltas ->clear(); 
+  m_stub_cor    ->clear(); 
   m_stub_deltasf->clear(); 
   m_stub_deltash->clear(); 
-  m_stub_corf->clear();
-  m_stub_pdg->clear();
-  m_stub_pid->clear();
-  m_stub_rank->clear(); 
+  m_stub_corf   ->clear();
+  m_stub_pdg    ->clear();
+  m_stub_pid    ->clear();
+  m_stub_rank   ->clear(); 
 
 }
 
@@ -759,7 +755,7 @@ int  StubExtractor::getClust2Idx(int idx1, float dist)
   for (int i=0;i<m_clus;++i) // Loop over clusters
   { 
     if (i==idx1) continue;
-    if (m_clus_layer->at(i)!=m_clus_layer->at(idx1)) continue;
+    if (m_clus_layer->at(i) !=m_clus_layer->at(idx1))  continue;
     if (m_clus_ladder->at(i)!=m_clus_ladder->at(idx1)) continue;
     if (m_clus_module->at(i)!=m_clus_module->at(idx1)) continue;
 

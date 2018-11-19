@@ -47,12 +47,12 @@ void PlotAcc(TString sourcefile, TString outputname, int pdid=11, int nhits=0, i
   gROOT->SetBatch();
   gErrorIgnoreLevel = kError;
   SetPlotStyle();
-
-  TString srcDIR  = "RootFiles/";
-  TString subDIR  = "RootFiles/PlotFiles/";
-  TString plotDIR = "Plots/"; 
+  
+  TString srcDIR  = "RootFiles/20181102/"; 
+  TString subDIR  = "RootFiles/20181102/";
+  TString plotDIR = "Plots/20181102/"; 
   TString plotPRE = "detAcc_";
-
+  
   // Read in File
   TChain *FullI = new TChain("FullInfo");
   FullI->Add(srcDIR+sourcefile+".root"); 

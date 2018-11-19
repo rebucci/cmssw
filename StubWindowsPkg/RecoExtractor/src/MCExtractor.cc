@@ -4,12 +4,24 @@
 // Tokens
 MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
 												 edm::EDGetTokenT< TrackingParticleCollection  > ttoken, 
-                         bool doTree) {
+                         bool doTree,
+                         bool TP_hitTracker,
+                         double TP_minPt,
+                         double TP_maxEta,
+                         double TP_maxR
+                        ) 
+{
   // Set everything to 0
   m_OK = false;
   
   m_gtoken = gtoken;
   m_ttoken = ttoken;
+  minpt    = TP_minPt;
+  maxeta   = TP_maxEta;
+  maxr     = TP_maxR;
+
+  if (TP_hitTracker) needhit = true;
+  else               needhit = false;
 
   m_gen_x       = new std::vector<float>;
   m_gen_y       = new std::vector<float>;
@@ -25,6 +37,7 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
   m_part_px     = new std::vector<float>; 
   m_part_py     = new std::vector<float>; 
   m_part_pz     = new std::vector<float>;	
+  m_part_pt     = new std::vector<float>;
   m_part_eta    = new std::vector<float>;   
   m_part_phi    = new std::vector<float>; 	
   m_part_x      = new std::vector<float>;   
@@ -32,6 +45,7 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
   m_part_z      = new std::vector<float>;   
   m_part_used   = new std::vector<int>;  
   m_part_stId   = new std::vector< std::vector<int> >;  
+  m_hits        = new std::vector<int>;
 
   MCExtractor::reset();
 
@@ -64,6 +78,7 @@ MCExtractor::MCExtractor(TFile *a_file) {
   m_part_px     = new std::vector<float>; 
   m_part_py     = new std::vector<float>; 
   m_part_pz     = new std::vector<float>;	
+  m_part_pt     = new std::vector<float>;
   m_part_eta    = new std::vector<float>;   
   m_part_phi    = new std::vector<float>; 	
   m_part_x      = new std::vector<float>;   
@@ -72,6 +87,7 @@ MCExtractor::MCExtractor(TFile *a_file) {
   m_part_used   = new std::vector<int>;  
   m_part_stId   = new std::vector< std::vector<int> >;  
   m_part_evtId  = new std::vector<int>;
+  m_hits        = new std::vector<int>;
 
   MCExtractor::reset();
 
@@ -104,12 +120,14 @@ MCExtractor::MCExtractor(TFile *a_file) {
   m_tree_retrieved->SetBranchAddress("subpart_px",     &m_part_px);
   m_tree_retrieved->SetBranchAddress("subpart_py",     &m_part_py);
   m_tree_retrieved->SetBranchAddress("subpart_pz",     &m_part_pz);
+  m_tree_retrieved->SetBranchAddress("subpart_pt",     &m_part_pt);
   m_tree_retrieved->SetBranchAddress("subpart_eta",    &m_part_eta);
   m_tree_retrieved->SetBranchAddress("subpart_phi",    &m_part_phi);
   m_tree_retrieved->SetBranchAddress("subpart_x",      &m_part_x);
   m_tree_retrieved->SetBranchAddress("subpart_y",      &m_part_y);
   m_tree_retrieved->SetBranchAddress("subpart_z",      &m_part_z);
   m_tree_retrieved->SetBranchAddress("subpart_stId",   &m_part_stId);
+  m_tree_retrieved->SetBranchAddress("subpart_hits",   &m_hits);
 }
 
 
@@ -120,16 +138,14 @@ void MCExtractor::init(const edm::EventSetup *setup) {
 
   // Here we build the whole detector
   // We need that to retrieve all the hits
-
   setup->get<TrackerDigiGeometryRecord>().get(theTrackerGeometry);
 
 }
 
 // -----------------------------------------------------------------------------------------------------------
 // Method filling the main event
-void MCExtractor::writeInfo(const edm::Event *event)  {
+void MCExtractor::writeInfo(const edm::Event *event)  { //possibly add double TP_minPt_ here?
   using namespace reco;
-
   // Reset Tree Variables :
   MCExtractor::reset();
 
@@ -161,18 +177,41 @@ void MCExtractor::writeInfo(const edm::Event *event)  {
     TrackingParticleRef tpr(TPCollection, tpIt);
     TrackingParticle* tp=const_cast<TrackingParticle*>(tpr.get());
     
-    // Fill tracking particle variables
-    m_part_pdgId->push_back(tp->pdgId());                         // Particle type
-    m_part_px   ->push_back(tp->momentum().x());                  // >>>
-    m_part_py   ->push_back(tp->momentum().y());                  // Momentum
-    m_part_pz   ->push_back(tp->momentum().z());                  // <<<
-    m_part_eta  ->push_back(tp->momentum().eta());                // Eta
-    m_part_phi  ->push_back(tp->momentum().phi());                // Phi
-    m_part_x    ->push_back(tp->parentVertex()->position().x());  // >>>
-    m_part_y    ->push_back(tp->parentVertex()->position().y());  // Vertex of gen
-    m_part_z    ->push_back(tp->parentVertex()->position().z());  // <<<
-    m_part_evtId->push_back(tp->eventId().rawId());  
+    // Temporarily define tracking particle variables
+    float tmp_part_pdgId = tp->pdgId();                         // Particle type
+    float tmp_part_px    = tp->momentum().x();                  // >>>
+    float tmp_part_py    = tp->momentum().y();                  // Momentum
+    float tmp_part_pz    = tp->momentum().z();                  // <<<
+    float tmp_part_eta   = tp->momentum().eta();                // Eta
+    float tmp_part_phi   = tp->momentum().phi();                // Phi
+    float tmp_part_x     = tp->parentVertex()->position().x();  // >>>
+    float tmp_part_y     = tp->parentVertex()->position().y();  // Vertex of gen
+    float tmp_part_z     = tp->parentVertex()->position().z();  // <<<
+    float tmp_part_evtId = tp->eventId().rawId();  
+    float tmp_hits       = tp->numberOfTrackerHits();           // Hit in Tracker?
+    float tmp_part_pt    = sqrt(tmp_part_px*tmp_part_px+tmp_part_py*tmp_part_py);
 
+    // Requirements for Tracking Particles
+    if (needhit) { 
+      if (tmp_hits == 0)             continue; // have hit in the tracker
+    }
+    if (     tmp_part_pt   < minpt)  continue; // have pT above threshold
+    if (fabs(tmp_part_eta) > maxeta) continue; // have eta above threshold
+
+
+    // Push Backs
+    m_part_pdgId->push_back(tmp_part_pdgId);
+    m_part_px   ->push_back(tmp_part_px);
+    m_part_py   ->push_back(tmp_part_py);
+    m_part_pz   ->push_back(tmp_part_pz);
+    m_part_pt   ->push_back(tmp_part_pt);
+    m_part_eta  ->push_back(tmp_part_eta);
+    m_part_phi  ->push_back(tmp_part_phi);
+    m_part_x    ->push_back(tmp_part_x);
+    m_part_y    ->push_back(tmp_part_y);
+    m_part_z    ->push_back(tmp_part_z);  
+    m_part_evtId->push_back(tmp_part_evtId);  
+    m_hits      ->push_back(tmp_hits);        
 
     the_ids.clear();
 
@@ -242,6 +281,7 @@ void MCExtractor::reset() {
   m_part_px   ->clear(); 
   m_part_py   ->clear(); 
   m_part_pz   ->clear(); 
+  m_part_pt   ->clear();
   m_part_eta  ->clear();
   m_part_phi  ->clear();
   m_part_pdgId->clear();  
@@ -250,7 +290,8 @@ void MCExtractor::reset() {
   m_part_x    ->clear();      
   m_part_y    ->clear();       
   m_part_z    ->clear();       
-  m_part_used ->clear();    
+  m_part_used ->clear();   
+  m_hits      ->clear(); 
 }    
 
 // -----------------------------------------------------------------------------------------------------------
@@ -262,7 +303,7 @@ void MCExtractor::fillTree() {
 // -----------------------------------------------------------------------------------------------------------
 // Fill Size
 void MCExtractor::fillSize(int size) {
-  m_gen_n=size;
+  m_gen_n = size;
 }
 
 // -----------------------------------------------------------------------------------------------------------
@@ -294,21 +335,24 @@ void MCExtractor::createTree() {
   m_tree_new->Branch("subpart_px",    &m_part_px);
   m_tree_new->Branch("subpart_py",    &m_part_py);
   m_tree_new->Branch("subpart_pz",    &m_part_pz);
+  m_tree_new->Branch("subpart_pt",    &m_part_pt);
   m_tree_new->Branch("subpart_eta",   &m_part_eta);
   m_tree_new->Branch("subpart_phi",   &m_part_phi);
   m_tree_new->Branch("subpart_x",     &m_part_x);
   m_tree_new->Branch("subpart_y",     &m_part_y);
   m_tree_new->Branch("subpart_z",     &m_part_z);
+  m_tree_new->Branch("subpart_hits",  &m_hits);
 } 
 
 // -----------------------------------------------------------------------------------------------------------
 // Tracking Particles
-void MCExtractor::clearTP(float ptmin,float rmax) {
+void MCExtractor::clearTP() {
   int n_TP= getNTP();
 
   // Loop over tracking particles
   for (int i=0;i<n_TP;++i) {
-    if (getTP_r(i)>rmax || getTP_pt(i)<ptmin || fabs(getTP_eta(i))>5.5) {
+    // if (getTP_r(i)>maxr || getTP_pt(i)<minpt || fabs(getTP_eta(i))>maxeta) { //OLD
+    if (getTP_r(i)>maxr || m_part_pt->at(i)<minpt || fabs(m_part_eta->at(i))>maxeta) {
       m_part_used->push_back(1);
     }
     else m_part_used->push_back(0);
@@ -317,8 +361,7 @@ void MCExtractor::clearTP(float ptmin,float rmax) {
 
 // -----------------------------------------------------------------------------------------------------------
 // Matched TPs
-int MCExtractor::getMatchingTP(float x,float y, float z,
-			       float px,float py, float pz) {
+int MCExtractor::getMatchingTP(float x,float y, float z, float px,float py, float pz) {
   int idx = -1;
 
   // Loop over TPs
@@ -338,8 +381,7 @@ int MCExtractor::getMatchingTP(float x,float y, float z,
 
 // -----------------------------------------------------------------------------------------------------------
 // Find matched TPs
-void MCExtractor::findMatchingTP(const int &stID,const int &evtID,
-				 int &itp, bool verb) {
+void MCExtractor::findMatchingTP(const int &stID,const int &evtID, int &itp, bool verb) {
   if (verb)
     std::cout << " Into new matching " << std::endl;
 

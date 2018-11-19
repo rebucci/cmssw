@@ -18,26 +18,30 @@ RecoExtractor::RecoExtractor(const edm::ParameterSet& config) :
   fullinfo_      (config.getUntrackedParameter<bool>("fullInfo",   false)),
   nevts_         (config.getUntrackedParameter<int>("n_events",    10000)),
   skip_          (config.getUntrackedParameter<int>("skip_events", 0)),
+  TP_hitTracker_ (config.getUntrackedParameter<bool>("TP_hitTracker", false)),
+  TP_minPt_      (config.getUntrackedParameter<double>("TP_minPt",  0.0)),
+  TP_maxEta_     (config.getUntrackedParameter<double>("TP_maxEta", 5.5)),
+  TP_maxR_       (config.getUntrackedParameter<double>("TP_maxR",   10000000.0)),
   outFilename_   (config.getParameter<std::string>("extractedRootFile")),
   inFilename_    (config.getParameter<std::string>("inputRootFile")),
   m_settings_    (config.getUntrackedParameter<std::vector<std::string> >("analysisSettings"))
   {
     clustersToken_  = consumes< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_  > > >(config.getParameter< edm::InputTag >( "TTClusters" ));
-    stubsToken_     = consumes< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_  > > >(config.getParameter< edm::InputTag >( "TTStubs" ));
-    clustersTToken_ = consumes< TTClusterAssociationMap< Ref_Phase2TrackerDigi_  > >(config.getParameter< edm::InputTag >( "TTClustersAssociators" ));
-    stubsTToken_    = consumes< TTStubAssociationMap< Ref_Phase2TrackerDigi_  > >(config.getParameter< edm::InputTag >( "TTStubsAssociators" ));
+    stubsToken_     = consumes< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_     > > >(config.getParameter< edm::InputTag >( "TTStubs" ));
+    clustersTToken_ = consumes< TTClusterAssociationMap< Ref_Phase2TrackerDigi_            > >(config.getParameter< edm::InputTag >( "TTClustersAssociators" ));
+    stubsTToken_    = consumes< TTStubAssociationMap< Ref_Phase2TrackerDigi_               > >(config.getParameter< edm::InputTag >( "TTStubsAssociators" ));
 
     gpToken_       = consumes< reco::GenParticleCollection >(config.getParameter< edm::InputTag >( "GenParticles" )); 
-    tpToken_       = consumes< TrackingParticleCollection >(config.getParameter< edm::InputTag >( "TrkParticles" )); 
+    tpToken_       = consumes< TrackingParticleCollection  >(config.getParameter< edm::InputTag >( "TrkParticles" )); 
     pixToken_      = consumes< edm::DetSetVector< Phase2TrackerDigi > >(config.getParameter< edm::InputTag >( "digi_tag" )); 
-    pixslToken_    = consumes< edm::DetSetVector< PixelDigiSimLink > >(config.getParameter< edm::InputTag >( "digisimlink_tag" )); 
+    pixslToken_    = consumes< edm::DetSetVector< PixelDigiSimLink  > >(config.getParameter< edm::InputTag >( "digisimlink_tag" )); 
     puToken_       = consumes< std::vector<PileupSummaryInfo> >(config.getParameter< edm::InputTag >( "PUinfo_tag" )); 
 
     trkToken_      = consumes< std::vector< TTTrack< Ref_Phase2TrackerDigi_ > > >(config.getParameter< edm::InputTag >( "L1track_tag" )); 
 
     tpToken2_      = consumes< std::vector< TrackingParticle > >(config.getParameter< edm::InputTag >( "TrkParticles" ));  
-    tvToken_       = consumes< std::vector< TrackingVertex > >(config.getParameter< edm::InputTag >( "TrkParticles" ));  
-    simtToken_     = consumes< edm::SimTrackContainer >(config.getParameter< edm::InputTag >( "SimHits" )); 
+    tvToken_       = consumes< std::vector< TrackingVertex   > >(config.getParameter< edm::InputTag >( "TrkParticles" ));  
+    simtToken_     = consumes< edm::SimTrackContainer  >(config.getParameter< edm::InputTag >( "SimHits" )); 
     simvToken_     = consumes< edm::SimVertexContainer >(config.getParameter< edm::InputTag >( "SimHits" ));   
 
     // We parse the analysis settings
@@ -60,7 +64,7 @@ void RecoExtractor::beginJob()
   if (do_BANK_ && do_STUB_) 
     m_BK = new StubTranslator();
 
-  skip_=0; // Temporary hack, process files separately..
+  skip_= 0; // Temporary hack, process files separately..
 
   nevent_tot = skip_;
 
@@ -105,7 +109,7 @@ void RecoExtractor::beginRun(Run const& run, EventSetup const& setup)
 void RecoExtractor::analyze(const edm::Event& event, const edm::EventSetup& setup)
 {
   using namespace reco;
-  
+
   if (do_fill_) 
   {
     RecoExtractor::fillInfo(&event); // Fill the ROOTuple
@@ -118,8 +122,9 @@ void RecoExtractor::analyze(const edm::Event& event, const edm::EventSetup& setu
  
 // -----------------------------------------------------------------------------------------------------------
 // End Run
-void RecoExtractor::endRun(Run const&, EventSetup const&) {
-  std::cout << "Total # of events for this run   = "<< nevent  << std::endl;
+void RecoExtractor::endRun(Run const&, EventSetup const&) 
+{
+  std::cout << "Total # of events for this run   = "<< nevent << std::endl;
 }
 
 // -----------------------------------------------------------------------------------------------------------
@@ -168,7 +173,7 @@ void RecoExtractor::getInfo(int ievent)
 void RecoExtractor::initialize() 
 {
   m_outfile  = new TFile(outFilename_.c_str(),"RECREATE");
-  m_MC       = new MCExtractor(gpToken_,tpToken_,do_MC_);
+  m_MC       = new MCExtractor(gpToken_,tpToken_,do_MC_,TP_hitTracker_,TP_minPt_,TP_maxEta_,TP_maxR_);
   m_STUB     = new StubExtractor(clustersToken_,stubsToken_,clustersTToken_,stubsTToken_,tpToken2_,tvToken_,simtToken_,simvToken_,do_STUB_);
   m_L1TRK    = new L1TrackExtractor(stubsToken_,trkToken_,do_L1TRK_);
   m_PIX      = new PixelExtractor(pixToken_,pixslToken_,puToken_,do_PIX_,do_MATCH_);

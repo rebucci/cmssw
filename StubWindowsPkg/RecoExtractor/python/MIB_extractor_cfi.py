@@ -1,3 +1,5 @@
+# MIB_extractor_cfi.py
+
 ############################################################
 # Define the MIB Extraction Process
 ############################################################
@@ -19,6 +21,10 @@ MIBextraction = cms.EDAnalyzer("RecoExtractor",
     GenParticles     = cms.InputTag("genParticles", ""),
     TrkParticles     = cms.InputTag("mix" , "MergedTrackTruth"),
     SimHits          = cms.InputTag("g4SimHits"),
+    TP_hitTracker    = cms.untracked.bool(False),  # only save TPs that have hits in the tracker
+    TP_minPt         = cms.untracked.double(0.0),        # default at zero
+    TP_maxEta        = cms.untracked.double(5.5),        # default taken from original StubExtractor.cc call of clearTP
+    TP_maxR          = cms.untracked.double(10000000.0), # default taken from original StubExtractor.cc call of clearTP
 
     ## Stubs
     doSTUB                = cms.untracked.bool(False),     # Extract the official STUB information (TkStub tree)
@@ -34,12 +40,7 @@ MIBextraction = cms.EDAnalyzer("RecoExtractor",
 
     ## L1 Tracks
     doL1TRK          = cms.untracked.bool(False),          # Extract the official L1track information
-   #L1pattern_tag    = cms.InputTag( "MergePROutput", "AML1Patterns"),
-   #L1tc_tag         = cms.InputTag( "MergeTCOutput", "AML1TCs"),
-   #L1track_tag      = cms.InputTag( "MergeTCOutput", "AML1TCs"), 
-   #L1track_tag      = cms.InputTag( "MergeFITOutput","AML1Tracks"), 
-   #L1track_tag	     = cms.InputTag( "TTTracksFromPhase2TrackerDigis", "Level1TTTracks"),
-   L1track_tag	     = cms.InputTag( "TTTracksFromTrackletEmulation", "Level1TTTracks"), 
+    L1track_tag	     = cms.InputTag( "TTTracksFromTrackletEmulation", "Level1TTTracks"), 
                                  
     ## Pixel information                              
     doPixel          = cms.untracked.bool(False),          # Extract the Tracker information (Pixel tree)

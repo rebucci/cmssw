@@ -77,14 +77,15 @@ class StubExtractor
 
 
   StubExtractor(edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > ctoken,
-                edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > stoken, 
+                edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_    > > > stoken, 
                 edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > cttoken, 
-                edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > sttoken, 
+                edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_    > > sttoken, 
                 edm::EDGetTokenT< std::vector< TrackingParticle > > tptoken, 
-                edm::EDGetTokenT< std::vector< TrackingVertex > > tvtoken, 
-                edm::EDGetTokenT< edm::SimTrackContainer > simttoken, 
+                edm::EDGetTokenT< std::vector< TrackingVertex   > > tvtoken, 
+                edm::EDGetTokenT< edm::SimTrackContainer  > simttoken, 
                 edm::EDGetTokenT< edm::SimVertexContainer > simvtoken, 
-                bool doTree);
+                bool doTree
+              );
 
   StubExtractor(TFile *a_file);
   ~StubExtractor();
@@ -110,10 +111,9 @@ class StubExtractor
 
   int getNDigis() {return m_clus;}
 
-  float getStub_ptGen(int i) {return sqrt(m_stub_pxGEN->at(i)*m_stub_pxGEN->at(i)
-					 +m_stub_pyGEN->at(i)*m_stub_pyGEN->at(i));}
+  float getStub_ptGen(int i)  {return sqrt(m_stub_pxGEN->at(i)*m_stub_pxGEN->at(i)+m_stub_pyGEN->at(i)*m_stub_pyGEN->at(i));}
   float getStub_etaGen(int i) {return m_stub_etaGEN->at(i);}
-  float getStub_strip(int i) {return m_stub_strip->at(i);}
+  float getStub_strip(int i)  {return m_stub_strip->at(i);}
   float getStub_x(int i) {return m_stub_x->at(i);}
   float getStub_y(int i) {return m_stub_y->at(i);}
   float getStub_z(int i) {return m_stub_z->at(i);}
@@ -122,30 +122,29 @@ class StubExtractor
   float getStub_Y0(int i) {return m_stub_Y0->at(i);}
   float getStub_Z0(int i) {return m_stub_Z0->at(i);}
   float getStub_PHI0(int i) {return m_stub_PHI0->at(i);}
-  float getStub_pdg(int i) {return m_stub_pdg->at(i);}
+  float getStub_pdg(int i)  {return m_stub_pdg->at(i);}
 
-  int getStub_ID(int i) {return 1000000*m_stub_layer->at(i)+10000*m_stub_ladder->at(i)
-      +100*m_stub_module->at(i)+m_stub_seg->at(i);}
+  int getStub_ID(int i)    {return 1000000*m_stub_layer->at(i)+10000*m_stub_ladder->at(i)+100*m_stub_module->at(i)+m_stub_seg->at(i);}
   int getStub_DETID(int i) {return m_stub_detid->at(i);}
-  int getStub_tp(int i) {return m_stub_tp->at(i);}
-  int getNStub() {return m_stub;}
+  int getStub_tp(int i)    {return m_stub_tp->at(i);}
+  int getNStub()           {return m_stub;}
 
  private:
   
   edm::EDGetTokenT< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > m_ctoken;
-  edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > m_cttoken;
+  edm::EDGetTokenT< TTClusterAssociationMap< Ref_Phase2TrackerDigi_           > > m_cttoken;
 
   edm::EDGetTokenT< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > m_stoken;
-  edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > > m_sttoken;
+  edm::EDGetTokenT< TTStubAssociationMap< Ref_Phase2TrackerDigi_           > > m_sttoken;
 
   edm::EDGetTokenT< std::vector< TrackingParticle > > m_tptoken;
-  edm::EDGetTokenT< std::vector< TrackingVertex > > m_tvtoken;
+  edm::EDGetTokenT< std::vector< TrackingVertex   > > m_tvtoken;
 
-  edm::EDGetTokenT< edm::SimTrackContainer > m_simttoken;
+  edm::EDGetTokenT< edm::SimTrackContainer  > m_simttoken;
   edm::EDGetTokenT< edm::SimVertexContainer > m_simvtoken;
 
-  edm::ESHandle<TrackerTopology> tTopoHandle;
-  edm::ESHandle<TrackerGeometry> tGeomHandle;
+  edm::ESHandle< TrackerTopology > tTopoHandle;
+  edm::ESHandle< TrackerGeometry > tGeomHandle;
 
   int n_tot_evt;
   int m_nstubs;
@@ -161,10 +160,10 @@ class StubExtractor
   float m_thresh;
 
   TTree* m_tree;
-  edm::Handle< edm::SimTrackContainer >  SimTrackHandle;
+  edm::Handle< edm::SimTrackContainer  > SimTrackHandle;
   edm::Handle< edm::SimVertexContainer > SimVtxHandle;
 
-  edm::Handle<TrackingParticleCollection>  TPCollection ;
+  edm::Handle< TrackingParticleCollection >  TPCollection ;
   edm::Handle< edm::DetSetVector<PixelDigiSimLink> > pDigiLinkColl;
   edm::DetSet<PixelDigiSimLink> pDigiLinks;
 
@@ -181,15 +180,15 @@ class StubExtractor
 
   /// Geometry handles etc
   edm::Handle< edmNew::DetSetVector< TTCluster< Ref_Phase2TrackerDigi_ > > > PixelDigiL1TkClusterHandle;
-  edm::Handle< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > > > PixelDigiL1TkStubHandle;
+  edm::Handle< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_    > > > PixelDigiL1TkStubHandle;
 
   edm::Handle< TTClusterAssociationMap< Ref_Phase2TrackerDigi_ > > MCTruthTTClusterHandle;
-  edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_ > >    MCTruthTTStubHandle;
+  edm::Handle< TTStubAssociationMap< Ref_Phase2TrackerDigi_    > > MCTruthTTStubHandle;
 
   edm::Handle< std::vector< TrackingParticle > > TrackingParticleHandle;
-  edm::Handle< std::vector< TrackingVertex > > TrackingVertexHandle;
+  edm::Handle< std::vector< TrackingVertex   > > TrackingVertexHandle;
 
-  std::vector<int>                 *m_clus_used;   
+  std::vector<int> *m_clus_used;   
 
   int m_clus;
 

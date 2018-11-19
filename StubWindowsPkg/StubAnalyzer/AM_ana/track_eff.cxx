@@ -858,42 +858,31 @@ void track_eff::do_test(int nevt) {
 /////////////////////////////////////////////////////////////////////////////////
 
 
-void track_eff::initTuple(std::string test,std::string out) {
-  m_PIX    = new TChain("Pixels");    // Tree containing the Digi info
-  m_L1TT   = new TChain("TkStubs");   // Tree containing the Stub info 
-  m_PATT   = new TChain("L1tracks");  // Tree containing the L1Track reco info
+void track_eff::initTuple(std::string in,std::string out) {
 
-  // Input data file 
+  // ----- Input File (filename) ----- //
+  m_L1TT = new TChain("TkStubs");
+  m_PIX  = new TChain("Pixels");
+  m_PATT = new TChain("L1tracks");
 
-  std::size_t found = test.find(".root");
+  // Input data file
+  std::size_t found = in.find(".root");
 
-  // Case 1, it's a root file
+  // Case 1: It's a root file
   if (found!=std::string::npos) {
-    m_L1TT->Add(test.c_str());
-    m_PIX->Add(test.c_str());
-    if (has_patt) m_PATT->Add(test.c_str());
+    m_L1TT ->Add(in.c_str());
+    m_PIX  ->Add(in.c_str());
+    if (has_patt) m_PATT ->Add(in.c_str());
   }
-  // This is a list provided into a text file
-  else {
-    std::string STRING;
-    std::ifstream in(test.c_str());
-    if (!in) {
-      std::cout << "Please provide a valid data filename list" << std::endl; 
-      return;
-    }    
   
-    while (!in.eof()) {
-      getline(in,STRING);
+  // Case 2: It's a directory
+  else {
+    TString inputDIR;
+    inputDIR = in.c_str();
 
-      found = STRING.find(".root");
-      if (found!=std::string::npos) {
-      	m_L1TT->Add(STRING.c_str());   
-      	m_PIX->Add(STRING.c_str());   
-      	if (has_patt) m_PATT->Add(STRING.c_str());   
-      }
-    }
-
-    in.close();
+    m_L1TT ->Add(inputDIR+"/*.root" );
+    m_PIX  ->Add(inputDIR+"/*.root" );
+    if (has_patt) m_PATT ->Add(inputDIR+"/*.root" );
   }
   
   pm_clus_layer  =&m_clus_layer;

@@ -73,9 +73,9 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   SetPlotStyle();
   SetColorTable();
  
-  TString srcDIR  = "RootFiles/"; 
-  TString subDIR  = "RootFiles/PlotFiles/";
-  TString plotDIR = "Plots/"; 
+  TString srcDIR  = "RootFiles/20181102/"; 
+  TString subDIR  = "RootFiles/20181102/";
+  TString plotDIR = "Plots/20181102/"; 
   TString plotPRE = "stubRates_";
 
   // Options

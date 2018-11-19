@@ -32,7 +32,7 @@ void rates::get_rates(bool fe) {
   for (int j=0;j<n_entries;++j) {
     L1TT->GetEntry(j);
     
-    if (j%100==0) cout << j << endl;
+    // if (j%100==0) cout << j << endl;
     
     if (m_clus == 0) continue; // No clusters, don't go further
     
@@ -218,35 +218,24 @@ void rates::initVars() {
 void rates::initTuple(std::string in,std::string out) {
   
   // ----- Input File (filename) ----- //
-  L1TT   = new TChain("TkStubs"); 
+  L1TT   = new TChain("TkStubs");
 
   // Input data file
   std::size_t found = in.find(".root");
 
-  // Case 1, it's a root file
+  // Case 1: It's a root file
   if (found!=std::string::npos) {
     L1TT->Add(in.c_str());
   }
-
-  // This is a list provided into a text file
-  else {
-    std::string STRING;
-    std::ifstream in2(in.c_str());
-    if (!in2) {
-      std::cout << "Please provide a valid data filename list" << std::endl;
-      return;
-    }
   
-    while (!in2.eof()) {
-      getline(in2,STRING);
+  // Case 2: It's a directory
+  else {
+    TString inputDIR;
+    inputDIR = in.c_str();
 
-      found = STRING.find(".root");
-      if (found!=std::string::npos) L1TT->Add(STRING.c_str());
-    }
-
-    in2.close();
+		L1TT->Add(inputDIR+"/*.root" );
   }
-
+  
   pm_clus_layer =&m_clus_layer;
   pm_clus_ladder=&m_clus_ladder;
   pm_clus_module=&m_clus_module;
