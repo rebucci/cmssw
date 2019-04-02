@@ -37,6 +37,7 @@ using namespace std;
 // filename : the name and directory of the input ROOT file containing the STUB information
 // outfile  : the name of the output ROOT file containing the rates 
 // ptype    : the pdg ID of the particle type you want to test 
+// nclust   : number of clusters required for a stub (1 or 2)
 //
 // Info about the code:
 //

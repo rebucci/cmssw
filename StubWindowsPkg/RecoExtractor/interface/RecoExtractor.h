@@ -20,16 +20,16 @@
 #include "SimTracker/TrackTriggerAssociation/interface/TTClusterAssociationMap.h"
 #include "SimTracker/TrackTriggerAssociation/interface/TTStubAssociationMap.h"
 
-#include "../interface/CoordsExtractor.h"
-#include "../interface/PixelExtractor.h"
-#include "../interface/StubExtractor.h"
-#include "../interface/L1TrackExtractor.h"
-#include "../interface/MCExtractor.h"
-#include "../interface/StubTranslator.h"
-#include "../interface/AnalysisSettings.h"
+#include "CoordsExtractor.h"
+#include "PixelExtractor.h"
+#include "StubExtractor.h"
+#include "L1TrackExtractor.h"
+#include "MCExtractor.h"
+#include "StubTranslator.h"
+#include "AnalysisSettings.h"
 
-#include "TFile.h"
-#include "TRFIOFile.h"
+#include <TFile.h>
+//#include <TRFIOFile.h>
 
 class RecoExtractor : public edm::EDAnalyzer{
  public:
@@ -38,7 +38,7 @@ class RecoExtractor : public edm::EDAnalyzer{
 
   /// Destructor
   virtual ~RecoExtractor(){ }
-   int nevent;
+  int nevent;
   int nevent_tot;
 
   /// Method called before the event loop

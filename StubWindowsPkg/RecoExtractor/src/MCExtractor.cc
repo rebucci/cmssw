@@ -59,8 +59,7 @@ MCExtractor::MCExtractor(edm::EDGetTokenT< reco::GenParticleCollection > gtoken,
 // -----------------------------------------------------------------------------------------------------------
 // Retrieval
 MCExtractor::MCExtractor(TFile *a_file) {
-  std::cout << "MCExtractor object is retrieved" << std::endl;
-
+ 
   // Tree definition
   m_OK = false;
 
@@ -135,7 +134,7 @@ MCExtractor::MCExtractor(TFile *a_file) {
 // Initialize
 void MCExtractor::init(const edm::EventSetup *setup) {
   // Initializations 
-
+  
   // Here we build the whole detector
   // We need that to retrieve all the hits
   setup->get<TrackerDigiGeometryRecord>().get(theTrackerGeometry);
@@ -146,6 +145,7 @@ void MCExtractor::init(const edm::EventSetup *setup) {
 // Method filling the main event
 void MCExtractor::writeInfo(const edm::Event *event)  { //possibly add double TP_minPt_ here?
   using namespace reco;
+  
   // Reset Tree Variables :
   MCExtractor::reset();
 
@@ -314,7 +314,8 @@ int  MCExtractor::getSize() {
 
 // -----------------------------------------------------------------------------------------------------------
 // Create Tree
-void MCExtractor::createTree() {  
+void MCExtractor::createTree() {
+ 
   m_tree_new = new TTree("MC","MC info");  
 
   m_tree_new->Branch("gen_n",   &m_gen_n);
@@ -347,6 +348,7 @@ void MCExtractor::createTree() {
 // -----------------------------------------------------------------------------------------------------------
 // Tracking Particles
 void MCExtractor::clearTP() {
+
   int n_TP= getNTP();
 
   // Loop over tracking particles
@@ -362,6 +364,7 @@ void MCExtractor::clearTP() {
 // -----------------------------------------------------------------------------------------------------------
 // Matched TPs
 int MCExtractor::getMatchingTP(float x,float y, float z, float px,float py, float pz) {
+
   int idx = -1;
 
   // Loop over TPs
@@ -382,6 +385,7 @@ int MCExtractor::getMatchingTP(float x,float y, float z, float px,float py, floa
 // -----------------------------------------------------------------------------------------------------------
 // Find matched TPs
 void MCExtractor::findMatchingTP(const int &stID,const int &evtID, int &itp, bool verb) {
+
   if (verb)
     std::cout << " Into new matching " << std::endl;
 

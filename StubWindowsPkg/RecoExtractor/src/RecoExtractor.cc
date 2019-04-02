@@ -55,7 +55,7 @@ RecoExtractor::RecoExtractor(const edm::ParameterSet& config) :
 void RecoExtractor::beginJob() 
 {
   // Initializations
-
+  
   // If do_fill is set to True, you extract the whole data, otherwise you start from a file already extracted (inFilename_)
   (do_fill_) 
     ? RecoExtractor::initialize()
@@ -75,7 +75,7 @@ void RecoExtractor::beginJob()
 void RecoExtractor::beginRun(Run const& run, EventSetup const& setup) 
 {
   nevent = 0;
-  
+
   if (do_fill_) // We are filling the ntuple, first init the geom stuff
   {
     if (do_COORDS_)   m_COORDS->init(&setup,use_flat_);
@@ -130,7 +130,7 @@ void RecoExtractor::endRun(Run const&, EventSetup const&)
 // -----------------------------------------------------------------------------------------------------------
 // End Job
 void RecoExtractor::endJob() {
-  
+
   std::cout << "Total # of events for this job   = "<< nevent_tot     << std::endl;
 
   if (do_fill_) 

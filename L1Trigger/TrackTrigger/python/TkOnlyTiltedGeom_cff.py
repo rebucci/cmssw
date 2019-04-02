@@ -31,10 +31,10 @@ trackerGeometry.applyAlignment = cms.bool(False)
 
 XMLIdealGeometryESSource = cms.ESSource("XMLIdealGeometryESSource",
     geomXMLFiles = cms.vstring(
-       'Geometry/CMSCommonData/data/materials.xml',
+        'Geometry/CMSCommonData/data/materials.xml',
         'Geometry/CMSCommonData/data/rotations.xml',
         'Geometry/CMSCommonData/data/extend/cmsextent.xml',
-        'Geometry/CMSCommonData/data/cms/2019/v1/cms.xml',
+        'Geometry/CMSCommonData/data/cms/2019/v1/cms.xml', #originally 2019
         'Geometry/CMSCommonData/data/cmsMother.xml',
         'Geometry/CMSCommonData/data/cmsTracker.xml',
         'Geometry/CMSCommonData/data/eta3/etaMax.xml',   

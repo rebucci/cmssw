@@ -6,7 +6,7 @@
 // Main constructor
 
 efficiencies::efficiencies(std::string filename, std::string outfile, int ptype) {
-  m_type = ptype;
+  m_type   = ptype;
 
   PTMAX=100.;       // changeable pT maximum
   MSV=PTMAX/100;    // momentum scale variable
@@ -55,7 +55,6 @@ void efficiencies::get_efficiencies() {
 
   int n_entries = L1TT->GetEntries();
   bool inTP;
-  bool m_dbg =false;
 
   std::vector<int> pix_tp;
   std::vector<int> pix_cl;
@@ -65,18 +64,18 @@ void efficiencies::get_efficiencies() {
   ///////////////////////////////////////////////////////////////////////
   // Loop over Events
   
-  // previously: for (int j=0;j<1000;++j)
   for (int j=0;j<n_entries;++j) {
-    efficiencies::reset();
 
+    efficiencies::reset();
+    
     PTGEN=0;
     D0GEN=0;
 
-    pix_i=-1;
-    clus_i=-1;
-    stub_i=-1;
+    pix_i   = -1;
+    clus_i  = -1;
+    stub_i  = -1;
 
-    if (j%10000==0) cout << j <<endl;
+    if (j%10000==0) cout << j <<endl; // counts out every 10,000th entry for reassurance that something is happening
 
     MC  ->GetEntry(j,1); // Get the MC info
     Pix ->GetEntry(j,1);
@@ -98,13 +97,10 @@ void efficiencies::get_efficiencies() {
     ///////////////////////////////////////////////////////////////////////
     // Loop over TPs
     
-    // previously: for (int k=0;k<1;++k) 
-    for (int k=0;k<m_part_n;++k) {
-      // cout << m_part_pdg->at(k) << endl;
+    for (int k=0;k<m_part_n;++k) {  
 
-      if (abs(m_part_pdg->at(k)) != m_type) continue; // This TP corresponds to what we are looking for so we continue
+      if (abs(m_part_pdg->at(k))!=m_type && m_type!=0) continue; // If the particle isn't the type we want AND the all-inclusive option wasn't chosen, go back to start of loop and try again
 
-      //D0GEN = fabs(m_part_y->at(k)*cos(atan2(m_part_py->at(k),m_part_px->at(k)))-m_part_x->at(k)*sin(atan2(m_part_py->at(k),m_part_px->at(k))));
       D0GEN = sqrt(m_part_x->at(k)*m_part_x->at(k)+m_part_y->at(k)*m_part_y->at(k));
       PTGEN = sqrt(m_part_px->at(k)*m_part_px->at(k)+m_part_py->at(k)*m_part_py->at(k));
 
@@ -114,25 +110,16 @@ void efficiencies::get_efficiencies() {
       evtID = m_part_evtId->at(k);
       stID  = m_part_stId->at(k);
 
-      // if (stID.size()!=1) continue;
-
       for (int i=0;i<30;++i) {
         hit_on_lay[i]=0;
         stub_on_lay[i]=0;
         clus_on_lay[i]=0;
       }
 
-      if (m_dbg) {
-        cout << endl;
-        cout << "Dealing with TP " << k << " of " << m_part_n << endl;
-        cout << "TP PDG code is " << m_part_pdg->at(k) << endl;
-        cout << "This event contains " << m_pclus << " pixel digis" << endl;
-      }
-
       i_eta = m_part_eta->at(k);
 
       ///////////////////////////////////////////////////////////////////////
-      // Loop over TP digis
+      // Loop over pixel digis
       for (int l=0;l<m_pclus;++l)  {
 
         if (m_pixclus_layer->at(l)<5) continue; // Don't care about pixel hits
@@ -141,34 +128,23 @@ void efficiencies::get_efficiencies() {
 
         for (unsigned int ll=0;ll<pix_evtID.size();++ll) {
           if (inTP) break;
-
-          if (m_dbg) cout << l << "/" << evtID << "/" << pix_evtID.at(ll) << endl;
-
           if (pix_evtID.at(ll) == evtID) inTP=true;
         }
 
         if (!inTP) continue;
-
-        if (m_dbg) cout << "In the same evt ID" << endl;
-
         inTP=false;
         pix_stID = m_pixclus_simhitID->at(l);
           
-        if (m_dbg) cout << pix_stID.size() << "/" << stID.size() << endl;
-
         for (unsigned int ll=0;ll<pix_stID.size();++ll) {
           if (inTP) break;
 
           for (unsigned int lll=0;lll<stID.size();++lll) {
-            if (m_dbg) cout << pix_stID.at(ll) << "/" << stID.at(lll) << endl;
             if (pix_stID.at(ll) == stID.at(lll)) inTP=true;
           }
         }
           
         if (!inTP) continue;
-
         pix_tp.at(l) = k;
-
 
         // This pixel digi comes from the TP
         i_lay = m_pixclus_layer->at(l);
@@ -177,38 +153,30 @@ void efficiencies::get_efficiencies() {
         ++hit_on_lay[i_lay-5];
 
       	if (m_pixclus_type->at(l)<3 && i_lay<=10) {
-      	  // cout << "/" << 20+i_lay-5 << endl;
       	  ++hit_on_lay[20+i_lay-5];		  
       	}
 
       	if (i_lay>10 && m_pixclus_ladder->at(l)<9) {
-      	  // cout << "///" << 25+(i_lay-11)%7 << endl;
       	  ++hit_on_lay[25+(i_lay-11)%7];
       	}
 
-        if (m_dbg) {
-            cout << endl;
-            cout << "   DIGI    " << endl;
-            cout << "   Coords " << i_lay
-                 << " / " << m_pixclus_ladder->at(l)
-                 << " / " << i_mod 
-                 << " / " << i_eta << endl;
-        }
-
+				// add counts if pT and eta criteria are met
         if (PTGEN<PTMAX)     entries_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
         if (fabs(i_eta)<2.5) entries_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
-        pix_i  = l;  // The index of the induced DIGI
-        clus_i = -1; // The index of the induced CLUSTER
-        stub_i = -1; // The index of the induced STUB
+        pix_i   = l;  // The index of the induced DIGI
+        clus_i  = -1; // The index of the induced CLUSTER
+        stub_i  = -1; // The index of the induced STUB
 
         i_seg = m_pixclus_column->at(pix_i);
         
+        // add counts if pT and eta criteria are met
         if (PTGEN<PTMAX)     digi_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
         if (fabs(i_eta)<2.5) digi_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
+
+				///////////////////////////////
         // We have the digis, now look at the clusters
-        // Then the official one
         for (int i=0;i<m_tkclus;++i) {
           if (clus_i!=-1) break;
           if (m_tkclus_nstrips->at(i)>4)                        continue;
@@ -218,33 +186,20 @@ void efficiencies::get_efficiencies() {
           if (m_tkclus_ladder ->at(i)!=m_pixclus_ladder->at(l)) continue;
           if (m_tkclus_bottom ->at(i)!=m_pixclus_bottom->at(l)) continue;
           if (m_tkclus_tp     ->at(i)!=k)                       continue;
-            
-          if (m_dbg) 
-            cout << m_tkclus_strip->at(i) << "/" << m_pixclus_row->at(pix_i) << "/" << m_tkclus_nstrips->at(i) << endl;
-          
-          if (m_dbg)
-            cout << m_tkclus_seg->at(i) << "/" << i_seg << endl;
-          
           if (fabs(m_tkclus_strip->at(i)-m_pixclus_row->at(pix_i))>=m_tkclus_nstrips->at(i)) continue;
           
           clus_i = i;
         }
 
-        if (clus_i!=-1) {
-          // cout << k << "/" << m_tkclus_tp->at(clus_i) << endl;
-
-    	   pix_cl.at(l)=1;
-
-    	   ++clus_on_lay[i_lay-5];
-  
-          if (m_dbg) {
-            cout << endl;
-            cout << "   CLUS FOUND !!   " << endl;
-          }
+        if (clus_i!=-1) { // if a cluster is found
+          pix_cl.at(l)=1;
+          ++clus_on_lay[i_lay-5];
         
+        	// add counts if pT and eta criteria are met
           if (PTGEN<PTMAX)     clus_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
           if (fabs(i_eta)<2.5) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
 
+					///////////////////////////////
           // We have the clusters, now look at the stubs
           for (int i=0;i<m_tkstub;++i) {
             if (stub_i!=-1) break;
@@ -253,40 +208,27 @@ void efficiencies::get_efficiencies() {
   
             if (m_tkstub_clust1->at(i)==clus_i) stub_i = i;
             if (m_tkstub_clust2->at(i)==clus_i) stub_i = i;
-              
-            // stub_i = i;     
-            // if (m_tkstub_tp->at(i)!=k)
-            // cout << k << "/" << m_tkstub_tp->at(i) << " / " << m_tkclus_tp->at(m_tkstub_clust1->at(i)) << " / " << m_tkclus_tp->at(m_tkstub_clust2->at(i)) << " / " << m_tkclus_tp->at(clus_i) << " / " << m_tkstub_clust2->at(i)  <<" / " << m_tkstub_clust1->at(i) << " / " << clus_i  <<endl;
           }
 
-          if (stub_i!=-1) {
-            if (m_dbg) {
-              cout << endl;
-              cout << "   STUB FOUND !!   " << endl;
-            }
-      
+          if (stub_i!=-1) { // if a stub is found
             ++stub_on_lay[i_lay-5];
-	
-        		if (m_tkstub_type->at(stub_i)<3 && i_lay<=10)                         ++stub_on_lay[20+i_lay-5];
+        		
+            if (m_tkstub_type->at(stub_i)<3 && i_lay<=10)                         ++stub_on_lay[20+i_lay-5];
         		if (m_tkstub_layer->at(stub_i)>10 && m_tkstub_ladder->at(stub_i)<9)   ++stub_on_lay[25+(i_lay-11)%7];
 	
 	          pix_st.at(l)=1;
-
+						
+						// add counts if pT and eta criteria are met
             if (PTGEN<PTMAX)     stub_pt[i_lay-5][static_cast<int>(iMSV*PTGEN)]+=1;
             if (fabs(i_eta)<2.5) stub_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
-          }
-        }
+          } // end if found stub
+        } // end if found cluster
       
-        else {
-          if (m_dbg) {
-            cout << endl;
-            cout << "   NOCLUS !!   " << endl;
-          }    
-        }
 
       } // End of loop over SimHits
 
-      for (int i=0;i<30;++i) {
+      for (int i=0;i<30;++i) { // for each layer, add a count if there's an entry, cluster, or stub for pT or eta
+      
         if (hit_on_lay[i]!=0) {
           if (PTGEN<PTMAX)     entries_pt_lay[i][static_cast<int>(iMSV*PTGEN)]+=1;
           if (fabs(i_eta)<2.5) entries_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
@@ -302,81 +244,8 @@ void efficiencies::get_efficiencies() {
           if (fabs(i_eta)<2.5) stub_eta_lay[i][static_cast<int>(25+10*i_eta)]+=1;
         }
       }
-    
+
     } // End of loop over TPs
-
-    /*
-      cout << endl;
-      cout << "This event contains " << m_pclus << " pixel digis" << endl;
-      // Loop over TPs
-      for (int k=0;k<m_pclus;++k) {
-        // if (m_pixclus_layer->at(k)!=10) continue;
-
-        cout << k 
-             << " / "  << m_pixclus_layer->at(k)
-             << " / "  << m_pixclus_ladder->at(k)
-             << " / "  << m_pixclus_module->at(k)
-             << " / "  << m_pixclus_bottom->at(k)
-             << " / "  << m_pixclus_row->at(k) 
-             << " / "  << m_pixclus_column->at(k)
-             << " --> "  << pix_tp.at(k)
-             << " / "  <<   pix_cl.at(k)
-             << " / "  <<   pix_st.at(k) << endl;
-      }
-
-      cout << "Clusters" << endl;
-      for (int k=0;k<m_tkclus;++k) {
-        //	  if (m_tkclus_layer->at(k)!=10) continue;
-
-        cout << k 
-             << " / "  << m_tkclus_layer->at(k)
-             << " / "  << m_tkclus_ladder->at(k)
-             << " / "  << m_tkclus_module->at(k)
-             << " / "  << m_tkclus_bottom->at(k)
-             << " / "  << m_tkclus_strip->at(k) 
-             << " / "  << m_tkclus_nstrips->at(k)
-             << " / "  << m_tkclus_seg->at(k)
-             << " --> "  << m_tkclus_tp->at(k) << endl;
-      }	
-
-
-      cout << "Unmatched digis" << endl;
-      // Loop over TPs
-      for (int k=0;k<m_pclus;++k) {
-        if (pix_tp.at(k)==-1 || pix_cl.at(k)==1) continue;
-
-        // if (m_pixclus_layer->at(k)!=10) continue;
-
-        cout << k 
-             << " / "  << m_pixclus_layer->at(k)
-             << " / "  << m_pixclus_ladder->at(k)
-             << " / "  << m_pixclus_module->at(k)
-             << " / "  << m_pixclus_bottom->at(k)
-             << " / "  << m_pixclus_row->at(k) 
-             << " / "  << m_pixclus_column->at(k)
-             << " --> "  << pix_tp.at(k)
-             << " / "  <<   pix_cl.at(k)
-             << " / "  <<   pix_st.at(k) << endl;
-      }
-
-      cout << "Unmatched clusters" << endl;
-      for (int k=0;k<m_tkclus;++k) {
-        if (m_tkclus_tp->at(k)!=-1) continue;
-
-        // if (m_tkclus_layer->at(k)!=10) continue;
-
-        cout << k 
-             << " / "  << m_tkclus_layer->at(k)
-             << " / "  << m_tkclus_ladder->at(k)
-             << " / "  << m_tkclus_module->at(k)
-             << " / "  << m_tkclus_bottom->at(k)
-             << " / "  << m_tkclus_strip->at(k) 
-             << " / "  << m_tkclus_nstrips->at(k)
-             << " / "  << m_tkclus_seg->at(k)
-             << " --> "  << m_tkclus_tp->at(k)
-             << " --> "  << m_tkclus_pdg->at(k) << endl;
-      }
-    */
 
   } // End of loop over events
 
@@ -500,26 +369,40 @@ void efficiencies::initTuple(std::string in,std::string out) {
   L1TT = new TChain("TkStubs");
   Pix  = new TChain("Pixels");
   MC   = new TChain("MC");
+  L1TT->Add(in.c_str());
+  Pix ->Add(in.c_str());
+  MC  ->Add(in.c_str());
 
-  // Input data file
-  std::size_t found = in.find(".root");
-
-  // Case 1: It's a root file
-  if (found!=std::string::npos) {
-    L1TT->Add(in.c_str());
-    Pix ->Add(in.c_str());
-    MC  ->Add(in.c_str());
-  }
-  
-  // Case 2: It's a directory
-  else {
-    TString inputDIR;
-    inputDIR = in.c_str();
-
-    L1TT->Add(inputDIR+"/*.root" );
-    Pix ->Add(inputDIR+"/*.root" );
-    MC  ->Add(inputDIR+"/*.root" );
-  }
+  /*  
+    // Is this a batch file?
+    std::size_t prefix = in.find("file:");
+    if (prefix!=std::string::npos) { // file DOES contain the prefix "file:"
+        std::string inCorrected = in.erase (0,5); // remove "file:" prefix
+        L1TT->Add(inCorrected.c_str());
+        Pix->Add(inCorrected.c_str());
+        MC->Add(inCorrected.c_str());
+    }
+    else { // file does NOT contain the prefix "file:"
+      L1TT->Add(in.c_str());
+      Pix ->Add(in.c_str());
+      MC  ->Add(in.c_str());
+    }
+    
+    // Is this a file or a directory?
+    std::size_t found = in.find(".root");
+    if (found!=std::string::npos) { // It's a root file
+      L1TT->Add(in.c_str());
+      Pix ->Add(in.c_str());
+      MC  ->Add(in.c_str());
+    }
+    else { // It's a directory
+      TString inputDIR;
+      inputDIR = in.c_str();
+      L1TT->Add(inputDIR+"/"+"*.root");
+      Pix ->Add(inputDIR+"/"+"*.root");
+      MC  ->Add(inputDIR+"/"+"*.root");
+    }
+  */
 
   m_pixclus_row      = new std::vector<int>;      
   m_pixclus_column   = new std::vector<int>;      
@@ -669,10 +552,10 @@ void efficiencies::initTuple(std::string in,std::string out) {
 
 
 /*
-Comments on binning
+  Comments on binning
 
   Originally, binning was set at 100 and pT max was set at 20 GeV.
-  
+
   When looping over TPs, and adding counts to clusters, stubs, and entries, Seb used:
       if (PTGEN<20)                   clus_pt[i_lay-5][static_cast<int>(5*PTGEN)]+=1;
       if (fabs(i_eta)<2.5 && PTGEN>20) clus_eta[i_lay-5][static_cast<int>(25+10*i_eta)]+=1;
@@ -690,5 +573,5 @@ Comments on binning
   This also changed the definition pt_val[j] in the initVars() void. Previously, it was
       for (int j=0;j<100;++j) pt_val[j]=0.2*j;
   where 0.2 = 1/5 = MSV.
-
 */
+

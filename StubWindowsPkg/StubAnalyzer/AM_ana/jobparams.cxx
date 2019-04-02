@@ -74,7 +74,7 @@ jobparams::jobparams(int argc, char** argv){
      cmd.add(qmax);
 
      ValueArg<int> type("t","type","PDG id of the particle to analyze",
-			false, 13, "int");
+			false, 0, "int");
      cmd.add(type);
 
      ValueArg<int> rate("r","rate","L1 rate (for pattern gen, in kHz)",

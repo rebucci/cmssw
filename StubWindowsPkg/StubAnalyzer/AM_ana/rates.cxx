@@ -219,23 +219,31 @@ void rates::initTuple(std::string in,std::string out) {
   
   // ----- Input File (filename) ----- //
   L1TT   = new TChain("TkStubs");
-
-  // Input data file
-  std::size_t found = in.find(".root");
-
-  // Case 1: It's a root file
-  if (found!=std::string::npos) {
+  L1TT->Add(in.c_str());
+  
+/*  
+  // Is this a batch file?
+  std::size_t prefix = in.find("file:");
+  if (prefix!=std::string::npos) { // file DOES contain the prefix "file:"
+      std::string inCorrected = in.erase (0,5); // remove "file:" prefix
+      L1TT->Add(inCorrected.c_str());
+  }
+  else { // file does NOT contain the prefix "file:"
     L1TT->Add(in.c_str());
   }
   
-  // Case 2: It's a directory
-  else {
+  // Is this a file or a directory?
+  std::size_t found = in.find(".root");
+  if (found!=std::string::npos) { // It's a root file
+    L1TT->Add(in.c_str());
+  }
+  else { // It's a directory
     TString inputDIR;
     inputDIR = in.c_str();
-
-		L1TT->Add(inputDIR+"/*.root" );
+    L1TT->Add(inputDIR+"/"+"*.root");
   }
-  
+*/
+
   pm_clus_layer =&m_clus_layer;
   pm_clus_ladder=&m_clus_ladder;
   pm_clus_module=&m_clus_module;

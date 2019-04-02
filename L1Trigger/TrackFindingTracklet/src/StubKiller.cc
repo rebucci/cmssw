@@ -158,12 +158,12 @@ bool StubKiller::killStub( const TTStub<Ref_Phase2TrackerDigi_>* stub ) {
 
 bool StubKiller::killStub( const TTStub<Ref_Phase2TrackerDigi_>* stub,
 		const vector<int> layersToKill,
-		const int minPhiToKill,
-		const int maxPhiToKill,
-		const int minZToKill,
-		const int maxZToKill,
-		const int minRToKill,
-		const int maxRToKill,
+		const double minPhiToKill,
+		const double maxPhiToKill,
+		const double minZToKill,
+		const double maxZToKill,
+		const double minRToKill,
+		const double maxRToKill,
 		const double fractionOfStubsToKillInLayers,
 		const double fractionOfStubsToKillEverywhere
 	) {

@@ -6,7 +6,7 @@ import FWCore.ParameterSet.Config as cms
 import os
 process = cms.Process("L1TrackNtuple")
 
-GEOMETRY = "D17"
+GEOMETRY = "D21"
 
  
 ############################################################
@@ -26,6 +26,10 @@ elif GEOMETRY == "D17":
     print "using geometry " + GEOMETRY + " (tilted)"
     process.load('Configuration.Geometry.GeometryExtended2023D17Reco_cff')
     process.load('Configuration.Geometry.GeometryExtended2023D17_cff')
+elif GEOMETRY == "D21":
+    print "using geometry " + GEOMETRY + " (tilted)"
+    process.load('Configuration.Geometry.GeometryExtended2023D21Reco_cff')
+    process.load('Configuration.Geometry.GeometryExtended2023D21_cff')
 elif GEOMETRY == "TkOnly": 
     print "using standalone tilted (T5) tracker geometry" 
     process.load('L1Trigger.TrackTrigger.TkOnlyTiltedGeom_cff')
@@ -46,9 +50,12 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
 
 if GEOMETRY == "D17":
-    #D17 (tilted barrel -- latest and greatest with T5 tracker, see: https://github.com/cms-sw/cmssw/blob/CMSSW_9_3_0_pre2/Configuration/Geometry/README.md)
     Source_Files = cms.untracked.vstring(
     "/store/relval/CMSSW_9_3_7/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/93X_upgrade2023_realistic_v5_2023D17noPU-v2/10000/0E1785F0-762C-E811-9192-0CC47A78A4BA.root"
+    )
+elif GEOMETRY == "D21":
+    Source_Files = cms.untracked.vstring(
+    "/store/relval/CMSSW_10_4_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/103X_upgrade2023_realistic_v2_2023D21noPU-v1/20000/F4344045-AEDE-4240-B7B1-27D2CF96C34E.root"
     )
 elif GEOMETRY == "TkOnly":
     Source_Files = cms.untracked.vstring(

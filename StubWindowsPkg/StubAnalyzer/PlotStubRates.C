@@ -8,14 +8,17 @@ Use:
     root[0]-> .L PlotStubRates.C
     root[1]->PlotStubRates("sourcefile",outputname",pu)
 where 
-    - sourcefile is the name of the root output file produced by AM_ana. It does not include the ".root" suffix, but it does have a preceding RootFiles/ path. This can be changed in the Preliminaries section of this macro. sourcefile must be enclosed in quotes.
+    - sourcefile is the name of the root output file produced by AM_ana. It does not include the ".root" suffix.
     - outputname is the name (no type suffix like ".root") of the root file this macro produces. it is also the prefix of all the plot names.
+    - both input and output files have customizable preceding paths and prefixes. These options can be changed in the Preliminaries section of this macro.
     - pu is the pileup value of the source file. It is used in the title only.
+
 
 Options
     - geometry: tilted (default) or flat
     - rate units: in MHz/cm^2 or in stubs/module/BX
     - print each layer: stub, cluster, and ratio plots produced for each of the six barrel layers
+
 
 Plots: Individual Barrel Layers
     - If PrintEachLayer=true, four canvases (and corresponding .pngs) are printed. 
@@ -73,21 +76,21 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   SetPlotStyle();
   SetColorTable();
  
-  TString srcDIR  = "RootFiles/20181102/"; 
-  TString subDIR  = "RootFiles/20181102/";
-  TString plotDIR = "Plots/20181102/"; 
+  TString srcDIR  = ""; 
+  TString subDIR  = "plots/rates/";
+  TString plotDIR = "plots/rates/"; 
   TString plotPRE = "stubRates_";
 
   // Options
   bool PrintEachLayer = false; // saves each layer plot
   bool PrintEachDisk  = false; // saves each disk plot
-  bool PrintTIBRate   = false;
-  bool PrintTOBRate   = false;
-  bool PrintEndcapRate= false;
+  bool PrintTIBRate   = true;
+  bool PrintTOBRate   = true;
+  bool PrintEndcapRate= true;
   bool RateInHz       = false; // rate is given in MHz/cm^2 (true) or in stubs/module/BX (false)
   bool SavePlotSource = false; // save the macro.C files for the 1D maps
 
-  int  tilt = 1; //Tilted Geometry = 1. Flat geometry = 0.
+  int  tilt = 1; // Tilted Geometry = 1. Flat geometry = 0.
 
   // Stub Options
   float pri = 1;    // use primaries = 1
@@ -194,13 +197,11 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   double n_lad_barrel[6];
   double n_mod_barrel[6];
 
-  if (tilt==1)
-  {
+  if (tilt==1) {
     for (int i=0;i<6;++i) n_lad_barrel[i] = n_lad_tilt[i];
     for (int i=0;i<6;++i) n_mod_barrel[i] = n_mod_tilt[i];
   }
-  else
-  {
+  else {
     for (int i=0;i<6;++i) n_lad_barrel[i] = n_lad_flat[i];
     for (int i=0;i<6;++i) n_mod_barrel[i] = n_mod_flat[i];
   }
@@ -232,8 +233,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   // ---------------------------------------------------------------------------------------------------------
 
   // Loop over Layers
-  for (int layer=5;layer<11;++layer)
-  {
+  for (int layer=5;layer<11;++layer) {
     // Values for EACH layer, not all layers, so they should be reset at the top of the loop.
     
     // from do_layer_maps(). resulting stub plots are four hists (stub pri, sec, fak, tot) on one divided canvas.
@@ -250,35 +250,30 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     float b_maxval_r = 0;
     int   b_maxmod_s = 0;
 
-    for (int j=(layer-5)*10000;j<(layer-5)*10000+8000;++j)
-    {
+    for (int j=(layer-5)*10000;j<(layer-5)*10000+8000;++j) {
       b_rate_ALL = count_sbrp[j]+count_sbrf[j]+count_sbrs[j];
       b_rate     = pri*count_sbrp[j]+fak*count_sbrf[j]+sec*count_sbrs[j];
         
       // ratio, variable stubs (single canvases)
-      if (b_rate!=0.)
-      {
+      if (b_rate!=0.) {
         b_ratio = count_cbr[j]/b_rate;
         if (b_ratio>b_maxval_r) b_maxval_r=b_ratio;
       }
 
       // stub rate for all stubs (divided canvas)
-      if (b_rate_ALL>b_maxval_sALL) 
-      {
+      if (b_rate_ALL>b_maxval_sALL) {
         b_maxval_sALL = b_rate_ALL;
         b_maxmod_sALL = j;
       }
 
       // stub rate for variable stubs (single canvases)
-      if (b_rate>b_maxval_s) 
-      {
+      if (b_rate>b_maxval_s) {
         b_maxval_s = b_rate;
         b_maxmod_s = j;
       }
 
       // cluster, variable stubs (single canvases)
-      if (count_cbr[j]>b_maxval_c) 
-      {
+      if (count_cbr[j]>b_maxval_c) {
         b_maxval_c = count_cbr[j];
       }
     }
@@ -314,8 +309,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_layer_ratio         ->Fill(n_mod_barrel[layer-5]+0.5,0.5,b_maxval_r);
 
     // Populate Histograms
-    for (int j=0;j<n_mod_barrel[layer-5];++j)
-    {
+    for (int j=0;j<n_mod_barrel[layer-5];++j) {
       for (int i=0;i<n_lad_barrel[layer-5];++i)
       {
         idx = 10000*(layer-5) + 100*i + j;
@@ -538,7 +532,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_layer_clusters->Update();
       c_layer_clusters->Write();
 
-      if (PrintEachLayer){
+      if (PrintEachLayer) {
         char name_lay_c[50];
         sprintf (name_lay_c, "_layer_%d_layermap_clusters.png", layer);
         c_layer_clusters->SaveAs(plotDIR+plotPRE+outputname+name_lay_c);
@@ -580,7 +574,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_layer_ratios->Update();
       c_layer_ratios->Write();
 
-      if (PrintEachLayer){
+      if (PrintEachLayer) {
         char name_lay_r[50];
         sprintf (name_lay_r, "_layer_%d_layermap_ratio.png", layer);
         c_layer_ratios->SaveAs(plotDIR+plotPRE+outputname+name_lay_r);
@@ -610,17 +604,14 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   // First Loop: 
     // Find max values for stub, cluster, and ratio rates for all 6 layers
     // Need these to define the upper bound on Y
-  for (int i=0;i<6;++i)
-  { 
-    for (int j=i*100;j<(i+1)*100;++j)
-    { 
+  for (int i=0;i<6;++i) { 
+    for (int j=i*100;j<(i+1)*100;++j) { 
       bl_rate_s = count_sblr[j]/n_lad_barrel[i];
       bl_rate_c = count_cblr[j]/n_lad_barrel[i];
       bl_rate_r = 0;
       if (bl_rate_s!=0) bl_rate_r = bl_rate_c/bl_rate_s;
 
-      if (RateInHz==true) 
-      { 
+      if (RateInHz==true) { 
         bl_rate_s /= n_mod_surf_barrel[i];
         bl_rate_c /= n_mod_surf_barrel[i];
         bl_rate_s *= bit_per_s*40.; // Give the value in MHz/cm2
@@ -646,8 +637,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
   // Second Loop:
     // Define number of bins in X using n_mod_barrel, which is different for each layer
-  for (int i=0;i<6;++i)
-  {
+  for (int i=0;i<6;++i) {
     TH2F *h_lay1D_stub = new TH2F("","",20*n_mod_barrel[i],-100.,100.,100,0.,1.1*bl_maxval_s);
     TH2F *h_lay1D_clus = new TH2F("","",20*n_mod_barrel[i],-100.,100.,100,0.,1.1*bl_maxval_c);
     TH2F *h_lay1D_rat = new TH2F("","",20*n_mod_barrel[i],-100.,100.,100,0.,1.1*bl_maxval_r);
@@ -659,19 +649,16 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
   // Populate Histograms
   float bin_w;
-  for (int i=0;i<6;++i)
-  {
+  for (int i=0;i<6;++i) {
     bin_w = 200./(20.*n_mod_barrel[i]);
 
-    for (int j=0;j<n_mod_barrel[i];++j)
-    {
+    for (int j=0;j<n_mod_barrel[i];++j) {
       bl_rate_s = count_sblr[100*i+j]/n_lad_barrel[i];
       bl_rate_c = count_cblr[100*i+j]/n_lad_barrel[i];
       if (bl_rate_s!=0) bl_rate_r = bl_rate_c/bl_rate_s;
       if (bl_rate_s==0) continue;
         
-      if (RateInHz) 
-      { 
+      if (RateInHz) { 
         bl_rate_s /= n_mod_surf_barrel[i];
         bl_rate_s *= bit_per_s*40.; // Give the value in MHz/cm2
   
@@ -695,8 +682,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_1D_layer_stub->GetYaxis()->SetTitleOffset(0.83);
     h_1D_layer_stub->Draw();
 
-    for (int i=0;i<6;++i)
-    {
+    for (int i=0;i<6;++i) {
       h_lay1D_stub_plots[i]->SetMarkerStyle(color[i]);
       h_lay1D_stub_plots[i]->SetMarkerSize(1.4);
       h_lay1D_stub_plots[i]->Draw("same");
@@ -731,8 +717,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     if (RateInHz)  sprintf (name_lay1D_s, "_1D_layermap_stubs_inHz.png");
     c_1D_layer_stubs->SaveAs(plotDIR+plotPRE+outputname+name_lay1D_s);
 
-    if (SavePlotSource)
-    {
+    if (SavePlotSource) {
       char name2_lay1D_s[100];
       sprintf (name2_lay1D_s, "_1D_layermap_stubs.C");
       if (RateInHz)  sprintf (name2_lay1D_s, "_1D_layermap_stubs_inHz.C");
@@ -749,8 +734,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_1D_layer_cluster->GetYaxis()->SetTitleOffset(0.83);
     h_1D_layer_cluster->Draw();
 
-    for (int i=0;i<6;++i)
-    {
+    for (int i=0;i<6;++i) {
       h_lay1D_clus_plots[i]->SetMarkerStyle(color[i]);
       h_lay1D_clus_plots[i]->SetMarkerSize(1.4);
       h_lay1D_clus_plots[i]->Draw("same");
@@ -785,8 +769,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     if (RateInHz)  sprintf (name_lay1D_c, "_1D_layermap_clusters_inHz.png");
     c_1D_layer_clusters->SaveAs(plotDIR+plotPRE+outputname+name_lay1D_c);
 
-    if (SavePlotSource)
-    {
+    if (SavePlotSource) {
       char name2_lay1D_c[100];
       sprintf (name2_lay1D_c, "_1D_layermap_clusters.C");
       if (RateInHz)  sprintf (name2_lay1D_c, "_1D_layermap_clusters_inHz.C");
@@ -802,8 +785,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_1D_layer_ratio->GetYaxis()->SetTitleOffset(0.83);
     h_1D_layer_ratio->Draw();
 
-    for (int i=0;i<6;++i)
-    {
+    for (int i=0;i<6;++i) {
       h_lay1D_rat_plots[i]->SetMarkerStyle(color[i]);
       h_lay1D_rat_plots[i]->SetMarkerSize(1.4);
       h_lay1D_rat_plots[i]->Draw("same");
@@ -837,8 +819,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     sprintf (name_lay1D_r, "_1D_layermap_ratio.png");
     c_1D_layer_ratios->SaveAs(plotDIR+plotPRE+outputname+name_lay1D_r);
 
-    if (SavePlotSource)
-    {
+    if (SavePlotSource) {
       char name2_lay1D_r[100];
       sprintf (name2_lay1D_r, "_1D_layermap_ratio.C");
       c_1D_layer_ratios->SaveSource(plotDIR+plotPRE+outputname+name2_lay1D_r);
@@ -850,10 +831,8 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   // ---------------------------------------------------------------------------------------------------------
 
   // loop over disks
-  for (int disk=0;disk<12;++disk)
-  {
-    if (disk>=7) // -Z case
-    {
+  for (int disk=0;disk<12;++disk) {
+    if (disk>=7) { // -Z case
       for (int i=0;i<15;++i) n_start_endcap[i] = 0; // There is no problem in this case
     }
 
@@ -866,18 +845,15 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     float e_maxval_c = 0;
     float e_maxval_r = 0;
 
-    for (int i=0;i<142000;++i) 
-    {
+    for (int i=0;i<142000;++i) {
       count_e_rate[i]=0.; 
       count_e_clus[i]=0.;
       count_e_ratio[i]=0.;
     }
 
      
-    for (int i=disk;i<disk+1;++i)
-    { 
-      for (int j=10000*i;j<10000*i+2000;++j)
-      {
+    for (int i=disk;i<disk+1;++i) { 
+      for (int j=10000*i;j<10000*i+2000;++j) {
         e_rate = pri*count_serp[j]+fak*count_serf[j]+sec*count_sers[j];
 
         // stubs
@@ -1054,7 +1030,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_disk_stubs->Update();
       c_disk_stubs->Write();
 
-      if (PrintEachDisk){
+      if (PrintEachDisk) {
         char name_disk_s[50];
         sprintf (name_disk_s, "_disk_%d_diskmap_stubs.png", disk+1);
         c_disk_stubs->SaveAs(plotDIR+plotPRE+outputname+name_disk_s);
@@ -1113,7 +1089,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_disk_clusters->Update();
       c_disk_clusters->Write();
 
-      if (PrintEachDisk){
+      if (PrintEachDisk) {
         char name_disk_c[50];
         sprintf (name_disk_c, "_disk_%d_diskmap_clusters.png", disk+1);
         c_disk_clusters->SaveAs(plotDIR+plotPRE+outputname+name_disk_c);      
@@ -1173,7 +1149,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       c_disk_ratios->Update();
       c_disk_ratios->Write();
 
-      if (PrintEachDisk){
+      if (PrintEachDisk) {
         char name_disk_r[50];
         sprintf (name_disk_r, "_disk_%d_diskmap_ratio.png", disk+1);
         c_disk_ratios->SaveAs(plotDIR+plotPRE+outputname+name_disk_r);      
@@ -1195,17 +1171,14 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   float el_rate_c;
   float el_rate_r;  
 
-  for (int i=7;i<12;++i)
-  {   
-    for (int j=i*100;j<i*100+15;++j)
-    { 
+  for (int i=7;i<12;++i) {   
+    for (int j=i*100;j<i*100+15;++j) { 
       el_rate_s = count_selr[j]/n_mod_endcap[j-100*i];
       el_rate_c = count_celr[j]/n_mod_endcap[j-100*i];
       el_rate_r = 0;
       if (el_rate_s !=0) el_rate_r = el_rate_c/el_rate_s;
 
-      if (RateInHz) 
-      { 
+      if (RateInHz) { 
         el_rate_s /= n_mod_surf_endcap[j-100*i];
         el_rate_s *= bit_per_s*40.; // Give the value in MHz/cm2
 
@@ -1227,8 +1200,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   std::vector<TH2F*> h_disk1D_clus_plots; 
   std::vector<TH2F*> h_disk1D_rat_plots; 
 
-  for (int i=0;i<5;++i)
-  {
+  for (int i=0;i<5;++i) {
     TH2F *h_disk1D_stub = new TH2F("","",200,20.,120.,100,0.,1.1*el_maxval_s);
     TH2F *h_disk1D_clus = new TH2F("","",200,20.,120.,100,0.,1.1*el_maxval_c);
     TH2F *h_disk1D_rat  = new TH2F("","",200,20.,120.,100,0.,1.1*el_maxval_r);
@@ -1239,10 +1211,8 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
   }
 
   int mv;
-  for (int i=7;i<12;++i)
-  {
-    for (int j=i*100;j<i*100+15;++j)
-    {
+  for (int i=7;i<12;++i) {
+    for (int j=i*100;j<i*100+15;++j) {
       mv = j%100;
       if (i>=9) mv+=3;
       if (mv>=15) continue;
@@ -1251,8 +1221,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       el_rate_c = count_celr[j]/n_mod_endcap[mv];
       if (el_rate_s!=0) el_rate_r = count_celr[j]/count_selr[j];
 
-      if (RateInHz) 
-      { 
+      if (RateInHz) { 
         el_rate_s /= n_mod_surf_endcap[mv];
         el_rate_s *= bit_per_s*40.; // Give the value in MHz/cm2
 
@@ -1276,8 +1245,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_1D_disk_stub->GetYaxis()->SetTitleOffset(0.83);
     h_1D_disk_stub->Draw();
 
-    for (int i=0;i<5;++i)
-    {
+    for (int i=0;i<5;++i) {
       h_disk1D_stub_plots[i]->SetMarkerStyle(color[i]);
       h_disk1D_stub_plots[i]->SetMarkerSize(1.4);
       h_disk1D_stub_plots[i]->Draw("same");
@@ -1315,7 +1283,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     if (RateInHz)  sprintf (name_disk1D_s, "_1D_diskmap_stubs_inHz.png");
     c_1D_disk_stubs->SaveAs(plotDIR+plotPRE+outputname+name_disk1D_s);
 
-    if (SavePlotSource){
+    if (SavePlotSource) {
       char name2_disk1D_s[100];
       sprintf (name2_disk1D_s, "_1D_diskmap_stubs.C");
       if (RateInHz)  sprintf (name2_disk1D_s, "_1D_diskmap_stubs_inHz.C");
@@ -1332,8 +1300,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_1D_disk_cluster->GetYaxis()->SetTitleOffset(0.83);
     h_1D_disk_cluster->Draw();
     
-    for (int i=0;i<5;++i)
-    {
+    for (int i=0;i<5;++i) {
       h_disk1D_clus_plots[i]->SetMarkerStyle(color[i]);
       h_disk1D_clus_plots[i]->SetMarkerSize(1.4);
       h_disk1D_clus_plots[i]->Draw("same");
@@ -1370,8 +1337,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     if (RateInHz)  sprintf (name_disk1D_c, "_1D_diskmap_clusters_inHz.png");
     c_1D_disk_clusters->SaveAs(plotDIR+plotPRE+outputname+name_disk1D_c);
 
-    if (SavePlotSource)
-    {
+    if (SavePlotSource) {
       char name2_disk1D_c[100];
       sprintf (name2_disk1D_c, "_1D_diskmap_clusters.C");
       if (RateInHz)  sprintf (name2_disk1D_c, "_1D_diskmap_clusters_inHz.C");
@@ -1387,8 +1353,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     h_1D_disk_ratio->GetYaxis()->SetTitleOffset(0.83);
     h_1D_disk_ratio->Draw();
     
-    for (int i=0;i<5;++i)
-    {
+    for (int i=0;i<5;++i) {
       h_disk1D_rat_plots[i]->SetMarkerStyle(color[i]);
       h_disk1D_rat_plots[i]->SetMarkerSize(1.4);
       h_disk1D_rat_plots[i]->Draw("same");
@@ -1425,8 +1390,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
     sprintf (name_disk1D_r, "_1D_diskmap_ratios.png");
     c_1D_disk_ratios->SaveAs(plotDIR+plotPRE+outputname+name_disk1D_r);
 
-    if (SavePlotSource)
-    {
+    if (SavePlotSource) {
       char name2_disk1D_r[100];
       sprintf (name2_disk1D_r, "_1D_diskmap_ratios.C");
       c_1D_disk_ratios->SaveAs(plotDIR+plotPRE+outputname+name2_disk1D_r);
@@ -1452,15 +1416,13 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       
       std::cout.precision(3);
 
-      for (int i=0;i<3;++i)
-      { 
+      for (int i=0;i<3;++i) { 
         cout << endl;
         cout << "Layer " << i+1 << endl;
         cout << "        /  TOT  / PRIM>2/ PRIM<2/  SEC  /  FAKE" << endl;
         
         
-        for (int j=0;j<TIB_n_mod_barrel[i];++j)
-        {
+        for (int j=0;j<TIB_n_mod_barrel[i];++j) {
           cout << "Ring " << j+1 << "  / ";
 
           TIB_rate = 0;
@@ -1469,8 +1431,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
           TIB_rate_s = 0;
           TIB_rate_f = 0;
       
-          for (int k=0;k<TIB_n_lad_barrel[i];++k)
-          {
+          for (int k=0;k<TIB_n_lad_barrel[i];++k) {
             TIB_idx = 10000*(i) + 100*k + j;
 
             TIB_rate_p += count_sbrp[TIB_idx]-count_sbrp2[TIB_idx];
@@ -1510,15 +1471,13 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       
       std::cout.precision(3);
 
-      for (int i=0;i<3;++i)
-      { 
+      for (int i=0;i<3;++i) { 
         cout << endl;
         cout << "Layer " << i+1 << endl;
         cout << "        /  TOT  / PRIM>2/ PRIM<2/  SEC  /  FAKE" << endl;
         
         
-        for (int j=TOB_n_off_barrel[i];j<TOB_n_mod_barrel[i];++j)
-        {
+        for (int j=TOB_n_off_barrel[i];j<TOB_n_mod_barrel[i];++j) {
           if (int(j+1-TOB_n_off_barrel[i])<10)
             cout << "Ring " << int(j+1-TOB_n_off_barrel[i]) << "  / ";
           if (int(j+1-TOB_n_off_barrel[i])>=10)
@@ -1530,8 +1489,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
             TOB_rate_s = 0;
             TOB_rate_f = 0;
       
-            for (int k=0;k<TOB_n_lad_barrel[i];++k)
-            {
+            for (int k=0;k<TOB_n_lad_barrel[i];++k) {
               TOB_idx = 10000*(i+3) + 100*k + j;
 
               TOB_rate_p += count_sbrp[TOB_idx]-count_sbrp2[TOB_idx];
@@ -1568,15 +1526,13 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
       
       std::cout.precision(3);
 
-      for (int i=0;i<5;++i)
-      { 
+      for (int i=0;i<5;++i) { 
         cout << endl;
         cout << "DISK " << i+1 << endl;
         cout << "        /  TOT  / PRIM>2/ PRIM<2/  SEC  /  FAKE" << endl;
         
         
-        for (int j=0;j<15;++j)
-        {
+        for (int j=0;j<15;++j) {
           if (j<10)  cout << "Ring " << j << "  / ";
           if (j>=10) cout << "Ring " << j << " / ";
 
@@ -1586,8 +1542,7 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
           ENDCAP_rate_s = 0;
           ENDCAP_rate_f = 0;
       
-          for (int k=0;k<n_lad_endcap[j];++k)
-          {
+          for (int k=0;k<n_lad_endcap[j];++k) {
             ENDCAP_idx = 10000*i + 100*j + k;
 
             ENDCAP_rate_p += count_serp[ENDCAP_idx]-count_serp2[ENDCAP_idx];
@@ -1624,14 +1579,12 @@ void PlotStubRates(TString sourcefile, TString outputname, int pu)
 
   // -----------------------------------------------------------------------------------------------------------
   // Fill Histograms
-  void fill_histo(TH2F *hist,float val[], double nlad, double dec, int disk, int ring,float max) 
-  {
+  void fill_histo(TH2F *hist,float val[], double nlad, double dec, int disk, int ring,float max) {
     float scale = 8*atan(1.)/nlad;
 
     float phi_sec = 0.;
 
-    for (int i=0;i<int(nlad);++i) 
-    {
+    for (int i=0;i<int(nlad);++i) {
       phi_sec = (i+.5-dec)*scale;
 
       if (phi_sec<0.) phi_sec+=8*atan(1.); 

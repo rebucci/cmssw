@@ -8,7 +8,7 @@
 # Author: S.Viret (s.viret@ipnl.in2p3.fr)
 # Date  : 24/05/2017
 #
-# Script tested with release CMSSW_10_0_0_pre1 (works either for Tilted of Flat geometries)
+# Script tested with release CMSSW_10_4_0
 #
 # Script, extractors, and tools updated by R.Bucci (rbucci@nd.edu). 2018.
 # 
@@ -28,8 +28,8 @@ process = cms.Process("MIBextractor")
 flat=False
 
 # Select stub windows
-STUBWINDOWS = "Tight"
-    # Tab2013  stub  windows in CMSSW_9_4_0 and 10_0_0
+STUBWINDOWS = "Tab"
+    # Tab  		 stub  windows in CMSSW_9_4_0 and 10_0_0
     # Tight    tight windows in CMSSW_10_2_X
     # Loose    loose windows in CMSSW_10_2_X
     # Zero     everything is zero!
@@ -67,21 +67,13 @@ process.maxEvents = cms.untracked.PSet(
 
 # input files
 Source_Files = cms.untracked.vstring(
-        #'file:/hadoop/store/user/rbucci/mc_gen/SingleElectronFlatPt5To100/step2_PU200/SingleElectronFlatPt5To100_PU200_100.root',
-        )
+        #'/store/relval/CMSSW_10_4_0_pre2/RelValTTbar_14TeV/GEN-SIM-DIGI-RAW/103X_upgrade2023_realistic_v2_2023D21noPU-v1/20000/F4344045-AEDE-4240-B7B1-27D2CF96C34E.root',
+)
 
 process.source = cms.Source("PoolSource", 
                             fileNames = Source_Files, 
-                            inputCommands=cms.untracked.vstring(
-                                'keep *_*_*_*',
-                                'drop l1tEMTFHit2016Extras_*_*_*',
-                                'drop l1tEMTFHit2016s_*_*_*',
-                                'drop l1tEMTFTrack2016Extras_*_*_*',
-                                'drop l1tEMTFTrack2016s_*_*_*',
-                                'drop l1tHGCalTowerMapBXVector_*_*_*',
-                            ), # Need to drop these branch names to run the 937 datasets here.
                             duplicateCheckMode = cms.untracked.string( 'noDuplicateCheck' )
-)
+                            )
 
 # name of output file
 OUTPUT_NAME="extracted.root"
@@ -102,10 +94,10 @@ process.MIBextraction.doSTUB     = True     # adds official stubs and clusters
 process.MIBextraction.doPixel    = True     # activate digis or not (not for official)
 process.MIBextraction.doMatch    = True     # adds digi matching to MC (used only if doPixel is true)
 
-process.MIBextraction.doL1TRK    = True     # adds patterns and L1 track info
-process.MIBextraction.doBANK 	   = False    # 
-process.MIBextraction.getCoords  = False    # 
-process.MIBextraction.fullInfo   = True     # 
+process.MIBextraction.doL1TRK    = True     # adds patterns and L1 track info; default false
+process.MIBextraction.doBANK 	   = False    # default false
+process.MIBextraction.getCoords  = False    # default false
+process.MIBextraction.fullInfo   = True     # default false
 
 process.MIBextraction.TP_hitTracker = True        # Require tracking particle to hit in the tracker
 process.MIBextraction.TP_minPt      = 2.0         # minimum pT of tracking particles  (default=0.0)
@@ -140,7 +132,7 @@ process.load('L1Trigger.TrackTrigger.TrackTrigger_cff')
 from L1Trigger.TrackTrigger.TTStubAlgorithmRegister_cfi import *
 
 # Stub Windows
-if   STUBWINDOWS == "Tab2013": 
+if   STUBWINDOWS == "Tab": 
     print "using stub windows for CMSSW_9_4_0 and 10_0_0"
     TTStubAlgorithm_official_Phase2TrackerDigi_.BarrelCut = cms.vdouble( 0, 2.0, 2.0, 3.5, 4.5, 5.5, 6.5)
     TTStubAlgorithm_official_Phase2TrackerDigi_.TiltedBarrelCutSet = cms.VPSet(
@@ -218,7 +210,7 @@ process.TTClusterStub      = cms.Path(process.TrackTriggerClustersStubs)
 process.TTClusterStubTruth = cms.Path(process.TrackTriggerAssociatorClustersStubs)
 
 process.TTTracksTruth = cms.Path(process.TrackTriggerAssociatorTracks)
-process.TTCSTTruth    = cms.Path(process.TrackTriggerAssociatorComplete) # both  the TTAssociatorTracks and the TTAssociatorClustersStubs
+process.TTCSTTruth    = cms.Path(process.TrackTriggerAssociatorComplete) # both the TTAssociatorTracks and the TTAssociatorClustersStubs
 
 
 from L1Trigger.TrackFindingTracklet.Tracklet_cfi import *
@@ -233,9 +225,16 @@ from L1Trigger.TrackTrigger.TTCluster_cfi import * # attempted fix
 # Processes
 ############################################################
 
+#process.MessageLogger = cms.Service("MessageLogger",
+#		destinations = cms.untracked.vstring('logDebug'),
+#			logDebug   = cms.untracked.PSet(threshold = cms.untracked.string('DEBUG') )
+#)
+
 process.dump = cms.EDAnalyzer("EventContentAnalyzer")
+#process.Tracer = cms.Service("Tracer")
+
 process.p    = cms.Path(process.MIBextraction)
-process.d    = cms.Path(process.dump)
+#process.d    = cms.Path(process.dump)
 
 # Don't re-run stub making (will use to the stub windows original to the release area)
 # process.schedule = cms.Schedule(process.TTClusterStubTruth,process.TTTracksEmulationWithTruth,process.p) 
